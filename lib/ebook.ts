@@ -2,18 +2,11 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import manifestData from "@/public/ebook/manifest.json";
 import { cloudflareEnv } from "./runtime";
 export const ebookPath = path.join(process.cwd(), "private/150-doces.pdf");
-export type EbookManifest = {
-  sha256: string;
-  pages: number;
-  images: string[];
-  video: string;
-  gif: string;
-  bytes?: number;
-};
-const manifest: EbookManifest = manifestData;
+import { EBOOK_PREVIEW, type EbookManifest } from "./ebook-preview";
+export type { EbookManifest } from "./ebook-preview";
+const manifest = EBOOK_PREVIEW;
 export const ebookObjectKey = `sha256/${manifest.sha256}.pdf`;
 export async function getEbook(): Promise<EbookManifest | null> {
   try {

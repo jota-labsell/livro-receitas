@@ -65,3 +65,11 @@ Compare visitas de oferta → clique → checkout → compra dentro do mesmo per
 ## Operação
 
 Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória de sandbox e ativação. O cookie de compra dura até 30 dias; limpar os dados do navegador remove o acesso automático. Atendimento: receitaspremium150@gmail.com. Não há garantia comercial adicional anunciada.
+
+## Demonstração visual e prints do Instagram
+
+A vitrine usa `lib/ebook-preview.ts`, com as amostras públicas geradas da edição identificada pelo SHA-256. A apresentação não depende da disponibilidade do PDF completo no R2: capa, galeria e loop continuam visíveis mesmo durante a configuração da entrega. O checkout e o download mantêm as verificações privadas de pagamento e arquivo.
+
+A prévia oferece MP4/H.264 e WebM, autoplay sem áudio, loop, pausa e reprodução manual quando o navegador bloquear autoplay. Movimento reduzido mantém as páginas estáticas. As seções mostram o que vem no PDF, uma composição de páginas e quatro grupos de receitas com fotografias extraídas das páginas reais.
+
+Depoimentos aceitam somente prints verdadeiros fornecidos pelo responsável pela oferta. Os arquivos autorizados vão em `public/testimonials/`; `content/testimonials.json` recebe objetos `{ "image": "/testimonials/arquivo.webp", "alt": "descrição fiel da mensagem" }`. O componente os posiciona logo após a headline. Enquanto as imagens reais não forem fornecidas, a seção não é exibida e nenhum relato ou print é inventado.

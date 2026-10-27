@@ -1,4 +1,4 @@
-import { getEbook } from "@/lib/ebook";
+import { EBOOK_PREVIEW } from "@/lib/ebook-preview";
 import {
   HeroSection,
   InsideEbookGallery,
@@ -8,7 +8,7 @@ import {
 } from "@/components/landing";
 export const dynamic = "force-dynamic";
 export default async function Home() {
-  const ebook = await getEbook();
+  const ebook = EBOOK_PREVIEW;
   return (
     <>
       <a href="#conteudo" className="skip-link">

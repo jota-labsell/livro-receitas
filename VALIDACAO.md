@@ -15,3 +15,11 @@
 Não há credenciais Mercado Pago no ambiente. O sandbox oficial **não foi executado** e não é substituído pelos testes acima. A consulta de D1 remoto retornou erro de autenticação Cloudflare 10000; é preciso liberar o acesso à conta/base correta, preencher o ID real e aplicar a migration remota. O checkout e as cobranças reais permanecem desabilitados.
 
 O roteiro de configuração e da matriz oficial de sandbox está em [CLOUDFLARE.md](CLOUDFLARE.md). O PDF deve continuar em R2 privado. Nenhuma aprovação foi simulada em produção e nenhum arquivo completo foi publicado.
+
+## Atualização da demonstração
+
+Corrigido o desaparecimento das amostras quando o PDF privado não estava disponível no R2. A vitrine agora usa um manifesto público das amostras; checkout e download continuam exigindo suas verificações privadas. Adicionadas seção “O que você recebe”, composição de páginas, quatro blocos fotográficos e loop maior com MP4/H.264 e WebM.
+
+Build Next.js/OpenNext aprovado. Os **18 testes de interface passaram no Worker local sem nenhum binding R2 ou D1**, reproduzindo a configuração que fazia as amostras desaparecerem. A reprodução atravessou o fim do vídeo e reiniciou o loop, e a pausa e o movimento reduzido foram conferidos nas três larguras.
+
+A seção de depoimentos por prints do Instagram está implementada logo após a headline e aguarda os arquivos verdadeiros do usuário. Nenhum relato ou print de outro produto foi publicado.

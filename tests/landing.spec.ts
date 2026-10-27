@@ -11,14 +11,20 @@ test("three commercial blocks, genuine previews, consistent offer, FAQ and stick
   await expect(page.locator("main>section")).toHaveCount(3);
   await expect(page.locator("details")).toHaveCount(3);
   await expect(page.locator(".sample")).toHaveCount(3);
+  await expect(
+    page.getByRole("heading", { name: "O que você recebe por R$ 10." }),
+  ).toBeVisible();
+  await expect(page.locator(".recipe-blocks article")).toHaveCount(4);
+  await expect(page.locator(".demo-stage")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await page.evaluate(() => scrollTo(0, 0));
   const first = page.locator(".initial-offer .button");
   expect((await first.boundingBox())!.y).toBeLessThan(
-    test.info().project.name === "desktop" ? 1000 : 800,
+    test.info().project.name === "desktop" ? 1200 : 900,
   );
   await page.evaluate(() =>
     scrollTo(
@@ -127,9 +133,20 @@ test("reduced motion, keyboard access and preview pause", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const video = page.locator(".product-demo video");
   await expect(video).toHaveCount(1);
+  await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute(
+    "src",
+    "/ebook/preview.mp4",
+  );
+  expect(
+    await video.evaluate(
+      (v: HTMLVideoElement) => v.loop && v.muted && v.playsInline,
+    ),
+  ).toBe(true);
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState))
     .toBeGreaterThanOrEqual(2);
+  await video.evaluate(async (v: HTMLVideoElement) => { v.currentTime = v.duration - 0.2; await v.play(); });
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(2);
   await page.getByRole("button", { name: "Pausar prévia" }).click();
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.paused))

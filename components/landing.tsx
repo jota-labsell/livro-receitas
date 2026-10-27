@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import type { EbookManifest } from "@/lib/ebook";
+import type { EbookManifest } from "@/lib/ebook-preview";
+import { Testimonials } from "./testimonials";
 import { ProductPreviewVideo } from "./ProductPreviewVideo";
 import { Checkout } from "./checkout";
 import { track } from "@/lib/analytics";
@@ -22,7 +23,7 @@ const CTA = ({
     {children}
   </a>
 );
-export function HeroSection({ ebook }: { ebook: EbookManifest | null }) {
+export function HeroSection({ ebook }: { ebook: EbookManifest }) {
   const root = useRef<HTMLElement>(null);
   useEffect(() => {
     let sent = false;
@@ -48,11 +49,15 @@ export function HeroSection({ ebook }: { ebook: EbookManifest | null }) {
           Os doces que <span className="purple">chamam atenção nas redes</span>{" "}
           podem entrar no <span className="magenta">seu cardápio.</span>
         </h1>
+        <Testimonials />
         <p className="hero-lead">
           Tenha 150 receitas para preparar em casa, testar novos sabores e
           começar a montar sua oferta de doces.
         </p>
-        <ProductPreviewVideo ebook={ebook ?? undefined} />
+        <p className="hero-price-note">
+          Edição fotográfica em PDF por <strong>R$ 10</strong>. Pagamento único.
+        </p>
+        <ProductPreviewVideo ebook={ebook} />
         <p className="product-facts">
           150 receitas <span>•</span> 10 capítulos <span>•</span> 167 páginas
         </p>
@@ -71,6 +76,159 @@ export function HeroSection({ ebook }: { ebook: EbookManifest | null }) {
     </section>
   );
 }
+function WhatYouReceive({ ebook }: { ebook: EbookManifest }) {
+  return (
+    <div className="what-you-get" id="o-que-recebe">
+      <div className="receive-heading">
+        <p className="section-label">UM LIVRO PARA ABRIR E USAR</p>
+        <h2>
+          O que você recebe
+          <br />
+          por <span className="magenta">R$ 10.</span>
+        </h2>
+        <p>
+          Da escolha do doce à sua primeira fornada, veja o que vem no arquivo.
+        </p>
+      </div>
+      <div className="receive-layout">
+        <div
+          className="receive-book-stack"
+          aria-label="Capa e exemplos de páginas do material entregue"
+        >
+          <Image
+            className="receive-page receive-page-one"
+            src={ebook.images[3]}
+            alt="Página real com receita de cookie recheado"
+            width={300}
+            height={424}
+          />
+          <Image
+            className="receive-page receive-page-two"
+            src={ebook.images[5]}
+            alt="Página real com receita de copo da felicidade"
+            width={300}
+            height={424}
+          />
+          <Image
+            className="receive-cover"
+            src={ebook.images[0]}
+            alt="Capa da edição fotográfica em PDF"
+            width={300}
+            height={424}
+          />
+          <span className="receive-stamp">
+            SEU LIVRO
+            <br />
+            <strong>167</strong> PÁGINAS
+          </span>
+        </div>
+        <div className="receive-content">
+          <article>
+            <span>01</span>
+            <div>
+              <h3>150 receitas em 10 capítulos</h3>
+              <p>
+                Um repertório para experimentar, comparar sabores e escolher o
+                que faz sentido para o seu cardápio.
+              </p>
+            </div>
+          </article>
+          <article>
+            <span>02</span>
+            <div>
+              <h3>Foto, ingredientes e modo de preparo</h3>
+              <p>
+                Receitas organizadas para acompanhar os ingredientes e consultar
+                cada etapa na cozinha.
+              </p>
+            </div>
+          </article>
+          <article>
+            <span>03</span>
+            <div>
+              <h3>Rendimento, conservação e dicas de venda</h3>
+              <p>
+                Informações para orientar seus testes, a apresentação dos doces
+                e o planejamento dos produtos.
+              </p>
+            </div>
+          </article>
+          <article>
+            <span>04</span>
+            <div>
+              <h3>PDF para baixar e consultar</h3>
+              <p>
+                167 páginas para abrir no celular, tablet ou computador.
+                Pagamento único, sem assinatura.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const recipeBlocks = [
+  {
+    image: 2,
+    title: "Brigadeiros gourmet",
+    detail: "Dos clássicos aos novos sabores.",
+  },
+  {
+    image: 3,
+    title: "Cookies recheados",
+    detail: "Massa, recheio e possibilidades.",
+  },
+  {
+    image: 4,
+    title: "Brownies e blondies",
+    detail: "Chocolate em diferentes versões.",
+  },
+  {
+    image: 5,
+    title: "Copos da felicidade",
+    detail: "Camadas para montar e apresentar.",
+  },
+];
+function RecipeCollection({ ebook }: { ebook: EbookManifest }) {
+  return (
+    <div className="recipe-collection" id="receitas-do-livro">
+      <div className="collection-heading">
+        <p className="section-label">UM GOSTINHO DOS CAPÍTULOS</p>
+        <h2>
+          Qual vai ser o primeiro
+          <br />
+          <span className="purple">doce da sua lista?</span>
+        </h2>
+      </div>
+      <div className="recipe-blocks">
+        {recipeBlocks.map((recipe) => (
+          <article key={recipe.title}>
+            <div className="recipe-photo">
+              <Image
+                src={ebook.images[recipe.image]}
+                alt={`Fotografia de referência de ${recipe.title.toLowerCase()}, extraída da página real do livro`}
+                width={778}
+                height={1100}
+                sizes="(max-width: 600px) 45vw, 440px"
+              />
+            </div>
+            <div className="recipe-block-copy">
+              <h3>{recipe.title}</h3>
+              <p>{recipe.detail}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <p className="collection-more">
+        E ainda: doces virais, bolos no pote, tortas e cheesecakes, bombons e
+        trufas, mousses e gelados, palhas e doces de corte.
+      </p>
+    </div>
+  );
+}
+
 const samples = [
   {
     index: 2,
@@ -88,7 +246,7 @@ const samples = [
     category: "COPOS DA FELICIDADE",
   },
 ];
-export function InsideEbookGallery({ ebook }: { ebook: EbookManifest | null }) {
+export function InsideEbookGallery({ ebook }: { ebook: EbookManifest }) {
   const dialog = useRef<HTMLDialogElement>(null),
     trigger = useRef<HTMLButtonElement | null>(null);
   const [index, setIndex] = useState(0);
@@ -105,14 +263,18 @@ export function InsideEbookGallery({ ebook }: { ebook: EbookManifest | null }) {
     setIndex((i) => (i + n + samples.length) % samples.length);
   return (
     <section className="proof wrap" id="por-dentro">
-      <p className="section-label">ABRA. ESCOLHA. PREPARE.</p>
-      <h2>
-        Veja o que você leva
-        <br className="desktop-break" /> para a sua cozinha.
-      </h2>
-      <p className="gallery-help">
-        Três receitas do livro. Toque em uma página para ampliar.
-      </p>
+      <WhatYouReceive ebook={ebook} />
+      <RecipeCollection ebook={ebook} />
+      <div className="inside-heading">
+        <p className="section-label">ABRA. ESCOLHA. PREPARE.</p>
+        <h2>
+          Veja o que você leva
+          <br className="desktop-break" /> para a sua cozinha.
+        </h2>
+        <p className="gallery-help">
+          Três receitas do livro. Toque em uma página para ampliar.
+        </p>
+      </div>
       <div
         className="sample-gallery"
         aria-label="Páginas reais de três categorias"

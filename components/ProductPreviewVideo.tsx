@@ -1,14 +1,17 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { EbookManifest } from "@/lib/ebook";
-export function ProductPreviewVideo({ ebook }: { ebook?: EbookManifest }) {
-  const root = useRef<HTMLElement>(null),
-    video = useRef<HTMLVideoElement>(null);
-  const [reduced, setReduced] = useState(true),
-    [visible, setVisible] = useState(false),
-    [paused, setPaused] = useState(false),
-    [failed, setFailed] = useState(false);
+import type { EbookManifest } from "@/lib/ebook-preview";
+
+export function ProductPreviewVideo({ ebook }: { ebook: EbookManifest }) {
+  const root = useRef<HTMLElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
+  const [reduced, setReduced] = useState(true);
+  const [visible, setVisible] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+
   useEffect(() => {
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setReduced(media.matches);
@@ -23,15 +26,34 @@ export function ProductPreviewVideo({ ebook }: { ebook?: EbookManifest }) {
       observer.disconnect();
     };
   }, []);
+
   useEffect(() => {
-    if (visible && !reduced && !paused)
-      void video.current?.play().catch(() => {});
-    else video.current?.pause();
+    if (visible && !reduced && !paused) {
+      const element = video.current;
+      if (element)
+        void element
+          .play()
+          .then(() => setBlocked(false))
+          .catch(() => setBlocked(true));
+    } else video.current?.pause();
   }, [visible, reduced, paused]);
-  if (!ebook) return null;
+
+  const play = () => {
+    setPaused(false);
+    void video.current
+      ?.play()
+      .then(() => setBlocked(false))
+      .catch(() => setBlocked(true));
+  };
+
   return (
-    <figure className="product-demo" ref={root}>
+    <figure
+      className="product-demo"
+      ref={root}
+      aria-label="Prévia em vídeo do livro de receitas"
+    >
       <div className="demo-stage">
+        <div className="demo-orbit" aria-hidden="true" />
         <Image
           className="demo-cover"
           src={ebook.images[0]}
@@ -39,6 +61,14 @@ export function ProductPreviewVideo({ ebook }: { ebook?: EbookManifest }) {
           width={260}
           height={368}
           priority
+        />
+        <Image
+          className="demo-back-page"
+          src={ebook.images[5]}
+          alt=""
+          aria-hidden="true"
+          width={260}
+          height={368}
         />
         <div className="demo-pages">
           <Image
@@ -55,22 +85,34 @@ export function ProductPreviewVideo({ ebook }: { ebook?: EbookManifest }) {
               loop
               playsInline
               autoPlay
-              preload="none"
+              preload="metadata"
               poster={ebook.images[2]}
-              aria-label="Capa e páginas reais do livro, com ingredientes e preparo"
+              aria-label="Capa e páginas reais do livro passando em loop"
               onError={() => setFailed(true)}
             >
+              {ebook.videoMp4 && (
+                <source src={ebook.videoMp4} type="video/mp4" />
+              )}
               <source src={ebook.video} type="video/webm" />
             </video>
           )}
+          {blocked && !reduced && (
+            <button className="video-play" type="button" onClick={play}>
+              ▶ Reproduzir prévia
+            </button>
+          )}
         </div>
+        <span className="demo-caption">
+          <span aria-hidden="true">●</span> FOLHEIE O SEU PRÓXIMO LIVRO DE
+          RECEITAS
+        </span>
       </div>
       <figcaption>
-        <span>Páginas reais da edição que você recebe.</span>
-        {!reduced && (
+        <span>Capa e páginas reais. Fotos, ingredientes e preparo.</span>
+        {!reduced && !failed && (
           <button
             type="button"
-            onClick={() => setPaused((p) => !p)}
+            onClick={() => setPaused((value) => !value)}
             aria-pressed={paused}
           >
             {paused ? "Reproduzir prévia" : "Pausar prévia"}
