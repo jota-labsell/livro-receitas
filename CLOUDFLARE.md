@@ -14,9 +14,17 @@ npm run cloudflare:deploy:vitrine -- --dry-run
 npm run cloudflare:deploy:vitrine
 ```
 
-O último comando publica a vitrine no Worker já configurado. Ele gera uma configuração local ignorada pelo Git que omite o D1 e força `CHECKOUT_ENABLED=false` e `LIVE_PAYMENTS_ENABLED=false`. O R2 continua privado e as páginas reais do livro são demonstradas. Nenhum pagamento ou download completo é liberado. Eventos estão preparados no código, mas não são persistidos neste modo sem D1.
+O último comando publica a vitrine no Worker `livro-receitas`, com o mesmo nome mostrado na tela de criação da Cloudflare. Ele gera uma configuração local ignorada pelo Git que omite o D1 e força `CHECKOUT_ENABLED=false` e `LIVE_PAYMENTS_ENABLED=false`. O R2 continua privado e as páginas reais do livro são demonstradas. Nenhum pagamento ou download completo é liberado. Eventos estão preparados no código, mas não são persistidos neste modo sem D1.
 
-No painel, a integração Git deve ser criada em **Workers**, usando a branch `feat/150-doces-r10`, build `npm run cloudflare:build` e deploy `npm run cloudflare:deploy:vitrine`. O projeto Pages anterior pode permanecer enquanto o Worker é validado. O aviso de conta Git desconectada deve ser resolvido na integração Git da Cloudflare para futuros deploys automáticos; ele não impede publicação pela CLI autenticada.
+Na tela **Set up your application** de Workers, preencha:
+
+| Campo | Valor |
+| --- | --- |
+| Project name | `livro-receitas` |
+| Build command | `npm run cloudflare:build` |
+| Deploy command | `npm run cloudflare:deploy:vitrine` |
+
+Essa tela pode não exibir seletor de branch. A branch padrão do GitHub já é `feat/150-doces-r10`, confirmada pela API do repositório. Mantenha o campo Preview command como está e clique no botão azul **Deploy**, no canto inferior direito. No fluxo de **Pages** não existe o mesmo campo Deploy command; para este projeto, continue no fluxo de **Workers** mostrado acima. O projeto Pages anterior pode permanecer enquanto o Worker é validado. O aviso de conta Git desconectada deve ser resolvido na integração Git da Cloudflare para futuros deploys automáticos; ele não impede publicação pela CLI autenticada.
 
 Depois de configurar D1 e testar o Mercado Pago, use o fluxo completo abaixo. `cloudflare:deploy:vitrine` continuará sempre bloqueando cobranças.
 
