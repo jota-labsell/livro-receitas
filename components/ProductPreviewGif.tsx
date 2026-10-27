@@ -2,80 +2,108 @@
 import { useEffect, useRef, useState } from "react";
 import MEDIA from "@/public/product-video/source.json";
 
+/**
+ * Native HTML5 video, following the working Pequenos Construtores preview:
+ * autoplay + muted + loop + playsInline + MP4 source + poster.
+ * Never silently replace a blocked autoplay with a static poster: offer play.
+ */
 export function ProductPreviewGif() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [videoFailed, setVideoFailed] = useState(false);
-  const [gifFailed, setGifFailed] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReducedMotion(media.matches);
-    update();
-    media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+  const [playBlocked, setPlayBlocked] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [gifError, setGifError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || reducedMotion || paused || videoFailed) return;
-    const attempt = video.play();
-    if (attempt) attempt.catch(() => setVideoFailed(true));
-  }, [paused, reducedMotion, videoFailed]);
+    if (!video) return;
+    const tryPlay = () => {
+      if (video.paused && !videoError) {
+        video.muted = true;
+        video.play().then(() => setPlayBlocked(false)).catch(() => setPlayBlocked(true));
+      }
+    };
+    tryPlay();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && !videoError) tryPlay();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [videoError]);
 
-  const showVideo = !reducedMotion && !videoFailed;
-  const showGif = !reducedMotion && videoFailed && !gifFailed;
+  const handlePlay = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      video.muted = true;
+      await video.play();
+      setPlayBlocked(false);
+    } catch {
+      setPlayBlocked(true);
+    }
+  };
 
   return (
-    <figure className="product-demo ebook-gif" aria-label="Prévia real das páginas do e-book">
+    <figure className="product-demo ebook-gif" aria-label="Prévia animada das páginas do e-book">
       <div className="demo-stage ebook-gif-screen">
-        {showVideo ? (
-          <video
-            ref={videoRef}
+        {!videoError ? (
+          <>
+            <video
+              ref={videoRef}
+              className="product-preview-media"
+              autoPlay
+              muted
+              loop
+              playsInline
+              disablePictureInPicture
+              poster={MEDIA.poster}
+              width={MEDIA.width}
+              height={MEDIA.height}
+              preload="auto"
+              aria-label="Prévia animada folheando as receitas do e-book"
+              onPlaying={() => { setIsPlaying(true); setPlayBlocked(false); }}
+              onPause={() => setIsPlaying(false)}
+              onError={() => setVideoError(true)}
+            >
+              <source src={MEDIA.mp4} type="video/mp4" />
+              Seu navegador não suporta reprodução de vídeo.
+            </video>
+            {playBlocked && (
+              <button className="preview-play-overlay" type="button" onClick={handlePlay}>
+                ▶ Reproduzir prévia
+              </button>
+            )}
+          </>
+        ) : !gifError ? (
+          <img
             className="product-preview-media"
-            src={MEDIA.mp4}
-            poster={MEDIA.poster}
-            width={MEDIA.width}
-            height={MEDIA.height}
-            muted
-            autoPlay
-            playsInline
-            loop
-            preload="metadata"
-            aria-label="Vídeo folheando o e-book"
-            onError={() => setVideoFailed(true)}
+            src={MEDIA.gif}
+            width={MEDIA.gifWidth}
+            height={MEDIA.gifHeight}
+            alt="GIF animado mostrando as receitas do e-book"
+            decoding="async"
+            onError={() => setGifError(true)}
           />
         ) : (
           <img
             className="product-preview-media"
-            src={showGif ? MEDIA.gif : MEDIA.poster}
-            alt={showGif ? "Animação folheando o e-book" : "Prévia do e-book"}
-            width={MEDIA.gifWidth}
-            height={MEDIA.gifHeight}
-            decoding="async"
-            onError={() => setGifFailed(true)}
+            src={MEDIA.poster}
+            width={MEDIA.width}
+            height={MEDIA.height}
+            alt="Capa da prévia do e-book"
           />
         )}
       </div>
       <figcaption>
-        <span>Veja páginas reais do e-book por dentro.</span>
-        {showVideo && (
-          <button
-            type="button"
-            aria-pressed={paused}
-            onClick={() => {
-              const video = videoRef.current;
-              if (!video) return;
-              if (paused) {
-                video.play().then(() => setPaused(false)).catch(() => setVideoFailed(true));
-              } else {
-                video.pause();
-                setPaused(true);
-              }
-            }}
-          >
-            {paused ? "Reproduzir vídeo" : "Pausar vídeo"}
+        <span>Veja as páginas reais do livro passando na tela.</span>
+        {!videoError && (
+          <button type="button" onClick={() => {
+            const video = videoRef.current;
+            if (!video) return;
+            if (video.paused) void handlePlay();
+            else video.pause();
+          }}>
+            {isPlaying ? "Pausar vídeo" : "Reproduzir vídeo"}
           </button>
         )}
       </figcaption>
