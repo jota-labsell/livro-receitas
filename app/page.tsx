@@ -1,11 +1,14 @@
 import { EBOOK_PREVIEW } from "@/lib/ebook-preview";
 import {
   HeroSection,
+  PremiumBenefits,
+  PurchaseAssurances,
   InsideEbookGallery,
   OfferSection,
   Footer,
   MobileCTA,
 } from "@/components/landing";
+import { Testimonials } from "@/components/testimonials";
 export const dynamic = "force-dynamic";
 export default async function Home() {
   const ebook = EBOOK_PREVIEW;
@@ -15,9 +18,12 @@ export default async function Home() {
         Pular para o conteúdo
       </a>
       <main id="conteudo">
-        <HeroSection ebook={ebook} />
-        <InsideEbookGallery ebook={ebook} />
+        <HeroSection />
+        <Testimonials />
+        <PremiumBenefits ebook={ebook} />
+        <PurchaseAssurances />
         <OfferSection />
+        <InsideEbookGallery ebook={ebook} />
       </main>
       <Footer />
       <MobileCTA />

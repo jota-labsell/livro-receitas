@@ -23,7 +23,11 @@ export function Testimonials() {
   if (testimonials.length === 0) return null;
   const current = testimonials[selected];
   return (
-    <section className="instagram-proof" aria-labelledby="instagram-title">
+    <section
+      className="instagram-proof wrap"
+      id="depoimentos"
+      aria-labelledby="instagram-title"
+    >
       <p className="section-label">MENSAGENS DE QUEM RECEBEU O LIVRO</p>
       <h2 id="instagram-title">Olha o que chegou no Instagram.</h2>
       <p className="instagram-help">

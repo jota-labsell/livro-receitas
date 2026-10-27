@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Footer } from "@/components/landing";
+import { PURCHASE_TERMS } from "@/lib/purchase-terms";
 export const metadata = { title: "Termos | 150 Doces" };
 export default function Terms() {
   return (
@@ -26,12 +27,23 @@ export default function Terms() {
           </a>{" "}
           com a referência de sua compra; não envie dados de cartão.
         </p>
+        <h2>Garantia de {PURCHASE_TERMS.guaranteeDays} dias</h2>
+        <p>
+          Se não ficar satisfeito com o material, você pode solicitar o
+          reembolso em até {PURCHASE_TERMS.guaranteeDays} dias após a compra.
+          Envie o pedido para{" "}
+          <a href={`mailto:${PURCHASE_TERMS.supportEmail}`}>
+            {PURCHASE_TERMS.supportEmail}
+          </a>
+          , informando a referência da compra para localizar o pagamento. O
+          atendimento dará continuidade à solicitação pelo canal informado. Não
+          há exigência de criação de conta para pedir suporte.
+        </p>
         <h2>Atendimento e cancelamento</h2>
         <p>
           Pedidos de suporte, cancelamento e reembolso são atendidos pelo e-mail
-          acima, observando os direitos aplicáveis ao consumidor. Esta oferta
-          não anuncia garantia comercial adicional. Pagamentos estornados ou
-          contestados não autorizam novos downloads.
+          acima, observando também os direitos aplicáveis ao consumidor.
+          Pagamentos estornados ou contestados não autorizam novos downloads.
         </p>
         <h2>Uso do material</h2>
         <p>

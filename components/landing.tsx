@@ -3,8 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { EbookManifest } from "@/lib/ebook-preview";
-import { Testimonials } from "./testimonials";
-import { ProductPreviewVideo } from "./ProductPreviewVideo";
+import { ProductPreviewGif } from "./ProductPreviewGif";
+import {
+  BookOpen,
+  ListChecks,
+  TrendingUp,
+  Smartphone,
+  ShieldCheck,
+  CreditCard,
+  Download,
+} from "lucide-react";
+import { PURCHASE_TERMS } from "@/lib/purchase-terms";
 import { Checkout } from "./checkout";
 import { track } from "@/lib/analytics";
 const CTA = ({
@@ -23,7 +32,7 @@ const CTA = ({
     {children}
   </a>
 );
-export function HeroSection({ ebook }: { ebook: EbookManifest }) {
+export function HeroSection() {
   const root = useRef<HTMLElement>(null);
   useEffect(() => {
     let sent = false;
@@ -44,7 +53,9 @@ export function HeroSection({ ebook }: { ebook: EbookManifest }) {
     <section className="hero" id="oferta" ref={root}>
       <div className="curve curve-top" aria-hidden="true" />
       <div className="wrap hero-content">
-        <p className="edition-label">150 DOCES PARA COMER E VENDER</p>
+        <p className="edition-label">
+          150 DOCES PARA COMER E VENDER · PDF POR R$ 10
+        </p>
         <h1>
           <span className="headline-first">
             Receba <span className="headline-count">150 receitas</span>,
@@ -59,23 +70,88 @@ export function HeroSection({ ebook }: { ebook: EbookManifest }) {
           </span>{" "}
           <span className="headline-outcome">para fazer e vender!</span>
         </h1>
-        <Testimonials />
-        <p className="hero-lead">
-          Brigadeiros, cookies, brownies e morango do amor: fotos, ingredientes
-          e passo a passo para testar na sua cozinha.
+        <ProductPreviewGif />
+      </div>
+    </section>
+  );
+}
+const premiumBenefits = [
+  {
+    icon: BookOpen,
+    title: "150 receitas para escolher e testar",
+    text: "Clássicos e doces inspirados no TikTok e Instagram, organizados em 10 capítulos. Brigadeiros, cookies, brownies, doces no pote e muito mais.",
+  },
+  {
+    icon: ListChecks,
+    title: "Ingredientes e preparo organizados",
+    text: "Fotografias de referência, quantidades e etapas de preparo, com orientações de rendimento e conservação para acompanhar seus testes.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Planeje suas primeiras vendas e uma renda extra",
+    text: "Use as dicas de apresentação e precificação para calcular custos, testar sabores e começar a montar seu cardápio de encomendas.",
+  },
+  {
+    icon: Smartphone,
+    title: "Acesso direto pelo celular",
+    text: "Baixe as 167 páginas em PDF e consulte no celular, tablet ou computador. Depois de baixar, as receitas também podem ser abertas sem internet.",
+  },
+];
+export function PremiumBenefits({ ebook }: { ebook: EbookManifest }) {
+  return (
+    <section
+      className="premium-benefits wrap"
+      id="beneficios"
+      aria-labelledby="benefits-title"
+    >
+      <div className="premium-panel">
+        <div className="premium-intro">
+          <div>
+            <p className="section-label">TUDO ISSO VAI PARA A SUA COZINHA</p>
+            <h2 id="benefits-title">
+              Um livro completo.
+              <br />
+              <span>Suas próximas receitas.</span>
+            </h2>
+            <p>
+              O que vem no seu PDF — e como aproveitar o material no dia a dia.
+            </p>
+          </div>
+          <div className="premium-edition">
+            <Image
+              src={ebook.images[0]}
+              alt="Capa da edição fotográfica que acompanha a compra"
+              width={120}
+              height={170}
+            />
+            <span>EDIÇÃO EM PDF</span>
+          </div>
+        </div>
+        <div className="premium-facts">
+          <span>150 receitas</span>
+          <span>10 capítulos</span>
+          <span>{ebook.pages} páginas</span>
+        </div>
+        <div className="premium-list">
+          {premiumBenefits.map(({ icon: Icon, title, text }) => (
+            <article key={title}>
+              <span className="premium-icon">
+                <Icon size={23} aria-hidden="true" />
+              </span>
+              <div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="premium-practice">
+          Escolha seus primeiros doces, teste os preparos e planeje o que
+          oferecer. Os resultados dependem dos custos, da execução e da demanda.
         </p>
-        <p className="hero-price-note">
-          Edição fotográfica em PDF por <strong>R$ 10</strong>. Pagamento único.
-        </p>
-        <ProductPreviewVideo />
-        <p className="product-facts">
-          150 receitas <span>•</span> 10 capítulos <span>•</span> {ebook.pages}{" "}
-          páginas
-        </p>
-        <p className="edition">Edição fotográfica em PDF</p>
         <div className="initial-offer" id="oferta-inicial">
           <h2>
-            Seu livro de receitas por <strong>R$ 10</strong>
+            Seu livro por <strong>R$ 10</strong>
           </h2>
           <p>Pagamento único. Sem assinatura.</p>
           <CTA />
@@ -84,6 +160,57 @@ export function HeroSection({ ebook }: { ebook: EbookManifest }) {
           </p>
         </div>
       </div>
+    </section>
+  );
+}
+export function PurchaseAssurances() {
+  return (
+    <section
+      className="purchase-assurances wrap"
+      id="garantia"
+      aria-labelledby="assurances-title"
+    >
+      <div className="assurances-heading">
+        <p className="section-label">PARA COMPRAR COM TUDO ÀS CLARAS</p>
+        <h2 id="assurances-title">Seu pedido, sem complicação.</h2>
+      </div>
+      <div className="assurances-grid">
+        <article className="guarantee-condition">
+          <ShieldCheck size={27} aria-hidden="true" />
+          <h3>{PURCHASE_TERMS.guaranteeDays} dias de garantia</h3>
+          <p>
+            Se não ficar satisfeito, solicite o reembolso em até{" "}
+            {PURCHASE_TERMS.guaranteeDays} dias após a compra pelo nosso e-mail
+            de atendimento.
+          </p>
+          <a href={`mailto:${PURCHASE_TERMS.supportEmail}`}>
+            Solicitar atendimento
+          </a>
+        </article>
+        <article>
+          <CreditCard size={27} aria-hidden="true" />
+          <h3>Pagamento único de R$ 10</h3>
+          <p>
+            Uma única compra. Sem mensalidade, sem assinatura e sem exigir
+            criação de conta nesta página.
+          </p>
+        </article>
+        <article>
+          <Download size={27} aria-hidden="true" />
+          <h3>PDF após a aprovação</h3>
+          <p>
+            Com o pagamento confirmado, o download é liberado aqui mesmo. Abra o
+            arquivo no celular e consulte quando precisar.
+          </p>
+        </article>
+      </div>
+      <p className="guarantee-contact">
+        Atendimento:{" "}
+        <a href={`mailto:${PURCHASE_TERMS.supportEmail}`}>
+          {PURCHASE_TERMS.supportEmail}
+        </a>{" "}
+        · <Link href="/termos">Condições da compra</Link>
+      </p>
     </section>
   );
 }
@@ -398,7 +525,7 @@ export function OfferSection() {
     <section className="checkout-section" id="checkout">
       <div className="curve curve-checkout" aria-hidden="true" />
       <div className="wrap">
-        <p className="section-label">SEU PRÓXIMO DOCE COMEÇA AQUI</p>
+        <p className="section-label">CHECKOUT MERCADO PAGO</p>
         <h2>
           Leve as 150 receitas
           <br />

@@ -1,6 +1,6 @@
 # 150 Doces para Comer e Vender — oferta de R$ 10
 
-Vitrine curta em três blocos, com composição vertical em celular e desktop: promessa e livro real → demonstração de três receitas → checkout e entrega. Fundo branco, curvas roxas/magenta, preço único e botões para `#checkout`. A edição demonstrada tem 150 receitas, 10 capítulos e 167 páginas. Sem cadastro, assinatura, depoimentos inventados ou produtos adicionais.
+Página de venda com sequência vertical explícita em celular e desktop: **headline → GIF do e-book → depoimentos → benefícios → garantia de 7 dias → checkout Mercado Pago → demais detalhes do livro**. Fundo branco, curvas roxas/magenta, oferta de R$ 10 e CTAs para `#checkout`. O material tem 150 receitas, 10 capítulos e 167 páginas em PDF, sem cadastro, assinatura ou produtos adicionais.
 
 ## Estado desta entrega
 
@@ -64,15 +64,17 @@ Compare visitas de oferta → clique → checkout → compra dentro do mesmo per
 
 ## Operação
 
-Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória de sandbox e ativação. O cookie de compra dura até 30 dias; limpar os dados do navegador remove o acesso automático. Atendimento: receitaspremium150@gmail.com. Não há garantia comercial adicional anunciada.
+Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória de sandbox e ativação. O cookie de compra dura até 30 dias; limpar os dados do navegador remove o acesso automático. Atendimento: receitaspremium150@gmail.com. A oferta tem garantia de 7 dias, autorizada pelo responsável: solicitações de reembolso são recebidas pelo mesmo e-mail, dentro de 7 dias após a compra, com referência do pagamento. O atendimento processa a solicitação; a página não promete estorno automático ou imediato.
 
 ## Demonstração visual e prints do Instagram
 
 A vitrine usa `lib/ebook-preview.ts`, com as amostras públicas geradas da edição identificada pelo SHA-256. A apresentação não depende da disponibilidade do PDF completo no R2: capa, galeria e loop continuam visíveis mesmo durante a configuração da entrega. O checkout e o download mantêm as verificações privadas de pagamento e arquivo.
 
-O vídeo principal agora usa o arquivo `1027.mp4` fornecido pelo usuário, convertido para MP4/H.264 de 720×1280, com os 20 segundos completos. O arquivo otimizado tem cerca de 1,4 MB, com autoplay sem áudio, loop, pausa e reprodução manual quando o navegador bloquear autoplay. A origem, o SHA-256 e os metadados estão em `public/product-video/source.json`. Movimento reduzido mantém as páginas estáticas. As seções mostram o que vem no PDF, uma composição de páginas e quatro grupos de receitas com fotografias extraídas das páginas reais.
+A apresentação principal usa o GIF `1027.gif` fornecido pelo usuário no arquivo `1027.zip`, preservado sem alterações em `public/product-video/1027-loop.gif`: 400×711, 300 quadros, 20 segundos e repetição infinita. A origem e o SHA-256 estão em `public/product-video/source.json`. O GIF é renderizado como imagem nativa, sem player de vídeo. A pausa congela o quadro no navegador, e movimento reduzido mantém a prévia estática. O MP4 anterior é mantido apenas como arquivo de origem disponível; não aparece no player principal.
 
-Depoimentos aceitam somente prints verdadeiros fornecidos pelo responsável pela oferta. Os três prints enviados no arquivo `Desktop.rar` foram copiados sem alteração para `public/testimonials/`: cookies da Juliana, brownie e morangos. `content/testimonials.json` registra caminhos, descrições acessíveis e dimensões originais. O componente os posiciona logo após a headline, com três imagens visíveis no desktop, rolagem no celular e ampliação por toque ou teclado.
+O painel de benefícios destaca o conteúdo do PDF, o preparo organizado, o planejamento de vendas para buscar renda extra e o acesso no celular após o download. Não há promessa de renda garantida. As condições da compra vêm imediatamente antes do checkout; as páginas reais, categorias e a explicação detalhada do conteúdo continuam depois dele.
+
+Depoimentos aceitam somente prints verdadeiros fornecidos pelo responsável pela oferta. Os três prints enviados no arquivo `Desktop.rar` foram copiados sem alteração para `public/testimonials/`: cookies da Juliana, brownie e morangos. `content/testimonials.json` registra caminhos, descrições acessíveis e dimensões originais. O componente os posiciona logo após o GIF, com três imagens visíveis no desktop, rolagem no celular e ampliação por toque ou teclado.
 
 ## Headline e referência tipográfica
 
