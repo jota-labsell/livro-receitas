@@ -1,0 +1,27 @@
+{
+  "sha256": "923c05444c26d527856f9effb76a3f8046ac08d507f57e6975db966672db7f55",
+  "pages": 167,
+  "bytes": 26452487,
+  "images": [
+    "/ebook/page-0.webp",
+    "/ebook/page-1.webp",
+    "/ebook/page-2.webp",
+    "/ebook/page-3.webp",
+    "/ebook/page-4.webp",
+    "/ebook/page-5.webp",
+    "/ebook/page-6.webp",
+    "/ebook/page-7.webp"
+  ],
+  "video": "/ebook/preview.webm",
+  "gif": "/ebook/preview.gif",
+  "sourcePages": [
+    1,
+    7,
+    23,
+    39,
+    55,
+    71,
+    119,
+    151
+  ]
+}

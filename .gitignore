@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+private/*.pdf
+playwright-report/
+test-results/
+*.tsbuildinfo
+.open-next/
+.wrangler/
+.dev.vars*
+work/
+artifacts/
