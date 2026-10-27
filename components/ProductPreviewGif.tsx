@@ -3,77 +3,79 @@ import { useEffect, useRef, useState } from "react";
 import MEDIA from "@/public/product-video/source.json";
 
 export function ProductPreviewGif() {
-  const image = useRef<HTMLImageElement>(null);
-  const [reduced, setReduced] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [frozenFrame, setFrozenFrame] = useState(MEDIA.poster);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [gifFailed, setGifFailed] = useState(false);
 
   useEffect(() => {
-    const media = matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(media.matches);
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
 
-  const pause = () => {
-    try {
-      const element = image.current;
-      if (element?.complete && element.naturalWidth > 0) {
-        const canvas = document.createElement("canvas");
-        canvas.width = element.naturalWidth;
-        canvas.height = element.naturalHeight;
-        canvas.getContext("2d")!.drawImage(element, 0, 0);
-        setFrozenFrame(canvas.toDataURL("image/png"));
-      }
-    } catch {
-      setFrozenFrame(MEDIA.poster);
-    }
-    setPaused(true);
-  };
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || reducedMotion || paused || videoFailed) return;
+    const attempt = video.play();
+    if (attempt) attempt.catch(() => setVideoFailed(true));
+  }, [paused, reducedMotion, videoFailed]);
 
-  const animated = !reduced && !paused && !failed;
-  const src =
-    reduced || failed ? MEDIA.poster : paused ? frozenFrame : MEDIA.gif;
+  const showVideo = !reducedMotion && !videoFailed;
+  const showGif = !reducedMotion && videoFailed && !gifFailed;
 
   return (
-    <figure
-      className="product-demo ebook-gif"
-      aria-label="Prévia de rolagem das páginas do e-book"
-    >
-      <div
-        className="demo-stage ebook-gif-screen"
-        style={{ aspectRatio: `${MEDIA.gifWidth} / ${MEDIA.gifHeight}` }}
-      >
-        <div className="demo-pages">
+    <figure className="product-demo ebook-gif" aria-label="Prévia real das páginas do e-book">
+      <div className="demo-stage ebook-gif-screen">
+        {showVideo ? (
+          <video
+            ref={videoRef}
+            className="product-preview-media"
+            src={MEDIA.mp4}
+            poster={MEDIA.poster}
+            width={MEDIA.width}
+            height={MEDIA.height}
+            muted
+            autoPlay
+            playsInline
+            loop
+            preload="metadata"
+            aria-label="Vídeo folheando o e-book"
+            onError={() => setVideoFailed(true)}
+          />
+        ) : (
           <img
-            ref={image}
-            className="demo-cover product-gif"
-            src={src}
-            alt={
-              animated
-                ? "Animação em loop da rolagem das páginas do e-book"
-                : "Prévia estática de uma página do e-book"
-            }
+            className="product-preview-media"
+            src={showGif ? MEDIA.gif : MEDIA.poster}
+            alt={showGif ? "Animação folheando o e-book" : "Prévia do e-book"}
             width={MEDIA.gifWidth}
             height={MEDIA.gifHeight}
-            loading="eager"
             decoding="async"
-            fetchPriority="high"
-            onError={() => setFailed(true)}
+            onError={() => setGifFailed(true)}
           />
-        </div>
+        )}
       </div>
       <figcaption>
-        <span>Páginas do livro, com fotos, ingredientes e preparo.</span>
-        {!reduced && !failed && (
+        <span>Veja páginas reais do e-book por dentro.</span>
+        {showVideo && (
           <button
             type="button"
             aria-pressed={paused}
-            onClick={() => (paused ? setPaused(false) : pause())}
+            onClick={() => {
+              const video = videoRef.current;
+              if (!video) return;
+              if (paused) {
+                video.play().then(() => setPaused(false)).catch(() => setVideoFailed(true));
+              } else {
+                video.pause();
+                setPaused(true);
+              }
+            }}
           >
-            {paused ? "Reproduzir prévia" : "Pausar prévia"}
+            {paused ? "Reproduzir vídeo" : "Pausar vídeo"}
           </button>
         )}
       </figcaption>

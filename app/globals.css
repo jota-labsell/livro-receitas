@@ -2077,3 +2077,65 @@ footer a:hover {
     margin-top: 16px;
   }
 }
+
+/* Conversion refresh: responsive media, social branding, offer and benefits */
+.hero .curve-top { display: none; }
+.social-corner {
+  position: absolute; right: max(18px, calc((100vw - 950px)/2)); top: 17px;
+  z-index: 2; display: flex; align-items: center; gap: 11px;
+  padding: 10px 13px; background: #fff; color: #b41d91;
+  border: 1px solid #f1e1ef; border-radius: 999px; box-shadow: 0 5px 18px #481a3614;
+}
+.social-tiktok { display: grid; place-items: center; width: 25px; height: 25px; font-size: 27px;
+  font-weight: 900; color: #121212; text-shadow: -2px -1px #24f4ee, 2px 1px #ff306e; }
+.hero .edition-label { margin-top: 35px; }
+.hero-lead { color: #51455b; }
+.hero-buy { width: min(100%, 520px); margin: 14px auto 0; text-align: center; }
+.hero-buy-kicker { color: #66556d; font-size: 12px; font-weight: 800; letter-spacing: .6px; }
+.hero-buy-price { margin: 6px 0 14px; font-size: 20px; font-weight: 600; }
+.hero-buy-price strong { color: var(--magenta); font-size: 35px; white-space: nowrap; }
+.hero-buy-sub { margin-top: 9px; color: #675c6e; font-size: 11px; }
+.conversion-cta {
+  position: relative; overflow: hidden; isolation: isolate;
+  background: linear-gradient(105deg, #bf087c, #ee198d, #ac0b7d);
+  border: 1px solid #f18cc5; box-shadow: 0 8px 0 #8d115f, 0 15px 28px #b61b7d55;
+  font-size: 15px; letter-spacing: .2px; transition: transform .2s, box-shadow .2s;
+}
+.conversion-cta:hover { background: linear-gradient(105deg, #ae0a76, #e41587, #9d096c); box-shadow: 0 5px 0 #8d115f, 0 11px 24px #b61b7d55; transform: translateY(3px); }
+.conversion-cta:active { transform: translateY(6px); box-shadow: 0 2px 0 #8d115f; }
+.cta-shine-text { position: relative; z-index: 1; overflow: hidden; font-size: inherit !important; font-weight: 850 !important; }
+.cta-shine-text::after { content: ""; position: absolute; inset: -40% -70%; width: 36%; transform: skewX(-23deg) translateX(-250%);
+  background: linear-gradient(90deg, transparent, #ffffffbb, transparent); animation: cta-reflection 3.8s ease-in-out infinite; pointer-events: none; }
+.cta-arrow { position: relative; z-index: 1; font-size: 25px; }
+@keyframes cta-reflection { 0%, 35% { transform: skewX(-23deg) translateX(-250%); } 68%,100% { transform: skewX(-23deg) translateX(760%); } }
+.ebook-gif .demo-stage { display: flex; align-items: center; justify-content: center; aspect-ratio: 720 / 1280 !important;
+  height: auto !important; padding: 0 !important; background: #f8f2f7; }
+.ebook-gif .product-preview-media { display: block; width: 100%; height: 100%; object-fit: contain;
+  max-width: 100%; max-height: 100%; transform: none; border-radius: 0; }
+.delivery-checklist { list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 14px 24px; margin: 29px 0 0; padding: 0; }
+.delivery-checklist li { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; font-weight: 650;
+  line-height: 1.5; padding: 12px 0; border-bottom: 1px solid #d6b5e533; }
+.delivery-checklist svg { flex: 0 0 auto; color: #4ff3aa; filter: drop-shadow(0 0 7px #36ec934d); }
+.premium-intro h2 { max-width: 510px; }
+.premium-practice { margin-top: 12px; }
+@media (max-width:600px) {
+  .social-corner { right: 15px; top: 10px; padding: 7px 9px; gap: 6px; }
+  .social-corner svg { width: 18px; height: 18px; }
+  .social-tiktok { width: 20px; height: 20px; font-size: 22px; }
+  .hero .edition-label { margin-top: 32px; }
+  .hero h1 { font-size: clamp(27px, 8vw, 32px); }
+  .hero-lead { font-size: 13px; margin-top: 13px; }
+  .hero-buy-price { font-size: 17px; }
+  .hero-buy-price strong { font-size: 30px; }
+  .hero-buy-kicker { font-size: 10px; }
+  .delivery-checklist { grid-template-columns: 1fr; gap: 3px; margin-top: 19px; }
+  .delivery-checklist li { padding: 10px 0; font-size: 13px; }
+  .premium-intro h2 { font-size: 26px; }
+  .premium-edition img { width: 66px; }
+  .conversion-cta { font-size: 12px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .cta-shine-text::after { animation: none; display: none; }
+  .conversion-cta { transition: none; }
+}

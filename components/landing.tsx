@@ -5,10 +5,8 @@ import Link from "next/link";
 import type { EbookManifest } from "@/lib/ebook-preview";
 import { ProductPreviewGif } from "./ProductPreviewGif";
 import {
-  BookOpen,
-  ListChecks,
-  TrendingUp,
-  Smartphone,
+  CheckCircle2,
+  Instagram,
   ShieldCheck,
   CreditCard,
   Download,
@@ -18,18 +16,14 @@ import { Checkout } from "./checkout";
 import { track } from "@/lib/analytics";
 const CTA = ({
   location = "offer",
-  children = "QUERO AS 150 RECEITAS POR R$ 10",
+  children = "SIM, QUERO MINHAS 150 RECEITAS!",
 }: {
   location?: string;
   children?: React.ReactNode;
 }) => (
-  <a
-    href="#checkout"
-    className="button"
-    data-location={location}
-    onClick={() => track("cta_click")}
-  >
-    {children}
+  <a href="#checkout" className="button conversion-cta" data-location={location} onClick={() => track("cta_click")}>
+    <span className="cta-shine-text">{children}</span>
+    <span className="cta-arrow" aria-hidden="true">→</span>
   </a>
 );
 export function HeroSection() {
@@ -51,118 +45,71 @@ export function HeroSection() {
   }, []);
   return (
     <section className="hero" id="oferta" ref={root}>
-      <div className="curve curve-top" aria-hidden="true" />
+      <div className="social-corner" aria-label="Receitas inspiradas nas tendências do Instagram e TikTok">
+        <Instagram size={22} aria-hidden="true" />
+        <span className="social-tiktok" aria-hidden="true">♪</span>
+      </div>
       <div className="wrap hero-content">
         <p className="edition-label">
           150 DOCES PARA COMER E VENDER · PDF POR R$ 10
         </p>
         <h1>
-          <span className="headline-first">
-            Receba <span className="headline-count">150 receitas</span>,
-          </span>{" "}
-          <span className="headline-description">
-            dos clássicos aos doces virais do{" "}
-            <span className="headline-networks">
-              <span className="purple">TikTok</span> e{" "}
-              <span className="magenta">Instagram</span>
-            </span>
-            ,
-          </span>{" "}
-          <span className="headline-outcome">para fazer e vender!</span>
+          <span className="headline-first">Descubra <span className="headline-count">150 receitas de doces</span></span>
+          <span className="headline-description">inspiradas nas tendências do <span className="purple">Instagram</span> e <span className="magenta">TikTok</span></span>
+          <span className="headline-outcome">e comece a criar sua renda extra!</span>
         </h1>
+        <p className="hero-lead">Receitas com fotos e passo a passo para você preparar doces deliciosos, testar seu cardápio e começar a vender — mesmo que esteja dando os primeiros passos.</p>
         <ProductPreviewGif />
+        <div className="hero-buy">
+          <p className="hero-buy-kicker">150 RECEITAS • 167 PÁGINAS • DOWNLOAD EM PDF</p>
+          <p className="hero-buy-price">Tudo por <strong>R$ 10,00</strong></p>
+          <CTA location="hero" />
+          <p className="hero-buy-sub">Pagamento único • Sem assinatura • 7 dias de garantia</p>
+        </div>
       </div>
     </section>
   );
 }
-const premiumBenefits = [
-  {
-    icon: BookOpen,
-    title: "150 receitas para escolher e testar",
-    text: "Clássicos e doces inspirados no TikTok e Instagram, organizados em 10 capítulos. Brigadeiros, cookies, brownies, doces no pote e muito mais.",
-  },
-  {
-    icon: ListChecks,
-    title: "Ingredientes e preparo organizados",
-    text: "Fotografias de referência, quantidades e etapas de preparo, com orientações de rendimento e conservação para acompanhar seus testes.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Planeje suas primeiras vendas e uma renda extra",
-    text: "Use as dicas de apresentação e precificação para calcular custos, testar sabores e começar a montar seu cardápio de encomendas.",
-  },
-  {
-    icon: Smartphone,
-    title: "Acesso direto pelo celular",
-    text: "Baixe as 167 páginas em PDF e consulte no celular, tablet ou computador. Depois de baixar, as receitas também podem ser abertas sem internet.",
-  },
+const deliveryBenefits = [
+  "150 receitas de doces em 10 capítulos organizados",
+  "Fotos, ingredientes e modo de preparo passo a passo",
+  "Doces virais, brigadeiros, cookies, brownies e doces no pote",
+  "Dicas de rendimento, conservação, apresentação e precificação",
+  "Ideias para testar um cardápio e buscar uma renda extra",
+  "PDF com 167 páginas para consultar no celular ou computador",
 ];
 export function PremiumBenefits({ ebook }: { ebook: EbookManifest }) {
   return (
-    <section
-      className="premium-benefits wrap"
-      id="beneficios"
-      aria-labelledby="benefits-title"
-    >
+    <section className="premium-benefits wrap" id="beneficios" aria-labelledby="benefits-title">
       <div className="premium-panel">
         <div className="premium-intro">
           <div>
-            <p className="section-label">TUDO ISSO VAI PARA A SUA COZINHA</p>
-            <h2 id="benefits-title">
-              Um livro completo.
-              <br />
-              <span>Suas próximas receitas.</span>
-            </h2>
-            <p>
-              O que vem no seu PDF — e como aproveitar o material no dia a dia.
-            </p>
+            <p className="section-label">O QUE VOCÊ VAI RECEBER</p>
+            <h2 id="benefits-title">Tudo para dar os <span>primeiros passos com seus doces.</span></h2>
+            <p>Um material prático para aprender receitas, testar sabores e explorar oportunidades de renda extra.</p>
           </div>
           <div className="premium-edition">
-            <Image
-              src={ebook.images[0]}
-              alt="Capa da edição fotográfica que acompanha a compra"
-              width={120}
-              height={170}
-            />
+            <Image src={ebook.images[0]} alt="Capa real do e-book" width={120} height={170} />
             <span>EDIÇÃO EM PDF</span>
           </div>
         </div>
-        <div className="premium-facts">
-          <span>150 receitas</span>
-          <span>10 capítulos</span>
-          <span>{ebook.pages} páginas</span>
-        </div>
-        <div className="premium-list">
-          {premiumBenefits.map(({ icon: Icon, title, text }) => (
-            <article key={title}>
-              <span className="premium-icon">
-                <Icon size={23} aria-hidden="true" />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-            </article>
+        <ul className="delivery-checklist">
+          {deliveryBenefits.map((benefit) => (
+            <li key={benefit}><CheckCircle2 aria-hidden="true" size={27} strokeWidth={2.8} /><span>{benefit}</span></li>
           ))}
-        </div>
-        <p className="premium-practice">
-          Escolha seus primeiros doces, teste os preparos e planeje o que
-          oferecer. Os resultados dependem dos custos, da execução e da demanda.
-        </p>
+        </ul>
+        <p className="premium-practice">As vendas e os ganhos dependem dos custos, do preparo e da demanda. O e-book não garante faturamento.</p>
         <div className="initial-offer" id="oferta-inicial">
-          <h2>
-            Seu livro por <strong>R$ 10</strong>
-          </h2>
+          <h2>Leve tudo por <strong>R$ 10,00</strong></h2>
           <p>Pagamento único. Sem assinatura.</p>
-          <CTA />
-          <p className="delivery">
-            Baixe o PDF após a confirmação do pagamento.
-          </p>
+          <CTA location="benefits" />
+          <p className="delivery">PDF disponível após a aprovação do pagamento.</p>
         </div>
       </div>
     </section>
   );
 }
+
 export function PurchaseAssurances() {
   return (
     <section
@@ -608,7 +555,7 @@ export function MobileCTA() {
   }, []);
   return show ? (
     <div className="mobile-cta">
-      <CTA location="sticky">150 RECEITAS · R$ 10</CTA>
+      <CTA location="sticky">QUERO AS RECEITAS · R$ 10</CTA>
     </div>
   ) : null;
 }
