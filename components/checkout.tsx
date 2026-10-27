@@ -33,7 +33,10 @@ function loadSdk() {
       const script = document.createElement("script");
       script.src = "https://sdk.mercadopago.com/js/v2";
       script.async = true;
-      script.onload = () => resolve();
+      script.onload = () => {
+        if (window.MercadoPago) resolve();
+        else { sdkPromise = undefined; reject(new Error("O SDK de pagamento não foi inicializado.")); }
+      };
       script.onerror = () => {
         sdkPromise = undefined;
         script.remove();
@@ -102,6 +105,9 @@ export function Checkout() {
         if (cancelled) return;
         setConfig(c);
         if (c.available) {
+          if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
+            throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
+          }
           await post("/api/checkout", { visitId: visitId() });
           const previous = await post("/api/orders/status");
           if (!cancelled && previous.status !== "created") setResult(previous);
@@ -156,7 +162,7 @@ export function Checkout() {
                 },
               }
             : {
-                initialization: { amount: 10 },
+                initialization: { amount: config!.amount },
                 customization: {
                   paymentMethods: config!.paymentMethods,
                   visual: {
@@ -186,7 +192,14 @@ export function Checkout() {
                       setResult(payment);
                     } catch (e) {
                       setError((e as Error).message);
-                      setResult({ status: "processing" });
+                      // A resposta pode ter sido perdida após o provedor receber a tentativa.
+                      // Confirmar o estado antes de permitir qualquer nova cobrança.
+                      try {
+                        setResult(await post("/api/orders/status"));
+                      } catch {
+                        setResult({ status: "processing" });
+                      }
+                      throw e;
                     } finally {
                       sending.current = false;
                       setBusy(false);
