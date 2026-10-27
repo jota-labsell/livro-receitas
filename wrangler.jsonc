@@ -31,7 +31,7 @@
     {
       "binding": "ORDERS",
       "database_name": "receitas-premium-150-orders",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a",
       "migrations_dir": "migrations"
     }
   ],
