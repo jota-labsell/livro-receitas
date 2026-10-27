@@ -4,6 +4,12 @@ import { siteUrl } from "@/lib/runtime";
 import "./globals.css";
 import localFont from "next/font/local";
 const manrope = localFont({ src: "./fonts/manrope.ttf", display: "swap" });
+const headline = localFont({
+  src: "./fonts/baloo2-latin.ttf",
+  display: "swap",
+  weight: "400 800",
+  variable: "--font-headline",
+});
 export async function generateMetadata(): Promise<Metadata> {
   const h = await headers();
   return {
@@ -17,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: "150 Doces para Comer e Vender",
       description:
-        "150 receitas para preparar e vender. Edição fotográfica em PDF por R$ 10,00.",
+        "150 receitas para fazer e vender, dos clássicos aos doces virais do TikTok e Instagram. PDF por R$ 10,00.",
       locale: "pt_BR",
       type: "website",
       images: [
@@ -39,7 +45,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={manrope.className}>{children}</body>
+      <body className={`${manrope.className} ${headline.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }

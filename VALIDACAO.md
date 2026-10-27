@@ -23,3 +23,11 @@ Corrigido o desaparecimento das amostras quando o PDF privado não estava dispon
 Build Next.js/OpenNext aprovado. Os **18 testes de interface passaram no Worker local sem nenhum binding R2 ou D1**, reproduzindo a configuração que fazia as amostras desaparecerem. A reprodução atravessou o fim do vídeo e reiniciou o loop, e a pausa e o movimento reduzido foram conferidos nas três larguras.
 
 A seção de depoimentos por prints do Instagram contém os três arquivos fornecidos pelo usuário em `Desktop.rar`: cookies da Juliana, brownie e morangos. Os PNGs foram copiados sem alteração, com hashes idênticos aos arquivos recebidos. A seção aparece logo após a headline, com ampliação e retorno do foco por teclado. Os 18 testes de interface e o build Next.js/OpenNext passaram após a inclusão. O print de brinquedos foi substituído e não faz parte da oferta.
+
+## Headline e vídeo 1027.mp4
+
+Aplicada a referência visual à headline: composição centralizada, fonte Baloo 2 local em peso 800, destaque de “150 receitas” e menção explícita aos doces virais do TikTok e Instagram. Os depoimentos aprovados continuam logo após a headline.
+
+O vídeo enviado `1027.mp4` substitui a animação anterior na apresentação principal. Foi convertido de HEVC/1080×1920 para H.264/720×1280, mantendo 20 segundos e todos os quadros visuais, sem áudio, com reprodução automática em loop. O arquivo otimizado ocupa 1.443.518 bytes. A origem é identificada pelo SHA-256 no manifesto público do vídeo. A apresentação mantém o quadro completo em 9:16, com pausa, alternativa estática para movimento reduzido e botão de reprodução quando o navegador bloquear autoplay.
+
+Build Next.js/OpenNext e os **18 testes de interface aprovados** nas larguras 360px, 402px e 1440px. Os testes conferiram o novo texto, a fonte de vídeo `/product-video/1027-loop.mp4`, as dimensões 720×1280, a duração de 20 segundos, o reinício após o fim e a pausa.

@@ -46,20 +46,31 @@ export function HeroSection({ ebook }: { ebook: EbookManifest }) {
       <div className="wrap hero-content">
         <p className="edition-label">150 DOCES PARA COMER E VENDER</p>
         <h1>
-          Os doces que <span className="purple">chamam atenção nas redes</span>{" "}
-          podem entrar no <span className="magenta">seu cardápio.</span>
+          <span className="headline-first">
+            Receba <span className="headline-count">150 receitas</span>,
+          </span>{" "}
+          <span className="headline-description">
+            dos clássicos aos doces virais do{" "}
+            <span className="headline-networks">
+              <span className="purple">TikTok</span> e{" "}
+              <span className="magenta">Instagram</span>
+            </span>
+            ,
+          </span>{" "}
+          <span className="headline-outcome">para fazer e vender!</span>
         </h1>
         <Testimonials />
         <p className="hero-lead">
-          Tenha 150 receitas para preparar em casa, testar novos sabores e
-          começar a montar sua oferta de doces.
+          Brigadeiros, cookies, brownies e morango do amor: fotos, ingredientes
+          e passo a passo para testar na sua cozinha.
         </p>
         <p className="hero-price-note">
           Edição fotográfica em PDF por <strong>R$ 10</strong>. Pagamento único.
         </p>
-        <ProductPreviewVideo ebook={ebook} />
+        <ProductPreviewVideo />
         <p className="product-facts">
-          150 receitas <span>•</span> 10 capítulos <span>•</span> 167 páginas
+          150 receitas <span>•</span> 10 capítulos <span>•</span> {ebook.pages}{" "}
+          páginas
         </p>
         <p className="edition">Edição fotográfica em PDF</p>
         <div className="initial-offer" id="oferta-inicial">

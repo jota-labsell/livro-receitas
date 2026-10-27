@@ -1534,3 +1534,166 @@ footer a:hover {
     font-size: 10px;
   }
 }
+
+/* Centered display typography based on the supplied headline reference. */
+.hero .edition-label {
+  display: table;
+  max-width: 100%;
+  margin: 0 auto 20px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: #f2ebff;
+  color: var(--purple);
+  font-size: 9px;
+  letter-spacing: 1.7px;
+  text-align: center;
+  line-height: 1.5;
+}
+.hero h1 {
+  font-family: var(--font-headline), sans-serif;
+  font-weight: 800;
+  font-size: clamp(36px, 4.4vw, 49px);
+  line-height: 1.08;
+  letter-spacing: -0.65px;
+  text-align: center;
+  color: #202d4d;
+  max-width: 800px;
+  margin-inline: auto;
+  text-wrap: balance;
+}
+.headline-first,
+.headline-description,
+.headline-outcome {
+  display: block;
+}
+.headline-count {
+  color: var(--purple);
+  background: linear-gradient(transparent 72%, #fff0a8 72%);
+  padding: 0 3px;
+}
+.headline-description {
+  font-size: 0.86em;
+  line-height: 1.16;
+  margin-top: 5px;
+}
+.headline-networks {
+  white-space: nowrap;
+}
+.headline-outcome {
+  display: table;
+  margin: 5px auto 0;
+  color: var(--magenta);
+  background: linear-gradient(transparent 72%, #fff0a8 72%);
+  padding: 0 3px;
+}
+.hero-lead {
+  text-align: center;
+  margin-inline: auto;
+  max-width: 650px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.hero-price-note {
+  text-align: center;
+}
+.initial-offer h2 strong {
+  font-family: var(--font-headline), sans-serif;
+  font-weight: 800;
+}
+.product-demo.uploaded-video {
+  width: 100%;
+  max-width: 360px;
+  margin: 26px auto 20px;
+}
+.uploaded-video .demo-stage {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9/16;
+  padding: 0;
+  overflow: hidden;
+  background: #fbf3f3;
+  border: 1px solid #eee1ec;
+  border-radius: 15px;
+  box-shadow: 0 12px 35px #491b4215;
+}
+.uploaded-video .demo-pages {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
+  transform: none;
+  box-shadow: none;
+}
+.uploaded-video .demo-cover {
+  display: block;
+  position: static;
+  width: 100%;
+  height: 100%;
+  left: auto;
+  right: auto;
+  top: auto;
+  transform: none;
+  box-shadow: none;
+  object-fit: contain;
+  z-index: auto;
+}
+.uploaded-video .demo-pages > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+.uploaded-video figcaption {
+  text-align: left;
+}
+@media (max-width: 600px) {
+  .hero .edition-label {
+    font-size: 7px;
+    letter-spacing: 1.3px;
+    margin-bottom: 15px;
+    padding: 7px 11px;
+  }
+  .hero h1 {
+    font-size: 31px;
+    letter-spacing: -0.4px;
+    line-height: 1.08;
+  }
+  .headline-description {
+    font-size: 0.88em;
+    margin-top: 6px;
+    line-height: 1.14;
+  }
+  .headline-outcome {
+    margin-top: 6px;
+  }
+  .hero-lead {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .product-demo.uploaded-video {
+    max-width: 300px;
+    margin: 21px auto 18px;
+  }
+  .uploaded-video .demo-stage {
+    height: auto;
+    border-radius: 12px;
+    padding: 0;
+  }
+  .uploaded-video .demo-pages {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+  .uploaded-video .demo-cover {
+    width: 100%;
+    height: 100%;
+    left: auto;
+    top: auto;
+  }
+}

@@ -70,6 +70,10 @@ Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória 
 
 A vitrine usa `lib/ebook-preview.ts`, com as amostras públicas geradas da edição identificada pelo SHA-256. A apresentação não depende da disponibilidade do PDF completo no R2: capa, galeria e loop continuam visíveis mesmo durante a configuração da entrega. O checkout e o download mantêm as verificações privadas de pagamento e arquivo.
 
-A prévia oferece MP4/H.264 e WebM, autoplay sem áudio, loop, pausa e reprodução manual quando o navegador bloquear autoplay. Movimento reduzido mantém as páginas estáticas. As seções mostram o que vem no PDF, uma composição de páginas e quatro grupos de receitas com fotografias extraídas das páginas reais.
+O vídeo principal agora usa o arquivo `1027.mp4` fornecido pelo usuário, convertido para MP4/H.264 de 720×1280, com os 20 segundos completos. O arquivo otimizado tem cerca de 1,4 MB, com autoplay sem áudio, loop, pausa e reprodução manual quando o navegador bloquear autoplay. A origem, o SHA-256 e os metadados estão em `public/product-video/source.json`. Movimento reduzido mantém as páginas estáticas. As seções mostram o que vem no PDF, uma composição de páginas e quatro grupos de receitas com fotografias extraídas das páginas reais.
 
 Depoimentos aceitam somente prints verdadeiros fornecidos pelo responsável pela oferta. Os três prints enviados no arquivo `Desktop.rar` foram copiados sem alteração para `public/testimonials/`: cookies da Juliana, brownie e morangos. `content/testimonials.json` registra caminhos, descrições acessíveis e dimensões originais. O componente os posiciona logo após a headline, com três imagens visíveis no desktop, rolagem no celular e ampliação por toque ou teclado.
+
+## Headline e referência tipográfica
+
+Headline: “Receba 150 receitas, dos clássicos aos doces virais do TikTok e Instagram, para fazer e vender!”. O topo usa composição centralizada, fonte Baloo 2 encorpada e arredondada, número em roxo e destaque magenta com marcação amarela. A fonte é hospedada localmente, com subconjunto latino e licença em `app/fonts/BALOO2-OFL.txt`; o navegador não faz requisições ao Google Fonts. A referência visual foi aplicada à tipografia e aos destaques, mantendo a oferta de R$ 10 e os prints já aprovados.

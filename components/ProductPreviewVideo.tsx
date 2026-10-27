@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import type { EbookManifest } from "@/lib/ebook-preview";
+import VIDEO from "@/public/product-video/source.json";
 
-export function ProductPreviewVideo({ ebook }: { ebook: EbookManifest }) {
+export function ProductPreviewVideo() {
   const root = useRef<HTMLElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const [reduced, setReduced] = useState(true);
@@ -48,34 +48,18 @@ export function ProductPreviewVideo({ ebook }: { ebook: EbookManifest }) {
 
   return (
     <figure
-      className="product-demo"
+      className="product-demo uploaded-video"
       ref={root}
-      aria-label="Prévia em vídeo do livro de receitas"
+      aria-label="Vídeo de apresentação do e-book"
     >
-      <div className="demo-stage">
-        <div className="demo-orbit" aria-hidden="true" />
-        <Image
-          className="demo-cover"
-          src={ebook.images[0]}
-          alt="Capa de 150 Doces para Comer e Vender, edição fotográfica"
-          width={260}
-          height={368}
-          priority
-        />
-        <Image
-          className="demo-back-page"
-          src={ebook.images[5]}
-          alt=""
-          aria-hidden="true"
-          width={260}
-          height={368}
-        />
+      <div className="demo-stage uploaded-video-screen">
         <div className="demo-pages">
           <Image
-            src={ebook.images[2]}
-            alt="Página real: fotografia, ingredientes e modo de preparo do brigadeiro belga"
-            width={540}
-            height={764}
+            className="demo-cover"
+            src={VIDEO.poster}
+            alt="Prévia estática das páginas do e-book mostradas no vídeo de apresentação"
+            width={VIDEO.width}
+            height={VIDEO.height}
             priority
           />
           {!reduced && !failed && (
@@ -86,14 +70,13 @@ export function ProductPreviewVideo({ ebook }: { ebook: EbookManifest }) {
               playsInline
               autoPlay
               preload="metadata"
-              poster={ebook.images[2]}
-              aria-label="Capa e páginas reais do livro passando em loop"
+              width={VIDEO.width}
+              height={VIDEO.height}
+              poster={VIDEO.poster}
+              aria-label="Vídeo enviado do e-book passando em loop"
               onError={() => setFailed(true)}
             >
-              {ebook.videoMp4 && (
-                <source src={ebook.videoMp4} type="video/mp4" />
-              )}
-              <source src={ebook.video} type="video/webm" />
+              <source src={VIDEO.mp4} type="video/mp4" />
             </video>
           )}
           {blocked && !reduced && (
@@ -102,13 +85,9 @@ export function ProductPreviewVideo({ ebook }: { ebook: EbookManifest }) {
             </button>
           )}
         </div>
-        <span className="demo-caption">
-          <span aria-hidden="true">●</span> FOLHEIE O SEU PRÓXIMO LIVRO DE
-          RECEITAS
-        </span>
       </div>
       <figcaption>
-        <span>Capa e páginas reais. Fotos, ingredientes e preparo.</span>
+        <span>Veja as páginas do livro em movimento.</span>
         {!reduced && !failed && (
           <button
             type="button"

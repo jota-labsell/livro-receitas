@@ -6,7 +6,7 @@ test("three commercial blocks, genuine previews, consistent offer, FAQ and stick
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Os doces que chamam atenção nas redes podem entrar no seu cardápio.",
+    "Receba 150 receitas, dos clássicos aos doces virais do TikTok e Instagram, para fazer e vender!",
   );
   await expect(page.locator("main>section")).toHaveCount(3);
   await expect(page.locator("details")).toHaveCount(3);
@@ -154,9 +154,10 @@ test("reduced motion, keyboard access and preview pause", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const video = page.locator(".product-demo video");
   await expect(video).toHaveCount(1);
+  await video.scrollIntoViewIfNeeded();
   await expect(video.locator('source[type="video/mp4"]')).toHaveAttribute(
     "src",
-    "/ebook/preview.mp4",
+    "/product-video/1027-loop.mp4",
   );
   expect(
     await video.evaluate(
@@ -166,6 +167,9 @@ test("reduced motion, keyboard access and preview pause", async ({ page }) => {
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState))
     .toBeGreaterThanOrEqual(2);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.videoWidth)).toBe(720);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.videoHeight)).toBe(1280);
+  expect(await video.evaluate((v: HTMLVideoElement) => v.duration)).toBeCloseTo(20, 0);
   await video.evaluate(async (v: HTMLVideoElement) => {
     v.currentTime = v.duration - 0.2;
     await v.play();
