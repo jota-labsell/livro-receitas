@@ -184,6 +184,8 @@ test("GIF asset, reduced motion, pause and resume", async ({
   await expect(
     page.getByRole("link", { name: "Pular para o conteúdo" }),
   ).toBeFocused();
+  await page.getByRole("button", { name: "Reproduzir prévia" }).click();
+  await expect(image).toHaveAttribute("src", "/product-video/1027-loop.gif");
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await image.scrollIntoViewIfNeeded();
   await expect(image).toHaveAttribute("src", "/product-video/1027-loop.gif");

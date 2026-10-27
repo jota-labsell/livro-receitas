@@ -6,6 +6,7 @@ export function ProductPreviewGif() {
   const image = useRef<HTMLImageElement>(null);
   const [reduced, setReduced] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [playRequested, setPlayRequested] = useState(false);
   const [failed, setFailed] = useState(false);
   const [frozenFrame, setFrozenFrame] = useState(MEDIA.poster);
 
@@ -33,9 +34,9 @@ export function ProductPreviewGif() {
     setPaused(true);
   };
 
-  const animated = !reduced && !paused && !failed;
+  const animated = (!reduced || playRequested) && !paused && !failed;
   const src =
-    reduced || failed ? MEDIA.poster : paused ? frozenFrame : MEDIA.gif;
+    failed || (reduced && !playRequested) ? MEDIA.poster : paused ? frozenFrame : MEDIA.gif;
 
   return (
     <figure
@@ -67,13 +68,16 @@ export function ProductPreviewGif() {
       </div>
       <figcaption>
         <span>Páginas do livro, com fotos, ingredientes e preparo.</span>
-        {!reduced && !failed && (
+        {!failed && (
           <button
             type="button"
-            aria-pressed={paused}
-            onClick={() => (paused ? setPaused(false) : pause())}
+            aria-pressed={!animated}
+            onClick={() => {
+              if (animated) pause();
+              else { setPlayRequested(true); setPaused(false); }
+            }}
           >
-            {paused ? "Reproduzir prévia" : "Pausar prévia"}
+            {animated ? "Pausar prévia" : "Reproduzir prévia"}
           </button>
         )}
       </figcaption>

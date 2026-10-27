@@ -64,7 +64,7 @@ Compare visitas de oferta → clique → checkout → compra dentro do mesmo per
 
 ## Operação
 
-Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória de sandbox e ativação. O cookie de compra dura até 30 dias; limpar os dados do navegador remove o acesso automático. Atendimento: receitaspremium150@gmail.com. A oferta tem garantia de 7 dias, autorizada pelo responsável: solicitações de reembolso são recebidas pelo mesmo e-mail, dentro de 7 dias após a compra, com referência do pagamento. O atendimento processa a solicitação; a página não promete estorno automático ou imediato.
+Comece pelo [passo a passo para ativar o checkout](ATIVAR-CHECKOUT.md). Ver [CLOUDFLARE.md](CLOUDFLARE.md) para D1/R2, credenciais, matriz obrigatória de sandbox e ativação. O cookie de compra dura até 30 dias; limpar os dados do navegador remove o acesso automático. Atendimento: receitaspremium150@gmail.com. A oferta tem garantia de 7 dias, autorizada pelo responsável: solicitações de reembolso são recebidas pelo mesmo e-mail, dentro de 7 dias após a compra, com referência do pagamento. O atendimento processa a solicitação; a página não promete estorno automático ou imediato.
 
 ## Demonstração visual e prints do Instagram
 
