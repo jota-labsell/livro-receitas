@@ -2139,3 +2139,16 @@ footer a:hover {
   .cta-shine-text::after { animation: none; display: none; }
   .conversion-cta { transition: none; }
 }
+
+/* Video preview: HTML5 MP4 loop and explicit playback recovery button. */
+.ebook-gif .ebook-gif-screen { position: relative; aspect-ratio: 9 / 16 !important; overflow: hidden; }
+.ebook-gif .ebook-gif-screen > video,
+.ebook-gif .ebook-gif-screen > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.preview-play-overlay {
+  position: absolute; z-index: 5; left: 50%; top: 50%;
+  transform: translate(-50%, -50%); width: max-content; max-width: 88%;
+  padding: 14px 20px; border: 2px solid #fff; border-radius: 999px;
+  color: #fff; background: #99156de8; font-size: 14px; font-weight: 800;
+  box-shadow: 0 8px 22px #22062666; cursor: pointer;
+}
+.preview-play-overlay:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
