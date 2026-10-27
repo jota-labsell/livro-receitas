@@ -23,9 +23,30 @@ test("three commercial blocks, genuine previews, consistent offer, FAQ and stick
   ).toBe(true);
   await page.evaluate(() => scrollTo(0, 0));
   const first = page.locator(".initial-offer .button");
-  expect((await first.boundingBox())!.y).toBeLessThan(
-    test.info().project.name === "desktop" ? 1200 : 900,
+  await expect(page.locator(".hero h1 + .instagram-proof")).toBeVisible();
+  await expect(page.locator(".instagram-prints img")).toHaveCount(3);
+  const testimonial = page.getByRole("button", {
+    name: "Ampliar depoimento: Cookies recheados",
+  });
+  await testimonial.click();
+  const printModal = page.getByRole("dialog", {
+    name: "Depoimento ampliado do Instagram",
+  });
+  await expect(printModal).toBeVisible();
+  await expect(printModal.locator("img")).toHaveAttribute(
+    "src",
+    "/testimonials/cookies-juliana.png",
   );
+  await expect
+    .poll(() =>
+      printModal
+        .locator("img")
+        .evaluate((img: HTMLImageElement) => img.naturalWidth),
+    )
+    .toBe(661);
+  await page.keyboard.press("Escape");
+  await expect(printModal).not.toBeVisible();
+  await expect(testimonial).toBeFocused();
   await page.evaluate(() =>
     scrollTo(
       0,
@@ -145,8 +166,13 @@ test("reduced motion, keyboard access and preview pause", async ({ page }) => {
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState))
     .toBeGreaterThanOrEqual(2);
-  await video.evaluate(async (v: HTMLVideoElement) => { v.currentTime = v.duration - 0.2; await v.play(); });
-  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeLessThan(2);
+  await video.evaluate(async (v: HTMLVideoElement) => {
+    v.currentTime = v.duration - 0.2;
+    await v.play();
+  });
+  await expect
+    .poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime))
+    .toBeLessThan(2);
   await page.getByRole("button", { name: "Pausar prévia" }).click();
   await expect
     .poll(() => video.evaluate((v: HTMLVideoElement) => v.paused))

@@ -22,4 +22,4 @@ Corrigido o desaparecimento das amostras quando o PDF privado não estava dispon
 
 Build Next.js/OpenNext aprovado. Os **18 testes de interface passaram no Worker local sem nenhum binding R2 ou D1**, reproduzindo a configuração que fazia as amostras desaparecerem. A reprodução atravessou o fim do vídeo e reiniciou o loop, e a pausa e o movimento reduzido foram conferidos nas três larguras.
 
-A seção de depoimentos por prints do Instagram está implementada logo após a headline e aguarda os arquivos verdadeiros do usuário. Nenhum relato ou print de outro produto foi publicado.
+A seção de depoimentos por prints do Instagram contém os três arquivos fornecidos pelo usuário em `Desktop.rar`: cookies da Juliana, brownie e morangos. Os PNGs foram copiados sem alteração, com hashes idênticos aos arquivos recebidos. A seção aparece logo após a headline, com ampliação e retorno do foco por teclado. Os 18 testes de interface e o build Next.js/OpenNext passaram após a inclusão. O print de brinquedos foi substituído e não faz parte da oferta.

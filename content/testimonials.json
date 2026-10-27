@@ -1,1 +1,23 @@
-[]
+[
+  {
+    "image": "/testimonials/cookies-juliana.png",
+    "title": "Cookies recheados",
+    "alt": "Print da conversa no Instagram de Juliana Santos relatando o preparo de cookies recheados do e-book, acompanhado de uma foto dos cookies.",
+    "width": 661,
+    "height": 826
+  },
+  {
+    "image": "/testimonials/brownie.png",
+    "title": "Brownie",
+    "alt": "Print de mensagem no Instagram relatando o preparo de um brownie do e-book, acompanhado de uma fotografia do doce.",
+    "width": 630,
+    "height": 787
+  },
+  {
+    "image": "/testimonials/morangos.png",
+    "title": "Morangos",
+    "alt": "Print de conversa no Instagram com uma fotografia de morangos cobertos por calda e relato sobre o preparo em casa e a intenção de vender os doces.",
+    "width": 887,
+    "height": 1109
+  }
+]

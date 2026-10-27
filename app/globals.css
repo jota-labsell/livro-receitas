@@ -1460,4 +1460,77 @@ footer a:hover {
   }
 }
 
-@media(max-width:600px){.recipe-photo img{width:170%;left:-35%;}}
+@media (max-width: 600px) {
+  .recipe-photo img {
+    width: 170%;
+    left: -35%;
+  }
+}
+
+.instagram-help {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 9px;
+}
+.instagram-prints {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  overflow: visible;
+  padding: 0;
+  margin-top: 18px;
+  gap: 16px;
+}
+.instagram-prints figure {
+  min-width: 0;
+  padding: 6px;
+  border-radius: 13px;
+}
+.testimonial-open {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: #101415;
+  overflow: hidden;
+}
+.testimonial-expand {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  color: var(--purple);
+  border-radius: 50%;
+  font-size: 21px;
+  box-shadow: 0 2px 12px #0003;
+}
+.testimonial-modal .modal-image {
+  background: #111719;
+}
+.testimonial-modal .modal-controls p {
+  font-size: 11px;
+  color: var(--muted);
+}
+@media (max-width: 600px) {
+  .instagram-prints {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+    padding: 0 2px 14px;
+    align-items: flex-start;
+  }
+  .instagram-prints figure {
+    flex: 0 0 86%;
+    padding: 5px;
+  }
+  .instagram-help {
+    font-size: 10px;
+  }
+}
