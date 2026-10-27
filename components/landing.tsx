@@ -6,7 +6,7 @@ import type { EbookManifest } from "@/lib/ebook-preview";
 import { ProductPreviewGif } from "./ProductPreviewGif";
 import {
   CheckCircle2,
-  Instagram,
+  Camera,
   ShieldCheck,
   CreditCard,
   Download,
@@ -46,7 +46,7 @@ export function HeroSection() {
   return (
     <section className="hero" id="oferta" ref={root}>
       <div className="social-corner" aria-label="Receitas inspiradas nas tendências do Instagram e TikTok">
-        <Instagram size={22} aria-hidden="true" />
+        <Camera size={22} aria-hidden="true" />
         <span className="social-tiktok" aria-hidden="true">♪</span>
       </div>
       <div className="wrap hero-content">
