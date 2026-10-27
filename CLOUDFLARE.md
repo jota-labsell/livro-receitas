@@ -4,6 +4,22 @@
 
 Credenciais do Mercado Pago ausentes. O token Cloudflare configurado não conseguiu listar D1 (erro de autenticação 10000). A integração do pagamento está implementada, mas o checkout continua desativado e o ID do D1 ainda precisa ser preenchido. Não envie tokens pelo chat. Ajuste permissões no gerenciador seguro da conta/ambiente: Workers Scripts, R2 Storage e D1, para a conta correta.
 
+## Publicar a vitrine enquanto D1 e Mercado Pago estão pendentes
+
+Este projeto é um **Worker com OpenNext**, não uma aplicação estática do Pages. Um deploy verde em `pages.dev` não executa o servidor Next.js. Use o endereço `workers.dev` retornado pelo deploy.
+
+```sh
+npm run cloudflare:build
+npm run cloudflare:deploy:vitrine -- --dry-run
+npm run cloudflare:deploy:vitrine
+```
+
+O último comando publica a vitrine no Worker já configurado. Ele gera uma configuração local ignorada pelo Git que omite o D1 e força `CHECKOUT_ENABLED=false` e `LIVE_PAYMENTS_ENABLED=false`. O R2 continua privado e as páginas reais do livro são demonstradas. Nenhum pagamento ou download completo é liberado. Eventos estão preparados no código, mas não são persistidos neste modo sem D1.
+
+No painel, a integração Git deve ser criada em **Workers**, usando a branch `feat/150-doces-r10`, build `npm run cloudflare:build` e deploy `npm run cloudflare:deploy:vitrine`. O projeto Pages anterior pode permanecer enquanto o Worker é validado. O aviso de conta Git desconectada deve ser resolvido na integração Git da Cloudflare para futuros deploys automáticos; ele não impede publicação pela CLI autenticada.
+
+Depois de configurar D1 e testar o Mercado Pago, use o fluxo completo abaixo. `cloudflare:deploy:vitrine` continuará sempre bloqueando cobranças.
+
 ## Infraestrutura
 
 1. Depois de corrigir a permissão, use `npx wrangler d1 list`. Reutilize `receitas-premium-150-orders` se existir; caso contrário, `npx wrangler d1 create receitas-premium-150-orders`. Copie o ID real para `wrangler.jsonc`, binding `ORDERS`.

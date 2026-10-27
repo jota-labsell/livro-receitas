@@ -6,7 +6,7 @@ Vitrine curta em três blocos, com composição vertical em celular e desktop: p
 
 Next.js + TypeScript + OpenNext + Cloudflare Workers preservados. Payment Brick e Status Screen oficiais integrados pelo SDK `https://sdk.mercadopago.com/js/v2`. O backend usa a Payments API do Mercado Pago; não há pagamento fictício ou liberação gratuita. O checkout permanece **desabilitado** até configurar infraestrutura e credenciais e testar oficialmente. A interface comunica indisponibilidade sem expor detalhes de implementação ao comprador.
 
-O ambiente fornecido não tem credenciais Mercado Pago. A consulta à lista de D1 na Cloudflare retornou erro de autenticação 10000; não foi possível provisionar a base remota. O ID zerado em `wrangler.jsonc` é um marcador explícito para configuração, não uma base existente. Não foi ativada cobrança real nem realizado deploy sobre a oferta anterior.
+O ambiente fornecido não tem credenciais Mercado Pago. A consulta à lista de D1 na Cloudflare retornou erro de autenticação 10000; não foi possível provisionar a base remota. O ID zerado em `wrangler.jsonc` é um marcador explícito para configuração, não uma base existente. A publicação da vitrine pode ser feita independentemente desses bloqueios com `npm run cloudflare:deploy:vitrine`. Esse comando omite o D1 e mantém cobranças e downloads bloqueados. A medição persistida requer o D1 configurado.
 
 ## Executar e conferir
 

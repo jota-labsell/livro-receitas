@@ -18,7 +18,8 @@
     "cloudflare:preview": "wrangler dev --port 8787",
     "cloudflare:deploy": "node scripts/check-worker-build.mjs && opennextjs-cloudflare deploy",
     "test:commerce": "node scripts/test-commerce.mjs",
-    "test:ui": "playwright test"
+    "test:ui": "playwright test",
+    "cloudflare:deploy:vitrine": "node scripts/deploy-storefront.mjs"
   },
   "repository": {
     "type": "git",
