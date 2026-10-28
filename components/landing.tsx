@@ -14,6 +14,7 @@ import {
 import { PURCHASE_TERMS } from "@/lib/purchase-terms";
 import { Checkout } from "./checkout";
 import { track } from "@/lib/analytics";
+import checkoutStyles from "./checkout.module.css";
 const CTA = ({
   location = "offer",
   children = "SIM, QUERO MINHAS 150 RECEITAS!",
@@ -469,26 +470,32 @@ export function InsideEbookGallery({ ebook }: { ebook: EbookManifest }) {
 }
 export function OfferSection() {
   return (
-    <section className="checkout-section" id="checkout">
+    <section className={`checkout-section ${checkoutStyles.theme}`} id="checkout">
       <div className="curve curve-checkout" aria-hidden="true" />
       <div className="wrap">
-        <p className="section-label">ÚLTIMA ETAPA • PAGAMENTO</p>
+        <p className="section-label">CHECKOUT MERCADO PAGO</p>
         <h2>
-          Finalize sua compra <span className="magenta">com segurança</span>
+          Leve as 150 receitas
+          <br />
+          por <span className="magenta">R$ 10.</span>
         </h2>
-        <p className="checkout-intro">Este é o local para pagar e receber suas 150 receitas. Confira o pedido abaixo e escolha o meio de pagamento disponível.</p>
-        <div className="order-summary">
-          <div>
-            <h3>150 Doces para Comer e Vender</h3>
-            <p>Edição fotográfica em PDF</p>
-            <p>150 receitas, 10 capítulos e 167 páginas</p>
-          </div>
-          <div className="summary-price">
-            <strong>R$ 10,00</strong>
-            <span>Pagamento único</span>
-          </div>
+        <p className={checkoutStyles.intro}>Escolha como pagar e preencha os dados abaixo para receber seu livro em PDF.</p>
+        <div className={checkoutStyles.layout}>
+          <aside className={`order-summary ${checkoutStyles.summary}`} aria-labelledby="order-summary-title">
+            <div>
+              <h3 id="order-summary-title">Resumo do pedido</h3>
+              <p className={checkoutStyles.productName}>150 Doces para Comer e Vender</p>
+              <p>Edição fotográfica em PDF</p>
+              <p>150 receitas, 10 capítulos e 167 páginas</p>
+            </div>
+            <div className={`summary-price ${checkoutStyles.total}`}>
+              <strong>R$ 10,00</strong>
+              <span>Pagamento único<br />Sem assinatura</span>
+            </div>
+            <p className={checkoutStyles.summaryNote}><Download size={18} aria-hidden="true" /> Download do PDF após a confirmação do pagamento.</p>
+          </aside>
+          <Checkout />
         </div>
-        <Checkout />
         <FAQSection />
       </div>
     </section>

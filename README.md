@@ -1,3 +1,6 @@
+> **Estado atual de produção e medição:** consulte [RELATORIO-PRODUCAO-META.md](RELATORIO-PRODUCAO-META.md). A compra real existente foi validada. As instruções históricas sobre bloqueio absoluto e sandbox devem ser interpretadas conforme esse relatório. Preparação de anúncios em [META-ADS-PREPARACAO.md](META-ADS-PREPARACAO.md).
+
+
 > Operação: veja [produção e Meta Ads](PRODUCAO-META.md) e [relatório da validação](RELATORIO-PRODUCAO-META.md). Produção exige credenciais e webhook reais, ativação explícita e validação de uma compra autorizada. O build sozinho não comprova vendas reais.
 
 > Integração atual: [Orders em sandbox](ORDERS-SANDBOX.md). Produção permanece bloqueada até validação oficial.

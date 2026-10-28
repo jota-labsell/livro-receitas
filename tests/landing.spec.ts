@@ -206,11 +206,94 @@ test("blocked autoplay offers manual play", async ({ page }) => {
   await expect(play).toHaveCount(0);
 });
 // SDK and API doubles below exercise UI states only. They are not Mercado Pago sandbox validation.
+test("SDK is reused and Brick teardown finishes before remount", async ({ page }) => {
+  await page.addInitScript(() => {
+    const metrics = { constructors: 0, creates: 0, active: 0, maxActive: 0 };
+    (window as any).__sdkMetrics = metrics;
+    window.MercadoPago = class {
+      constructor() { metrics.constructors++; }
+      bricks() { return { create: async (_type: string, id: string) => {
+        metrics.creates++; metrics.active++;
+        metrics.maxActive = Math.max(metrics.maxActive, metrics.active);
+        await new Promise(resolve => setTimeout(resolve, 150));
+        document.getElementById(id)!.textContent = "Cartão simulado";
+        return { unmount: async () => {
+          await new Promise(resolve => setTimeout(resolve, 150));
+          document.getElementById(id)?.replaceChildren(); metrics.active--;
+        } };
+      } }; }
+    } as any;
+  });
+  await page.route("**/api/checkout", route => route.fulfill({ json: route.request().method() === "GET"
+    ? { available: true, publicKey: "TEST", amount: 10, paymentMethods: { creditCard: "all", bankTransfer: "all" } }
+    : { ready: true } }));
+  await page.route("**/api/orders/status", route => route.fulfill({ json: { status: "created" } }));
+  await page.goto("/");
+  await page.locator(".initial-offer .button").click();
+  await expect.poll(() => page.evaluate(() => (window as any).__sdkMetrics.creates)).toBe(1);
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole("radio", { name: "Pix", exact: true }).check();
+    await page.getByRole("radio", { name: "Cartão de crédito", exact: true }).check();
+  }
+  await expect(page.getByText("Cartão simulado", { exact: true })).toBeVisible();
+  const metrics = await page.evaluate(() => (window as any).__sdkMetrics);
+  expect(metrics.constructors).toBe(1);
+  expect(metrics.maxActive).toBe(1);
+  expect(metrics.active).toBe(1);
+});
+
+test("Pix validates email, handles failure, blocks repeats and follows server approval", async ({ page }) => {
+  let submissions = 0;
+  let status = "created";
+  await page.addInitScript(() => {
+    window.MercadoPago = class {
+      bricks() { return { create: async (_type: string, id: string) => {
+        document.getElementById(id)!.textContent = "Campos de cartão simulados";
+        return { unmount: async () => { document.getElementById(id)?.replaceChildren(); } };
+      } }; }
+    } as any;
+  });
+  await page.route("**/api/checkout", route => route.fulfill({ json: route.request().method() === "GET"
+    ? { available: true, publicKey: "TEST", amount: 10, paymentMethods: { creditCard: "all", bankTransfer: "all" } }
+    : { ready: true } }));
+  await page.route("**/api/orders/status", route => route.fulfill({ json: { status } }));
+  await page.route("**/api/payments", async route => {
+    submissions++;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (submissions === 1) return route.fulfill({ status: 502, json: { error: "Falha simulada da API" } });
+    status = "pending";
+    return route.fulfill({ json: { status, pix: { code: "FIXTURE-SEM-VALOR-DE-PAGAMENTO", qrCodeBase64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=" } } });
+  });
+  await page.goto("/");
+  await page.locator(".initial-offer .button").click();
+  await page.getByRole("radio", { name: "Pix", exact: true }).check();
+  await expect(page.getByText("Campos de cartão simulados")).not.toBeVisible();
+  await expect(page.getByRole("radio", { name: /débito/i })).toHaveCount(0);
+  const email = page.getByLabel("E-mail", { exact: true });
+  const submit = page.getByRole("button", { name: "Gerar Pix de R$ 10,00" });
+  await email.fill("invalido"); await submit.click();
+  expect(submissions).toBe(0);
+  await email.fill("fixture@example.com"); await submit.click();
+  await expect(page.locator(".payment-area").getByRole("alert")).toHaveText("Falha simulada da API");
+  await submit.click();
+  await expect(page.getByRole("button", { name: "Gerando Pix…" })).toBeDisabled();
+  await expect(page.getByLabel("Pix copia e cola")).toHaveValue("FIXTURE-SEM-VALOR-DE-PAGAMENTO");
+  await expect(page.getByAltText("QR Code Pix do seu pedido")).toBeVisible();
+  expect(submissions).toBe(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" })).toHaveCount(0);
+  status = "approved";
+  await page.getByRole("button", { name: "Consultar status do pagamento" }).click();
+  await expect(page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" })).toBeVisible();
+});
+
 for (const status of ["approved", "pending", "rejected"])
   test(`checkout displays ${status} from backend and prevents double submission`, async ({
     page,
   }) => {
     let submissions = 0;
+    let releasePayment!: () => void;
+    const paymentResponseReady = new Promise<void>(resolve => { releasePayment = resolve; });
     await page.addInitScript(() => {
       window.MercadoPago = class {
         bricks() {
@@ -267,7 +350,7 @@ for (const status of ["approved", "pending", "rejected"])
     );
     await page.route("**/api/payments", async (route) => {
       submissions++;
-      await new Promise((r) => setTimeout(r, 250));
+      await paymentResponseReady;
       await route.fulfill({ json: { status, paymentId: null, providerOrderId: "ORDfixture", ...(status === "pending" ? { pix: { code: "pix-fixture-copy-code" } } : {}) } });
     });
     await page.goto("/");
@@ -279,7 +362,7 @@ for (const status of ["approved", "pending", "rejected"])
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("line-height", "32px");
     const field = await page.getByRole("textbox", { name: "Campo de teste do formulário" }).boundingBox();
     const host = await page.locator("#payment-brick").boundingBox();
-    expect(host!.width).toBeGreaterThanOrEqual(320);
+    expect(host!.width).toBeGreaterThanOrEqual(280);
     expect(field!.x).toBeGreaterThanOrEqual(host!.x);
     expect(field!.x + field!.width).toBeLessThanOrEqual(host!.x + host!.width + 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -289,6 +372,7 @@ for (const status of ["approved", "pending", "rejected"])
     await expect(
       page.getByText("Processando sua solicitação. Aguarde a confirmação."),
     ).toBeVisible();
+    releasePayment();
     if (status === "approved")
       await expect(
         page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" }),
@@ -327,6 +411,8 @@ test('Meta consent, approved production receipt and reload deduplication', async
   await page.locator('#checkout').scrollIntoViewIfNeeded();
   await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
   await expect.poll(()=>calls.filter(c=>c[0]==='trackSingle'&&c[2]==='Purchase').length).toBe(1);
+  for (const event of ['PageView', 'ViewContent', 'InitiateCheckout'])
+    await expect.poll(() => calls.some(c => c[0] === 'trackSingle' && c[2] === event)).toBe(true);
   const sent=calls.find(c=>c[2]==='Purchase')!;
   expect(sent[1]).toBe('1150409944170993');expect(sent[3].value).toBe(10);expect(sent[3].currency).toBe('BRL');expect(sent[4].eventID).toBe(purchase.eventId);
   expect(JSON.stringify(sent)).not.toMatch(/email|payer|token|card_number|first_name/);

@@ -1,3 +1,53 @@
+# Relatório de produção e Meta Ads — estado atual em 28/10/2026
+
+Esta atualização substitui as conclusões históricas preservadas ao final. Versões antigas, indisponibilidade e compra real pendente descritas no histórico não representam o estado atual.
+
+## Código, branch e causa do 404
+
+- Branch confirmada: `feat/150-doces-r10`; ponta remota inicial `c5b1603b62d563dfefc3595f2f6fc8e11eaa1833`.
+- Pasta original em `056205b`, com dois relatórios não rastreados e sem permissão de escrita: preservada. Cópia de produção `D:\livro-receitas-publicacao`, branch `checkout-ui`, commit `b756af6`: também preservada.
+- Produção recebia 100% do tráfego em `a65d6f51-7da7-4745-a880-a5fd8f08aa14`, compilada da cópia local. Essa árvore não tinha `/api/marketing`, `MetaPixel` nem `lib/meta-pixel.ts`. A rota existia no remoto, mas não no código publicado. Não foi uma falha comprovada do roteador OpenNext.
+- Integração na cópia isolada `D:\livro-receitas-producao-meta`, por merge dos dois históricos. Preservados: tema verde, Pix separado, QR/imagem, cópia, proteção contra SDK duplicado, checagem do vendedor, padding de 16px do Brick e `overflow:clip`.
+- Vídeo, arquivos de mídia, assinatura do webhook, autorização de download e migrations não foram alterados. Nenhuma validação financeira foi removida.
+- O novo build Next.js e o manifesto OpenNext contêm `/api/marketing/route`.
+
+## Compra real existente — somente leitura
+
+- Pedido `38b69388-5d8a-4816-b2c9-55a2482e4693`; tentativa `9ab8403b-5da2-4231-b71c-91a4f7bde786`; Order `ORD01M61WT2QS58WQW0EY0GH66DCD`.
+- D1: produção, pedido e tentativa aprovados, tentativa ativa correspondente, 1000 centavos, BRL.
+- Mercado Pago GET: HTTP 200, `processed/accredited`, Pix, valor e total pago `10.00`, uma transação. Vendedor corresponde à configuração e ao token. A função real `validateProviderOrder` retornou `approved`.
+- Dois recibos processados de webhook para a Order. O código grava recibos somente após conferir assinatura e reconciliar a Order consultada no provedor. Não foram fabricados nem reexecutados recibos para produzir evidência.
+- Exatamente um `purchase_approved`, com chave esperada, 1000 centavos e BRL. Zero pedidos de produção com duplicidade desse evento.
+- Download: sessão HttpOnly ligada ao pedido e consulta no servidor antes de entregar o PDF. O responsável confirmou o recebimento real; não foi forjada sessão do comprador para repetir o download.
+- R2 privado: objeto de 26.452.487 bytes, tamanho e SHA-256 iguais ao manifesto. O hash foi calculado no backend, sem expor o PDF. Nenhum arquivo completo foi colocado em assets públicos.
+- Auditoria feita com SELECT no D1 e GET no provedor, em sessão temporária autenticada sem alterar o deployment principal. Nenhuma cobrança, pagamento, estorno, alteração financeira ou evento interno foi criado.
+
+## Pixel e limites da comprovação
+
+- Pixel `1150409944170993`; implementação existente no remoto preservada, sem API de Conversões.
+- Preferência `recipe-ad-measurement` preservada. SDK e eventos dependem de consentimento e da habilitação em produção; negar medição não interfere na compra.
+- `PageView`, `ViewContent` e `InitiateCheckout` ligados à navegação. `Purchase` depende da resposta do backend para um pedido aprovado de produção: `value=10`, `currency=BRL`, produto e `eventID=SHA-256(meta-purchase:<orderId>)`.
+- Deduplicação por memória e localStorage evita nova chamada no mesmo navegador após recarga. Não comprova entrega à Meta, não deduplica dispositivos distintos e perde a persistência se o navegador negar armazenamento. A marca indica chamada ao SDK, não confirmação no Gerenciador de Eventos.
+- Testes locais substituem o SDK Meta para conferir consentimento, parâmetros, isolamento e deduplicação. Purchase de fixture não é enviado ao serviço real.
+- Não há conector ou sessão autenticada do Gerenciador de Eventos disponível. A documentação oficial consultada também exigiu login ou retornou 429. Não será afirmado recebimento na Meta sem evidência do painel.
+- A compra real ocorreu antes de esta versão conter Pixel. Não há evidência de Purchase histórico na Meta. Não haverá backfill nem disparo artificial para gerar conversão.
+
+## Anúncios sem gastos
+
+`META-ADS-PREPARACAO.md` contém objetivo Vendas, Site, Purchase, Pixel, destino, nomes, duas opções de texto/título e UTMs. Orçamento, público, região, período, identidades, criativos e aprovação final dependem do responsável. Nenhuma campanha ou anúncio foi criado ou ativado.
+
+## Verificações da integração
+
+- TypeScript e build Next.js/OpenNext aprovados; rota marketing presente nos dois manifestos.
+- Backend: 21 testes aprovados após a integração das extensões de resposta.
+- Interface: testes direcionados a checkout e Meta, sem repetir a suíte de vídeo inalterada. A execução inicial teve 35 aprovações e uma falha transitória: a janela de 250ms do mock terminou antes da asserção de carregamento sob carga. O teste foi corrigido para liberar a resposta só após a asserção; os nove casos afetados passaram. Nenhum comportamento do produto foi alterado para isso.
+- Resultados da publicação e das chamadas reais do navegador serão registrados abaixo após o deploy.
+
+
+---
+
+## Histórico preservado
+
 # Relatório de produção e Meta Ads — 28/10/2026
 
 ## Atualização Pix e recorte do checkout

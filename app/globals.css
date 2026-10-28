@@ -371,8 +371,7 @@ p:not(:where(#payment-brick *, #status-screen *)) {
 .checkout-section {
   position: relative;
   isolation: isolate;
-  /* Clip decoration without letting SDK focus scroll the whole checkout sideways. */
-  overflow: clip;
+  overflow: hidden;
   background: var(--wash);
   padding: 48px 0 34px;
   scroll-margin-top: 0;
@@ -2182,79 +2181,27 @@ footer a:hover {
   .payment-heading > span { white-space: nowrap; }
 }
 
-/* Distinct, accessible payment step; official Mercado Pago fields remain untouched. */
-.checkout-section { background: linear-gradient(180deg,#faf4fc 0%,#fff 100%); padding: 52px 0 42px; }
-.checkout-section > .wrap { max-width: 890px; }
-.checkout-section .section-label { color: #702691; font-weight: 850; letter-spacing: .11em; }
-.checkout-section > .wrap > h2 { color: #231b30; line-height: 1.15; text-wrap: balance; }
-.checkout-intro { color:#504459; font-size: 15px; line-height:1.65; max-width:660px; margin: 13px 0 22px; }
-.checkout-section .order-summary { background:#fff; border:1px solid #e8dce9; border-radius:18px; padding:22px 24px; margin-top:20px; box-shadow:0 8px 30px #421e4910; }
-.checkout-section .payment-area { background:#fff; border:2px solid #d9b8df; border-radius:20px; box-shadow:0 18px 48px #50246019; padding:0 26px 23px; margin-top:17px; }
-.checkout-secure-banner { display:flex; align-items:center; gap:13px; margin:0 -26px 24px; padding:19px 25px; background:#f0eaf8; border-radius:18px 18px 0 0; color:#312044; }
-.checkout-secure-icon { width:45px; height:45px; flex:none; display:grid; place-items:center; border-radius:13px; background:#fff; color:#652287; }
-.checkout-secure-banner > span:nth-child(2) { flex:1; min-width:0; }
-.checkout-secure-banner strong { display:block; font-size:17px; line-height:1.35; font-weight:850; }
-.checkout-secure-banner small { display:block; color:#5d4d66; margin-top:4px; line-height:1.4; font-size:12px; }
-.checkout-secure-shield { color:#5a287b; flex:none; }
-.checkout-section .payment-heading { align-items:center; }
-.checkout-section .payment-heading h3 { color:#231b30; font-size:22px; line-height:1.3; }
-.checkout-section .payment-heading > span { font-size:24px; font-weight:850; color:#50206b; }
-.checkout-section .checkout-caption { margin:6px 0 17px; font-size:13px; }
-.checkout-progress { display:flex; align-items:center; gap:8px; border-block:1px solid #f0e8f2; padding:12px 0; margin-bottom:18px; color:#776d7c; font-size:12px; font-weight:650; flex-wrap:wrap; }
-.checkout-progress span { display:inline-flex; gap:5px; align-items:center; }
-.checkout-progress span + span::before { content:"›"; color:#b6a9bb; margin-right:4px; }
-.checkout-progress .checkout-progress-done { color:#28764b; }
-.checkout-progress .checkout-progress-current { color:#682287; font-weight:850; }
-.checkout-loading { display:flex; align-items:center; gap:16px; padding:23px 17px; margin:10px 0 18px; border:1px solid #ebe0ef; border-radius:13px; background:#fbf9fc; color:#33243c; }
-.checkout-loading strong { font-size:14px; }
-.checkout-loading p { margin-top:5px; color:#72667a; font-size:12px; line-height:1.5; }
-.checkout-spinner { display:block; width:29px; height:29px; border:3px solid #e5d5ed; border-top-color:#872c9e; border-radius:50%; animation:checkout-spin .8s linear infinite; flex:none; }
-@keyframes checkout-spin { to { transform:rotate(360deg); } }
-.checkout-trust-footer { display:flex; align-items:flex-start; gap:8px; margin-top:20px; padding:12px 13px; border-radius:10px; background:#f3f9f5; color:#2c6543; font-size:12px; line-height:1.5; }
-.checkout-trust-footer svg { flex:none; margin-top:1px; }
-.checkout-section .delivery-note { margin-top:10px; }
-@media(max-width:600px) {
-  .checkout-section { padding:35px 0; }
-  .checkout-section > .wrap { width:calc(100% - 24px); }
-  .checkout-intro { font-size:13px; }
-  .checkout-section .order-summary { padding:16px 14px; border-radius:13px; gap:10px; }
-  .checkout-section .order-summary h3 { font-size:14px; }
-  .checkout-section .summary-price strong { font-size:22px; }
-  .checkout-section .payment-area { padding:0 14px 18px; border-radius:16px; }
-  .checkout-secure-banner { margin:0 -14px 20px; padding:17px 14px; border-radius:14px 14px 0 0; gap:10px; }
-  .checkout-secure-icon { width:38px; height:38px; }
-  .checkout-secure-banner strong { font-size:14px; }
-  .checkout-secure-banner small { font-size:11px; }
-  .checkout-secure-shield { width:20px; }
-  .checkout-section .payment-heading h3 { font-size:19px; }
-  .checkout-section .payment-heading > span { font-size:21px; }
-  .checkout-progress { gap:6px; font-size:11px; }
-  .checkout-loading { padding:18px 12px; }
-}
-@media(prefers-reduced-motion:reduce) { .checkout-spinner { animation:none; border-top-color:#872c9e; } }
+/* Checkout sections keep the provider's internal styles intact. */
+.checkout-fields { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eadfe8; }
+.payment-methods { display: flex; flex-wrap: wrap; gap: 12px; border: 0; padding: 0; margin: 0 0 24px; min-width: 0; }
+.payment-methods legend { font-weight: 750; margin-bottom: 12px; }
+.payment-methods label { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid #d8c4d4; border-radius: 10px; cursor: pointer; min-height: 48px; }
+.payment-methods label:has(:checked) { background: #fff2fa; border-color: #c81f8b; }
+.payment-methods input { accent-color: #c81f8b; }
+.pix-form { display: grid; gap: 12px; margin-bottom: 24px; }
+.pix-form h4 { margin: 0 0 8px; font-size: 18px; }
+.pix-form label, .payment-notice label { display: block; font-weight: 700; }
+.pix-form input, #pix-code { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; border: 1px solid #b99fb3; border-radius: 8px; font: inherit; font-size: 16px; background: white; color: #30203d; }
+.pix-form .button { margin-top: 12px; width: 100%; white-space: normal; }
+.payment-area :is(input, textarea, button, a):focus-visible { outline: 3px solid #712f91; outline-offset: 3px; }
+.payment-area button:disabled { opacity: .65; cursor: wait; }
+.payment-notice { overflow-wrap: anywhere; }
+.pix-qr { display: block; width: 240px; max-width: 100%; height: auto; margin: 0 auto 20px; padding: 12px; background: white; }
+#pix-code { margin-top: 10px; resize: vertical; }
+.payment-heading { gap: 12px; }
 
-/* Checkout comfort: preserve the provider settings and give fields room to grow. */
-.checkout-section .payment-area { padding-bottom: 28px; }
-.checkout-section .payment-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
-.checkout-section .payment-heading h3 { min-width: 0; }
-.checkout-section .payment-heading > span { white-space: nowrap; }
-.checkout-section .checkout-caption { line-height: 1.65; margin-bottom: 22px; }
-.checkout-progress { column-gap: 12px; row-gap: 8px; padding-block: 15px; margin-bottom: 24px; }
-#payment-brick { margin-top: 8px; }
-.checkout-section .status-button { margin-top: 26px; padding-block: 12px; }
-.checkout-trust-footer { margin-top: 24px; padding: 15px; line-height: 1.65; }
-@media (max-width: 600px) {
-  .checkout-section > .wrap { width: calc(100% - 16px); }
-  .checkout-section .payment-area { padding: 0 10px 24px; }
-  .checkout-secure-banner { margin-inline: -10px; margin-bottom: 24px; padding: 18px 14px; align-items: flex-start; gap: 12px; }
-  .checkout-secure-banner strong { line-height: 1.45; }
-  .checkout-secure-banner small { margin-top: 6px; line-height: 1.55; }
-  .checkout-secure-shield { margin-top: 8px; }
-  .checkout-section .checkout-caption { margin-top: 9px; font-size: 12px; }
-  .checkout-progress { column-gap: 8px; row-gap: 10px; line-height: 1.6; }
-  .checkout-trust-footer { padding: 14px 12px; }
-}
-
+/* Preserve the remote checkout clipping fix and consent UI. */
+.checkout-section { overflow: clip; }
 .ad-preference { position: fixed; z-index: 110; right: 16px; bottom: 20px; width: min(390px, calc(100vw - 32px)); padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 6px 28px #26132b26; }
 .ad-preference p { font-size: 12px; line-height: 1.5; }
 .ad-preference a { text-decoration: underline; }

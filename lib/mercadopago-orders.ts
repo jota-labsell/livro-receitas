@@ -1,5 +1,6 @@
 import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, orderEnvironment, type CommerceEnv } from './commerce';
 import { PRODUCT_CONFIG as PRODUCT } from './product.config';
+import { assertProviderAccount } from './mercadopago-account';
 
 type LocalOrder = { environment: string; id: string; product_id: string; amount_cents: number; currency: string; active_attempt: string | null; status: string };
 type Attempt = { id: string; order_id: string; payment_id: string | null; created_at: number };
@@ -7,7 +8,7 @@ export type ProviderOrder = {
   id: string; type: string; external_reference: string; user_id: string;
   currency: string; total_amount: string; total_paid_amount?: string;
   status: string; status_detail?: string; last_updated_date: string;
-  transactions?: { payments?: { id: string; amount: string; paid_amount?: string; refunded_amount?: string; status: string; payment_method?: { qr_code?: string; qr_code_base64?: string } }[]; refunds?: unknown[]; chargebacks?: unknown[] };
+  transactions?: { payments?: { id: string; amount: string; paid_amount?: string; refunded_amount?: string; status: string; status_detail?: string; payment_method?: { qr_code?: string; qr_code_base64?: string } }[]; refunds?: unknown[]; chargebacks?: unknown[] };
 };
 const validId = (id: string) => /^[a-zA-Z0-9_-]{1,100}$/.test(id);
 function scope(env: CommerceEnv): Record<string, string> {
@@ -36,8 +37,9 @@ export function validateProviderOrder(p: ProviderOrder, a: Attempt, o: LocalOrde
   if (p.transactions?.refunds?.length || Number(payments[0].refunded_amount || 0) > 0 || p.status === 'refunded' || payments[0].status === 'refunded') return 'refunded';
   if (p.status === 'processed' && p.status_detail === 'accredited' && ['approved','processed'].includes(payments[0].status) &&
       /^10(?:\.0{1,2})?$/.test(p.total_paid_amount || payments[0].paid_amount || '')) return 'approved';
+  if (p.status === 'expired' || p.status_detail === 'expired' || payments[0].status_detail === 'expired') return 'cancelled';
   if (p.status === 'failed' || payments[0].status === 'rejected') return 'rejected';
-  if (p.status === 'cancelled') return 'cancelled';
+  if (p.status === 'cancelled' || p.status === 'canceled') return 'cancelled';
   return 'pending';
 }
 export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder) {
@@ -56,9 +58,9 @@ export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder)
 }
 function result(o: LocalOrder, p?: ProviderOrder) {
   const method = p?.transactions?.payments?.[0]?.payment_method;
-  return { status: o.status, paymentId: null, providerOrderId: p?.id || null,
+  return { status: o.status, paymentId: null, expired: p?.status === "expired" || p?.status_detail === "expired" || p?.transactions?.payments?.[0]?.status_detail === "expired", providerOrderId: p?.id || null,
     ...(o.environment === "production" && o.status === "approved" && p ? { purchase: { eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: "BRL" } } : {}),
-    ...(o.status === 'pending' && method?.qr_code ? { pix: { code: method.qr_code } } : {}) };
+    ...(o.status === 'pending' && method?.qr_code ? { pix: { code: method.qr_code, qrCodeBase64: method.qr_code_base64 } } : {}) };
 }
 export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, fetcher: typeof fetch = fetch) {
   scope(env);
@@ -87,6 +89,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
   const methods = await availableMethods(env,fetcher);
   const data = safePaymentData(form,methods);
   const method = methods.find(m=>m.id === data.payment_method_id)!;
+  await assertProviderAccount(env, fetcher);
   const a = await startAttempt(env,order as Parameters<typeof startAttempt>[1],hash(JSON.stringify(data)));
   if (a.payment_id) return refreshProviderOrder(env,order,fetcher);
   let created: ProviderOrder;

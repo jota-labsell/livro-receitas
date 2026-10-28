@@ -1,9 +1,9 @@
 "use client";
 import { metaConfirmedPurchase, type ConfirmedPurchase } from "@/lib/meta-pixel";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import { visitId, track } from "@/lib/analytics";
-import { LockKeyhole, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Check, Copy, CreditCard, LockKeyhole, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
+import styles from "./checkout.module.css";
 type Controller = { unmount: () => Promise<void> };
 type Bricks = {
   create: (
@@ -14,6 +14,7 @@ type Bricks = {
 };
 declare global {
   interface Window {
+    receitasPaymentSdk?: { publicKey: string; builder: Bricks };
     MercadoPago?: new (
       key: string,
       settings: Record<string, string>,
@@ -27,7 +28,7 @@ type Config = {
   paymentMethods?: Record<string, unknown>;
   mode?: string;
 };
-type Result = { status: string; paymentId?: string | null; pix?: { code: string }; purchase?: ConfirmedPurchase };
+type Result = { status: string; paymentId?: string | null; pix?: { code: string; qrCodeBase64?: string }; expired?: boolean; purchase?: ConfirmedPurchase };
 let sdkPromise: Promise<void> | undefined;
 function loadSdk() {
   if (window.MercadoPago) return Promise.resolve();
@@ -51,6 +52,16 @@ function loadSdk() {
     });
   return sdkPromise;
 }
+function getBricks(publicKey: string) {
+  if (window.receitasPaymentSdk) {
+    if (window.receitasPaymentSdk.publicKey !== publicKey)
+      throw new Error("A configuração de pagamento mudou. Recarregue a página.");
+    return window.receitasPaymentSdk.builder;
+  }
+  const builder = new window.MercadoPago!(publicKey, { locale: "pt-BR" }).bricks();
+  window.receitasPaymentSdk = { publicKey, builder };
+  return builder;
+}
 async function post(path: string, data?: unknown): Promise<Result> {
   const response = await fetch(path, {
     method: "POST",
@@ -63,17 +74,20 @@ async function post(path: string, data?: unknown): Promise<Result> {
   return result;
 }
 export function Checkout() {
+  const [method, setMethod] = useState("card");
+  const [email, setEmail] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const pixCode = useRef<HTMLTextAreaElement>(null);
   const [config, setConfig] = useState<Config | null>(null),
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
-    [brickReady, setBrickReady] = useState(false),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
   const root = useRef<HTMLDivElement>(null),
     sending = useRef(false),
-    builder = useRef<Bricks | null>(null),
-    controller = useRef<Controller | null>(null),
+    lifecycle = useRef<Promise<void>>(Promise.resolve()),
     seen = useRef(false);
   const refresh = useCallback(async () => {
     if (sending.current) return;
@@ -91,23 +105,31 @@ export function Checkout() {
   }, []);
   useEffect(() => {
     let cancelled = false;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !seen.current) {
+          seen.current = true;
+          track("checkout_start");
+          void initialize();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
     async function initialize() {
       try {
-        const response = await fetch("/api/checkout", { cache: "no-store" });
+        const response = await fetch("/api/checkout");
         const c = (await response.json()) as Config;
         if (cancelled) return;
         setConfig(c);
+        if (!c.paymentMethods?.creditCard) setMethod("pix");
         if (c.available) {
           if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
             throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
           }
-          // Download the official SDK in parallel with the order/session round trips.
-          // This never charges the customer; charging still requires onSubmit.
-          const sdk = loadSdk();
           await post("/api/checkout", { visitId: visitId() });
           const previous = await post("/api/orders/status");
           if (!cancelled && previous.status !== "created") setResult(previous);
-          await sdk;
         }
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
@@ -115,119 +137,68 @@ export function Checkout() {
         if (!cancelled) setLoading(false);
       }
     }
-    void initialize();
-    return () => { cancelled = true; };
-  }, []);
-  useEffect(() => {
-    const node = root.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !seen.current) {
-        seen.current = true;
-        track("checkout_start");
-        observer.disconnect();
-      }
-    }, { threshold: 0.1 });
-    observer.observe(node);
-    return () => observer.disconnect();
+    if (root.current) observer.observe(root.current);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
   }, []);
   const status = result?.status;
   useEffect(() => {
     if (status === "approved" && result?.purchase) metaConfirmedPurchase(result.purchase);
   }, [status, result?.purchase]);
   useEffect(() => {
-    if (!config?.available || loading) return;
+    if (!config?.available || loading || method !== "card" || (status && status !== "created")) return;
     let disposed = false;
+    let mounted: Controller | undefined;
+    const previous = lifecycle.current;
     async function mount() {
-      setBrickReady(false);
       try {
+        await previous;
+        if (disposed) return;
         await loadSdk();
         if (disposed) return;
-        builder.current = new window.MercadoPago!(config!.publicKey!, {
-          locale: "pt-BR",
-        }).bricks();
-        if (
-          status === "approved" ||
-          status === "refunded" ||
-          status === "charged_back"
-        )
-          return;
-        if (
-          (status === "pending" || status === "processing") &&
-          !result?.paymentId
-        )
-          return;
-        const pending = status === "pending" || status === "processing";
-        const instance = await builder.current.create(
-          pending ? "statusScreen" : "payment",
-          pending ? "status-screen" : "payment-brick",
-          pending
-            ? {
-                initialization: { paymentId: result!.paymentId },
-                callbacks: {
-                  onReady: () => setBrickReady(true),
-                  onError: () =>
-                    setError(
-                      "Consulte o status abaixo para acompanhar seu pagamento.",
-                    ),
-                },
-              }
-            : {
+        const theme = getComputedStyle(root.current!);
+        const color = (name: string, fallback: string) => theme.getPropertyValue(name).trim() || fallback;
+        const instance = await getBricks(config!.publicKey!).create(
+          "payment", "payment-brick", {
                 initialization: { amount: config!.amount },
                 customization: {
-                  paymentMethods: config!.paymentMethods,
+                  paymentMethods: { creditCard: config!.paymentMethods?.creditCard, maxInstallments: 1 },
                   visual: {
-                    defaultPaymentOption: config!.paymentMethods?.creditCard
-                      ? { creditCardForm: true }
-                      : config!.paymentMethods?.bankTransfer
-                        ? { bankTransferForm: true }
-                        : { debitCardForm: true },
+                    hideFormTitle: true,
+                    defaultPaymentOption: { creditCardForm: true },
                     texts: {
-                      formTitle: "Preencha os dados do cartão",
-                      // When Pix is also available, let the SDK pick the contextual action label.
-                      ...(config!.paymentMethods?.bankTransfer ? {} : { formSubmit: "Pagar com cartão" }),
-                      cardholderName: {
-                        label: "Nome completo do titular",
-                        placeholder: "Como está escrito no cartão",
-                      },
+                      formSubmit: "Pagar com cartão",
+                      cardholderName: { label: "Nome completo do titular", placeholder: "Como está escrito no cartão" },
                       installmentsSectionTitle: "Condições de pagamento",
-                      paymentMethods: {
-                        creditCardTitle: "Cartão de crédito",
-                        debitCardTitle: "Cartão de débito",
-                      },
                     },
                     style: {
                       theme: "default",
                       customVariables: {
-                        baseColor: "#ab167c",
-                        baseColorFirstVariant: "#961368",
-                        baseColorSecondVariant: "#fceaf5",
-                        textPrimaryColor: "#282037",
-                        textSecondaryColor: "#645a6b",
+                        baseColor: color("--checkout-primary", "#166534"),
+                        baseColorFirstVariant: color("--checkout-hover", "#14532d"),
+                        baseColorSecondVariant: color("--checkout-selected", "#eaf6ee"),
+                        textPrimaryColor: color("--checkout-text", "#172d20"),
+                        textSecondaryColor: color("--checkout-secondary", "#526459"),
                         buttonTextColor: "#ffffff",
+                        outlinePrimaryColor: "#6b8173",
                         inputBackgroundColor: "#ffffff",
                         formBackgroundColor: "#ffffff",
-                        outlinePrimaryColor: "#d5c9d9",
-                        outlineSecondaryColor: "#e8e0eb",
-                        successColor: "#20804d",
-                        borderRadiusSmall: "8px",
-                        borderRadiusMedium: "14px",
-                        borderRadiusLarge: "18px",
+                        inputFocusedBoxShadow: "0 0 0 3px #bbf7d0",
                         inputVerticalPadding: "16px",
                         inputHorizontalPadding: "16px",
-                        inputBorderWidth: "1px",
-                        inputFocusedBorderWidth: "2px",
+                        borderRadiusMedium: "9px",
                         formPadding: "16px",
-                        fontSizeSmall: "13px",
-                        fontSizeMedium: "15px",
-                        fontSizeLarge: "17px",
-                        fontSizeExtraLarge: "19px",
+                        fontSizeMedium: "16px",
+                        fontSizeLarge: "18px",
+                        fontSizeExtraLarge: "20px",
                       },
                     },
                   },
                 },
                 callbacks: {
-                  onReady: () => setBrickReady(true),
+                  onReady: () => {},
                   onError: () =>
                     setError(
                       "Confira os dados de pagamento. Se necessário, tente carregar novamente.",
@@ -262,45 +233,71 @@ export function Checkout() {
                 },
               },
         );
-        if (disposed) await instance.unmount();
-        else controller.current = instance;
+        mounted = instance;
       } catch (e) {
         if (!disposed) setError((e as Error).message);
       }
     }
-    void mount();
+    lifecycle.current = mount();
     return () => {
       disposed = true;
-      void controller.current?.unmount();
-      controller.current = null;
+      // Finish an in-flight creation and its teardown before mounting another Brick.
+      lifecycle.current = lifecycle.current.then(async () => { await mounted?.unmount(); });
+      void lifecycle.current.catch(() => {});
     };
-  }, [config, loading, retry, status, result?.paymentId]);
+  }, [config, loading, retry, status, result?.paymentId, method]);
+  useEffect(() => {
+    if (status !== "pending" && status !== "processing") return;
+    const timer = window.setInterval(() => { if (!document.hidden) void refresh(); }, 10000);
+    return () => window.clearInterval(timer);
+  }, [status, refresh]);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 3000);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+  async function copyPix() {
+    setCopyError("");
+    setCopied(false);
+    try {
+      await navigator.clipboard.writeText(result!.pix!.code);
+      setCopied(true);
+    } catch {
+      pixCode.current?.focus();
+      pixCode.current?.select();
+      setCopyError("Não foi possível copiar automaticamente. O código está selecionado: copie e cole no aplicativo do seu banco.");
+    }
+  }
+  async function submitPix() {
+    if (sending.current) return;
+    sending.current = true; setBusy(true); setError("");
+    try {
+      setResult(await post("/api/payments", { visitId: visitId(), formData: { payment_method_id: "pix", payer: { email: email.trim() } } }));
+    } catch (e) {
+      setError((e as Error).message);
+      try { setResult(await post("/api/orders/status")); }
+      catch { setResult({ status: "processing" }); }
+    } finally { sending.current = false; setBusy(false); }
+  }
   const again = () => {
     setError("");
     setResult(null);
     setRetry((n) => n + 1);
   };
   return (
-    <div className="payment-area" ref={root} aria-busy={busy || loading}>
-      <div className="checkout-secure-banner">
-        <span className="checkout-secure-icon"><LockKeyhole size={22} aria-hidden="true" /></span>
-        <span><strong>Você está na etapa de pagamento</strong><small>Finalize sua compra aqui, com o Mercado Pago.</small></span>
-        <ShieldCheck className="checkout-secure-shield" size={26} aria-hidden="true" />
+    <div className={`payment-area ${styles.panel}`} ref={root} aria-busy={busy || loading}>
+      <div className={`payment-heading ${styles.heading}`}>
+        <span className={styles.badge}><LockKeyhole size={16} aria-hidden="true" /> Ambiente seguro</span>
+        <h3>Conclua sua compra</h3>
       </div>
-      <div className="payment-heading">
-        <h3>Escolha como pagar</h3>
-        <span>R$ 10,00</span>
-      </div>
-      <p className="checkout-caption">Pagamento único de R$ 10,00. Sem assinatura.</p>
-      <div className="checkout-progress"><span className="checkout-progress-done"><CheckCircle2 size={16} aria-hidden="true" /> Pedido</span><span className="checkout-progress-current">2. Pagamento</span><span>3. Download</span></div>
+      <p className={`checkout-caption ${styles.caption}`}>Preencha seus dados e finalize a compra com segurança.</p>
       {loading && (
-        <div className="checkout-loading" role="status" aria-live="polite">
-          <span className="checkout-spinner" aria-hidden="true" />
-          <div><strong>Preparando seu pagamento...</strong><p>Carregando os meios de pagamento disponíveis.</p></div>
-        </div>
+        <p className={`payment-notice ${styles.notice}`} role="status">
+          Carregando o pagamento…
+        </p>
       )}
       {!loading && !config?.available && (
-        <div className="payment-notice" role="status">
+        <div className={`payment-notice ${styles.notice}`} role="status">
           <p>O pagamento está temporariamente indisponível.</p>
           <p>
             Tente novamente em instantes ou{" "}
@@ -310,40 +307,67 @@ export function Checkout() {
       )}
       {config?.available && (
         <>
+          {(!status || status === "created") && !loading && (
+            <div className={`checkout-fields ${styles.fields}`}>
+              <fieldset disabled={busy} className={`payment-methods ${styles.methods}`}>
+                <legend>Forma de pagamento</legend>
+                {!!config.paymentMethods?.creditCard && <label className={styles.method}>
+                  <input type="radio" name="payment-method" aria-label="Cartão de crédito" checked={method === "card"} onChange={() => setMethod("card")} />
+                  <CreditCard size={22} aria-hidden="true" />
+                  <span className={styles.methodCopy}><strong>Cartão de crédito</strong><small>À vista, sem assinatura</small></span>
+                </label>}
+                {!!config.paymentMethods?.bankTransfer && <label className={styles.method}>
+                  <input type="radio" name="payment-method" aria-label="Pix" checked={method === "pix"} onChange={() => setMethod("pix")} />
+                  <QrCode size={22} aria-hidden="true" />
+                  <span className={styles.methodCopy}><strong>Pix</strong><small>QR Code ou copia e cola</small></span>
+                </label>}
+              </fieldset>
+              {method === "pix" && <form className={`pix-form ${styles.form}`} onSubmit={(event) => { event.preventDefault(); void submitPix(); }}>
+                <h4>Dados do comprador</h4>
+                <p>Informe seu e-mail para identificar esta compra.</p>
+                <label htmlFor="pix-email">E-mail</label>
+                <input id="pix-email" type="email" autoComplete="email" required maxLength={254} value={email} disabled={busy} onChange={(event) => setEmail(event.target.value)} aria-describedby="pix-help" />
+                <p id="pix-help">O QR Code e o código Pix aparecerão aqui após gerar o pagamento.</p>
+                <button className={`button ${styles.primary}`} type="submit" disabled={busy}>
+                  <QrCode size={19} aria-hidden="true" />{busy ? "Gerando Pix…" : "Gerar Pix de R$ 10,00"}
+                </button>
+              </form>}
+            </div>
+          )}
           {busy && (
-            <p role="status" className="payment-notice">
+            <p role="status" className={`payment-notice ${styles.notice}`}>
               Processando sua solicitação. Aguarde a confirmação.
             </p>
           )}
           {status === "approved" ? (
-            <div className="approved" role="status">
+            <div className={`approved ${styles.approved}`} role="status">
               <h3>Pagamento aprovado!</h3>
               <p>Seu livro já pode ir para a cozinha.</p>
-              <a href="/api/download" className="button">
+              <a href="/api/download" className={`button ${styles.primary}`}>
                 BAIXAR AS 150 RECEITAS
               </a>
               <p className="small">O download é autorizado ao abrir o link.</p>
             </div>
           ) : status === "refunded" || status === "charged_back" ? (
-            <p role="status" className="payment-notice">
+            <p role="status" className={`payment-notice ${styles.notice}`}>
               Este pagamento foi estornado ou contestado. O download está
               indisponível. Entre em contato para conferir o pedido.
             </p>
           ) : (
             <>
               {(status === "rejected" || status === "cancelled") && (
-                <div role="status" className="payment-notice">
+                <div role="status" className={`payment-notice ${styles.notice}`}>
                   <p>
-                    O pagamento não foi aprovado. Confira os dados ou tente
+                    {result?.expired ? "O Pix expirou. Gere um novo pagamento ou escolha" : "O pagamento não foi aprovado. Confira os dados ou tente"}
                     outro meio de pagamento.
                   </p>
-                  <button type="button" className="text-button" onClick={again}>
+                  <button type="button" className={`text-button ${styles.retry}`} onClick={again}>
                     Tentar novamente
                   </button>
                 </div>
               )}
               {(status === "pending" || status === "processing") && (
-                <div role="status" className="payment-notice">
+                <div role="status" className={`payment-notice ${styles.notice}`}>
                   <p>
                     {status === "pending"
                       ? "Seu pagamento aguarda confirmação."
@@ -355,62 +379,66 @@ export function Checkout() {
                   </p>
                 </div>
               )}
-              {(!brickReady && !status) && (
-                <div className="checkout-loading" role="status">
-                  <span className="checkout-spinner" aria-hidden="true" />
-                  <div><strong>Abrindo formulário de pagamento...</strong><p>Você poderá preencher os dados aqui mesmo.</p></div>
-                </div>
-              )}
-              <div
+              <section className={styles.cardSection} hidden={method !== "card" || !!status && status !== "created"} aria-labelledby="card-data-title">
+                <h4 id="card-data-title">Dados do comprador e do cartão</h4>
+                <p>Preencha os campos abaixo. O pagamento é processado pelo Mercado Pago.</p>
+                <div
                 className={busy ? "brick-blocked" : ""}
                 inert={busy}
                 hidden={
-                  status === "pending" ||
-                  status === "processing" ||
-                  status === "rejected" ||
-                  status === "cancelled"
+                  method !== "card" || !!status && status !== "created"
                 }
                 id="payment-brick"
               />
+              </section>
               {status === "pending" && result?.pix?.code && (
-                <div className="payment-notice">
-                  <label htmlFor="pix-code">Pix copia e cola</label>
-                  <textarea id="pix-code" readOnly value={result.pix.code} style={{ width: "100%", minHeight: 90 }} />
-                  <p>Copie o código e pague no aplicativo do seu banco. Depois consulte o status.</p>
-                </div>
+                <section className={styles.pixPanel} aria-labelledby="pix-title">
+                  <h4 id="pix-title">Seu Pix está pronto</h4>
+                  <p id="pix-instructions">Escaneie o QR Code no app do seu banco ou copie o código abaixo.</p>
+                  {result.pix.qrCodeBase64 && <div className={styles.qrFrame}><img className={`pix-qr ${styles.qrImage}`} src={`data:image/png;base64,${result.pix.qrCodeBase64}`} alt="QR Code Pix do seu pedido" /></div>}
+                  <div>
+                    <label htmlFor="pix-code">Pix copia e cola</label>
+                    <textarea ref={pixCode} className={styles.pixCode} id="pix-code" rows={3} readOnly value={result.pix.code} aria-describedby="pix-instructions" />
+                  </div>
+                  <button type="button" className={styles.secondary} onClick={() => void copyPix()} aria-label="Copiar código Pix (copia e cola)">
+                    {copied ? <Check size={20} aria-hidden="true" /> : <Copy size={20} aria-hidden="true" />}
+                    {copied ? "Copiado!" : "Copiar código Pix (copia e cola)"}
+                  </button>
+                  <p className={styles.copyStatus} role="status" aria-live="polite" aria-atomic="true">{copied ? "Copiado! Cole o código no aplicativo do seu banco." : ""}</p>
+                  {copyError && <p className={styles.copyError} role="alert">{copyError}</p>}
+                </section>
               )}
-              <div
-                id="status-screen"
-                hidden={status !== "pending" && status !== "processing"}
-              />
+              {status && status !== "created" && (
               <button
                 type="button"
-                className="status-button"
+                className={`status-button ${styles.secondary}`}
                 disabled={busy}
                 onClick={() => void refresh()}
               >
+                <RefreshCw size={18} aria-hidden="true" />
                 {busy ? "Consultando…" : "Consultar status do pagamento"}
               </button>
+              )}
             </>
           )}
         </>
       )}
       {error && (
-        <p role="alert" className="payment-error">
+        <p role="alert" className={`payment-error ${styles.error}`}>
           {error}
         </p>
       )}
       {config?.available && error && !status && (
         <button
           type="button"
-          className="text-button"
+          className={`text-button ${styles.retry}`}
           onClick={() => setRetry((n) => n + 1)}
         >
           Carregar pagamento novamente
         </button>
       )}
-      <div className="checkout-trust-footer"><LockKeyhole size={15} aria-hidden="true" /><span>Dados do pagamento tratados pelo Mercado Pago. Acesso ao PDF após aprovação.</span></div>
-      <p className="small delivery-note">
+      <p className={styles.trust}><ShieldCheck size={18} aria-hidden="true" /> Dados de pagamento processados pelo Mercado Pago.</p>
+      <p className={`small delivery-note ${styles.delivery}`}>
         Baixe o PDF nesta página após a confirmação do pagamento. Mantenha este
         navegador para consultar sua compra.
       </p>
