@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [feat/150-doces-r10]
   workflow_dispatch:
+concurrency:
+  group: checkout-meta-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
