@@ -38,6 +38,8 @@ Os identificadores dinâmicos permitem relacionar anúncio e conjunto sem depend
 
 ## Conferência humana do recebimento na Meta
 
+Estado desta entrega: SDK/configuração do Pixel carregam com HTTP 200, mas a sessão automatizada não observou requisições de eventos a `facebook.com/tr`. Os testes locais comprovam a lógica, não a entrega. Antes de ativar gastos, confirmar a navegação no painel; se não aparecer, consultar **Diagnóstico** e permissões/configurações do conjunto de dados. Não há causa de bloqueio comprovada para alterar arbitrariamente a integração.
+
 1. Abra o Gerenciador de Eventos da empresa correta e selecione o conjunto de dados/Pixel `1150409944170993`.
 2. Entre em **Testar eventos**, informe a URL do site e abra a página pela ferramenta. Na página, permita a medição somente se essa for sua escolha para o teste.
 3. Visualize a oferta e entre no checkout, sem gerar cobrança. Confira `PageView`, `ViewContent` e `InitiateCheckout` e seus parâmetros. Ausência de consentimento ou bloqueadores pode impedir o envio.
