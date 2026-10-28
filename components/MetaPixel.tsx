@@ -23,6 +23,8 @@ export function MetaPixel() {
   function select(value: "allow" | "deny") {
     try { localStorage.setItem(KEY, value); } catch {}
     setChoice(value); setOpen(false); setMetaConsent(value === "allow");
+    void fetch("/api/marketing", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consent: value === "allow" }), keepalive: true }).catch(() => {});
     if (value === "allow") metaPageView(visitId());
   }
   if (!active) return null;
