@@ -10,6 +10,7 @@ export class CommerceError extends Error {
   constructor(
     public status: number,
     message: string,
+    public providerStatus?: number,
   ) {
     super(message);
   }
@@ -123,6 +124,7 @@ export async function mp<T>(
         ? 502
         : 422,
       "Não foi possível concluir o pagamento. Confira os dados ou consulte o status.",
+      response.status,
     );
   return response.json() as Promise<T>;
 }

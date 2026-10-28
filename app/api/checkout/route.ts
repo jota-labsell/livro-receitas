@@ -11,11 +11,20 @@ import {
 } from "@/lib/commerce";
 import { getEbook } from "@/lib/ebook";
 export async function GET() {
+  let stage = "configuration";
+  const unavailable = (reason: string) => {
+    console.warn(JSON.stringify({ event: "checkout_unavailable", reason }));
+    return json({ available: false });
+  };
   try {
     const runtime = env();
-    if (runtime.MERCADOPAGO_MODE !== "sandbox" || !paymentReady(runtime) || !(await getEbook()))
-      return json({ available: false });
+    if (runtime.MERCADOPAGO_MODE !== "sandbox" || !paymentReady(runtime))
+      return unavailable("configuration");
+    stage = "ebook";
+    if (!(await getEbook())) return unavailable("ebook");
+    stage = "payment_methods";
     const methods = await availableMethods(runtime);
+    if (!methods.length) return unavailable("no_active_payment_methods");
     return json({
       available: methods.length > 0,
       publicKey: runtime.MERCADOPAGO_PUBLIC_KEY,
@@ -32,7 +41,13 @@ export async function GET() {
       },
       mode: runtime.MERCADOPAGO_MODE,
     });
-  } catch {
+  } catch (error) {
+    // Log only bounded diagnostic fields. No keys, payer data or provider body.
+    console.warn(JSON.stringify({
+      event: "checkout_unavailable", reason: stage,
+      status: error instanceof CommerceError ? error.status : null,
+      providerStatus: error instanceof CommerceError ? error.providerStatus ?? null : null,
+    }));
     return json({ available: false });
   }
 }
