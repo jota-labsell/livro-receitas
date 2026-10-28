@@ -24,7 +24,7 @@ type Config = {
   paymentMethods?: Record<string, unknown>;
   mode?: string;
 };
-type Result = { status: string; paymentId?: string | null };
+type Result = { status: string; paymentId?: string | null; pix?: { code: string } };
 let sdkPromise: Promise<void> | undefined;
 function loadSdk() {
   if (window.MercadoPago) return Promise.resolve();
@@ -292,6 +292,13 @@ export function Checkout() {
                 }
                 id="payment-brick"
               />
+              {status === "pending" && result?.pix?.code && (
+                <div className="payment-notice">
+                  <label htmlFor="pix-code">Pix copia e cola</label>
+                  <textarea id="pix-code" readOnly value={result.pix.code} style={{ width: "100%", minHeight: 90 }} />
+                  <p>Copie o código e pague no aplicativo do seu banco. Depois consulte o status.</p>
+                </div>
+              )}
               <div
                 id="status-screen"
                 hidden={status !== "pending" && status !== "processing"}

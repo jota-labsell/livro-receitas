@@ -457,6 +457,7 @@ export function validateWebhook(
   req: Request,
   env: CommerceEnv,
   now = Date.now(),
+  orders = false,
 ) {
   const url = new URL(req.url),
     id = url.searchParams.get("data.id"),
@@ -468,7 +469,7 @@ export function validateWebhook(
   if (
     !env.MERCADOPAGO_WEBHOOK_SECRET ||
     !id ||
-    !/^\d+$/.test(id) ||
+    !(orders ? /^[a-zA-Z0-9_-]{1,100}$/.test(id) : /^\d+$/.test(id)) ||
     !requestId ||
     !/^[a-zA-Z0-9-]{1,200}$/.test(requestId) ||
     !/^\d{10,13}$/.test(parts.ts || "") ||
@@ -479,7 +480,7 @@ export function validateWebhook(
   if (Math.abs(now - timestamp) > 600000)
     throw new CommerceError(401, "Assinatura expirada.");
   const expected = createHmac("sha256", env.MERCADOPAGO_WEBHOOK_SECRET)
-    .update(`id:${id};request-id:${requestId};ts:${parts.ts};`)
+    .update(`id:${orders ? id.toLowerCase() : id};request-id:${requestId};ts:${parts.ts};`)
     .digest();
   if (!timingSafeEqual(expected, Buffer.from(parts.v1, "hex")))
     throw new CommerceError(401, "Assinatura inválida.");

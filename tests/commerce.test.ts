@@ -298,3 +298,78 @@ test("provider validation refusal permits a new attempt, while ambiguous failure
     ),
   );
 });
+
+// Orders fixtures verify backend logic only, not the official sandbox.
+import { chargeProviderOrder, refreshProviderOrder, reconcileProviderOrder, validateProviderOrder } from '../lib/mercadopago-orders';
+function ordersProvider(initial = 'approved') {
+  const rows = new Map<string, any>(); let creates = 0; let lost = false;
+  const fetcher = async (url: string | URL | Request, init?: RequestInit) => {
+    const u = new URL(String(url));
+    if (u.pathname === '/v1/payment_methods') return Response.json([{id:'visa',payment_type_id:'credit_card',status:'active'},{id:'pix',payment_type_id:'bank_transfer',status:'active'}]);
+    assert.equal((init?.headers as any)['X-Test-Scope'],'sandbox');
+    if (init?.method === 'POST') {
+      assert.equal(u.pathname,'/v1/orders');
+      const b = JSON.parse(String(init.body)); const key = (init.headers as any)['X-Idempotency-Key'];
+      assert.equal(b.total_amount,'10.00'); assert.equal(b.currency,'BRL'); assert.equal(b.transactions.payments.length,1);
+      if (!rows.has(key)) { creates++; rows.set(key,{
+        id:'ORD'+randomUUID().replaceAll('-',''),type:'online',external_reference:key,user_id:'123',currency:'BRL',total_amount:'10.00',total_paid_amount:initial==='approved'?'10.00':'0.00',
+        status:initial==='approved'?'processed':initial==='rejected'?'failed':'action_required',status_detail:initial==='approved'?'accredited':'waiting_payment',last_updated_date:new Date().toISOString(),
+        transactions:{payments:[{id:'PAYfixture',amount:'10.00',status:initial==='approved'?'processed':initial,payment_method:{qr_code:'test-pix-code'}}]},
+      }); }
+      if (lost) {lost=false;throw new Error('lost response');}
+      return Response.json(rows.get(key));
+    }
+    if (u.pathname === '/v1/orders') return Response.json({data:[...rows.values()].filter(r=>r.external_reference===u.searchParams.get('external_reference'))});
+    const found = [...rows.values()].find(r=>u.pathname===`/v1/orders/${r.id}`);
+    assert.ok(found); return Response.json(found);
+  };
+  return {fetcher:fetcher as typeof fetch,rows,get creates(){return creates;},lose(){lost=true;}};
+}
+test('Orders: concurrent submissions persist one provider order and one purchase event',async()=>{
+  const local = await ensureOrder(env,newAccess(),randomUUID()), p=ordersProvider();
+  const r=await Promise.all([chargeProviderOrder(env,local,form,p.fetcher),chargeProviderOrder(env,local,form,p.fetcher)]);
+  assert.ok(r.every(x=>x.status==='approved'));assert.equal(p.creates,1);
+  const events=await db.prepare("SELECT COUNT(*) AS count FROM funnel_events WHERE order_id=? AND name='purchase_approved'").bind(local.id).first<any>();assert.equal(events.count,1);
+  const refreshed=await refreshProviderOrder(env,(await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>())!,p.fetcher);assert.equal(refreshed.status,'approved');
+});
+test('Orders: validates account, currency, amount, product, reference and provider ID',()=>{
+  const a={id:'attempt',order_id:'local',payment_id:null,created_at:Date.now()};
+  const o={id:'local',product_id:'150-doces-comer-vender',amount_cents:1000,currency:'BRL',active_attempt:a.id,status:'processing'};
+  const p:any={id:'ORD123',type:'online',external_reference:a.id,user_id:'123',currency:'BRL',total_amount:'10.00',total_paid_amount:'10.00',status:'processed',status_detail:'accredited',last_updated_date:new Date().toISOString(),transactions:{payments:[{id:'PAY123',amount:'10.00',status:'processed'}]}};
+  assert.equal(validateProviderOrder(p,a,o,env),'approved');
+  for(const bad of [{currency:'USD'},{user_id:'456'},{total_amount:'1.00'},{external_reference:'other'},{type:'point'},{last_updated_date:'invalid'},{transactions:{payments:[]}}]) assert.throws(()=>validateProviderOrder({...p,...bad},a,o,env));
+  assert.throws(()=>validateProviderOrder(p,{...a,payment_id:'ORDother'},o,env));
+  assert.equal(validateProviderOrder({...p,total_paid_amount:'0.00'},a,o,env),'pending');
+  assert.equal(validateProviderOrder({...p,status:'unknown'},a,o,env),'pending');
+});
+test('Orders: pending, reconciliation, refund and stale events',async()=>{
+  const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider('pending');
+  const pending=await chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);assert.equal(pending.status,'pending');assert.equal(pending.pix?.code,'test-pix-code');
+  const row=[...p.rows.values()][0], old=structuredClone(row);
+  row.status='processed';row.status_detail='accredited';row.total_paid_amount='10.00';row.transactions.payments[0].status='processed';row.last_updated_date=new Date(Date.now()+1000).toISOString();
+  assert.equal((await reconcileProviderOrder(env,row)).status,'approved');
+  await reconcileProviderOrder(env,row);
+  row.transactions.payments[0].refunded_amount='10.00';row.last_updated_date=new Date(Date.now()+2000).toISOString();
+  assert.equal((await reconcileProviderOrder(env,row)).status,'refunded');assert.equal((await reconcileProviderOrder(env,old)).status,'refunded');
+});
+test('Orders: lost create response is recovered by reference without another charge',async()=>{
+  const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider();p.lose();
+  await assert.rejects(chargeProviderOrder(env,local,form,p.fetcher));
+  const stored=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
+  assert.equal((await refreshProviderOrder(env,stored,p.fetcher)).status,'approved');assert.equal(p.creates,1);
+});
+test('Orders: alphanumeric webhook IDs authenticate using lowercase ID in manifest',()=>{
+  const id='ORD123ABC',ts=String(Date.now()),rid='request-orders';
+  const sign=createHmac('sha256',env.MERCADOPAGO_WEBHOOK_SECRET).update(`id:${id.toLowerCase()};request-id:${rid};ts:${ts};`).digest('hex');
+  const req=new Request(`https://example.com/api/webhooks/mercadopago?data.id=${id}`,{headers:{'x-request-id':rid,'x-signature':`ts=${ts},v1=${sign}`}});
+  assert.equal(validateWebhook(req,env,Date.now(),true).id,id);
+  assert.throws(()=>validateWebhook(new Request(`https://example.com/?data.id=ORDaltered`,{headers:req.headers}),env,Date.now(),true));
+});
+
+ test('Orders: rejected attempts allow retry and production remains blocked', async()=>{
+   const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider('rejected');
+   assert.equal((await chargeProviderOrder(env,local,form,p.fetcher)).status,'rejected');
+   const stored=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
+   assert.equal((await chargeProviderOrder(env,stored,form,p.fetcher)).status,'rejected');assert.equal(p.creates,2);
+   await assert.rejects(chargeProviderOrder({...env,MERCADOPAGO_MODE:'production',LIVE_PAYMENTS_ENABLED:'true'},stored,form,p.fetcher));
+ });

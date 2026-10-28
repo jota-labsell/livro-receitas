@@ -1,3 +1,5 @@
+> **Atualização Orders:** a integração HTTP foi migrada para Orders, apenas para sandbox. Siga [ORDERS-SANDBOX.md](ORDERS-SANDBOX.md), que substitui as instruções abaixo sobre Payments, tópico `payment`, Status Screen e ativação de produção por flags. Não habilite cobranças reais.
+
 # Workers + OpenNext + D1 + R2 privado
 
 ## Bloqueios observados

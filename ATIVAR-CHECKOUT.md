@@ -1,3 +1,5 @@
+> **Atualização Orders:** a integração HTTP foi migrada para Orders, apenas para sandbox. Siga [ORDERS-SANDBOX.md](ORDERS-SANDBOX.md), que substitui as instruções abaixo sobre Payments, tópico `payment`, Status Screen e ativação de produção por flags. Não habilite cobranças reais.
+
 # Ativar o checkout na página
 
 A integração usa o Payment Brick oficial, sem redirecionamento. O backend mantém pedidos no D1, valida webhooks e libera o PDF do R2 privado somente após aprovação confirmada. O preço é R$ 10,00, em BRL.
