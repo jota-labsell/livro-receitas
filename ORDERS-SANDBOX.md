@@ -1,3 +1,5 @@
+> **Preparação de produção:** consulte [PRODUCAO-META.md](PRODUCAO-META.md). Aplique a migration 0002 antes de publicar esta versão, inclusive em sandbox. O deploy padrão não ativa vendas reais; a produção usa comando separado e credenciais correspondentes. As instruções históricas abaixo sobre bloqueio absoluto de produção são substituídas por esse guia.
+
 # Checkout Orders — validação antes da ativação
 
 O fluxo HTTP do site agora usa `POST /v1/orders`, `GET /v1/orders/{id}` e busca por referência em `GET /v1/orders`. O Payment Brick coleta os dados; o servidor define R$ 10,00/BRL e cria a cobrança. Orders pendentes mostram o Pix copia e cola retornado pelo servidor, quando disponível; não passam um ID de Order ao Status Screen legado.

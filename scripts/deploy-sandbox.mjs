@@ -18,4 +18,7 @@ await mkdir('.wrangler',{recursive:true});
 const target = path.resolve('.wrangler/sandbox.deploy.json');
 await writeFile(target,JSON.stringify(config,null,2)+'\n');
 console.log('Publicação de sandbox: Orders em modo de teste. Cobranças de produção bloqueadas. Os secrets devem estar no Worker.');
+if (!args.includes('--dry-run')) {
+  runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT environment FROM orders LIMIT 0"],{stdio:'inherit'});
+}
 runLocalCli('wrangler','wrangler',['deploy','--config',target,...args],{stdio:'inherit',env:{...process.env,WRANGLER_SEND_METRICS:'false',XDG_CONFIG_HOME:process.env.XDG_CONFIG_HOME || path.resolve('work/cloudflare-config'),WRANGLER_LOG_PATH:process.env.WRANGLER_LOG_PATH || path.resolve('work/wrangler-logs')}});

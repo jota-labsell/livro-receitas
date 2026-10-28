@@ -1,7 +1,7 @@
-import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, type CommerceEnv } from './commerce';
+import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, orderEnvironment, type CommerceEnv } from './commerce';
 import { PRODUCT_CONFIG as PRODUCT } from './product.config';
 
-type LocalOrder = { id: string; product_id: string; amount_cents: number; currency: string; active_attempt: string | null; status: string };
+type LocalOrder = { environment: string; id: string; product_id: string; amount_cents: number; currency: string; active_attempt: string | null; status: string };
 type Attempt = { id: string; order_id: string; payment_id: string | null; created_at: number };
 export type ProviderOrder = {
   id: string; type: string; external_reference: string; user_id: string;
@@ -10,11 +10,10 @@ export type ProviderOrder = {
   transactions?: { payments?: { id: string; amount: string; paid_amount?: string; refunded_amount?: string; status: string; payment_method?: { qr_code?: string; qr_code_base64?: string } }[]; refunds?: unknown[]; chargebacks?: unknown[] };
 };
 const validId = (id: string) => /^[a-zA-Z0-9_-]{1,100}$/.test(id);
-function scope(env: CommerceEnv) {
+function scope(env: CommerceEnv): Record<string, string> {
   requireReady(env);
-  // Explicit test scope; production requires a separate release after official validation.
-  if (env.MERCADOPAGO_MODE !== 'sandbox') throw new CommerceError(503, 'O pagamento está temporariamente indisponível.');
-  return { 'X-Test-Scope': 'sandbox' };
+  // Test requests carry the test header; explicitly enabled production must not.
+  return env.MERCADOPAGO_MODE === 'sandbox' ? { 'X-Test-Scope': 'sandbox' } : {};
 }
 async function get(env: CommerceEnv, id: string, fetcher: typeof fetch) {
   if (!validId(id)) throw new CommerceError(400, 'Pedido inválido.');
@@ -24,7 +23,7 @@ async function get(env: CommerceEnv, id: string, fetcher: typeof fetch) {
 }
 export function validateProviderOrder(p: ProviderOrder, a: Attempt, o: LocalOrder, env: CommerceEnv) {
   const payments = p.transactions?.payments;
-  if (!validId(p.id) || p.type !== 'online' || p.external_reference !== a.id ||
+  if (o.environment !== orderEnvironment(env) || !validId(p.id) || p.type !== 'online' || p.external_reference !== a.id ||
       String(p.user_id) !== env.MERCADOPAGO_COLLECTOR_ID || p.currency !== 'BRL' ||
       !/^10(?:\.0{1,2})?$/.test(p.total_amount) || o.amount_cents !== 1000 || o.currency !== 'BRL' ||
       o.product_id !== PRODUCT.id || a.order_id !== o.id || (a.payment_id && a.payment_id !== p.id) ||
@@ -83,6 +82,7 @@ export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, 
 }
 export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, form: unknown, fetcher: typeof fetch = fetch) {
   const headers = scope(env);
+  if (order.environment !== orderEnvironment(env)) throw new CommerceError(409, 'Inicie uma nova compra neste ambiente.');
   const methods = await availableMethods(env,fetcher);
   const data = safePaymentData(form,methods);
   const method = methods.find(m=>m.id === data.payment_method_id)!;

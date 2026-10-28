@@ -38,7 +38,7 @@ before(async () => {
   );
   db = (await mf.getD1Database("ORDERS")) as any;
   env.ORDERS = db;
-  const sql = await readFile("migrations/0001_commerce.sql", "utf8");
+  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8"));
   for (const statement of sql.split(";").filter((s) => s.trim()))
     await db.prepare(statement).run();
 });
@@ -301,12 +301,12 @@ test("provider validation refusal permits a new attempt, while ambiguous failure
 
 // Orders fixtures verify backend logic only, not the official sandbox.
 import { chargeProviderOrder, refreshProviderOrder, reconcileProviderOrder, validateProviderOrder } from '../lib/mercadopago-orders';
-function ordersProvider(initial = 'approved') {
+function ordersProvider(initial = 'approved', mode = 'sandbox') {
   const rows = new Map<string, any>(); let creates = 0; let lost = false;
   const fetcher = async (url: string | URL | Request, init?: RequestInit) => {
     const u = new URL(String(url));
     if (u.pathname === '/v1/payment_methods') return Response.json([{id:'visa',payment_type_id:'credit_card',status:'active'},{id:'pix',payment_type_id:'bank_transfer',status:'active'}]);
-    assert.equal((init?.headers as any)['X-Test-Scope'],'sandbox');
+    assert.equal((init?.headers as any)['X-Test-Scope'],mode === 'sandbox' ? 'sandbox' : undefined);
     if (init?.method === 'POST') {
       assert.equal(u.pathname,'/v1/orders');
       const b = JSON.parse(String(init.body)); const key = (init.headers as any)['X-Idempotency-Key'];
@@ -334,7 +334,7 @@ test('Orders: concurrent submissions persist one provider order and one purchase
 });
 test('Orders: validates account, currency, amount, product, reference and provider ID',()=>{
   const a={id:'attempt',order_id:'local',payment_id:null,created_at:Date.now()};
-  const o={id:'local',product_id:'150-doces-comer-vender',amount_cents:1000,currency:'BRL',active_attempt:a.id,status:'processing'};
+  const o={environment:'sandbox',id:'local',product_id:'150-doces-comer-vender',amount_cents:1000,currency:'BRL',active_attempt:a.id,status:'processing'};
   const p:any={id:'ORD123',type:'online',external_reference:a.id,user_id:'123',currency:'BRL',total_amount:'10.00',total_paid_amount:'10.00',status:'processed',status_detail:'accredited',last_updated_date:new Date().toISOString(),transactions:{payments:[{id:'PAY123',amount:'10.00',status:'processed'}]}};
   assert.equal(validateProviderOrder(p,a,o,env),'approved');
   for(const bad of [{currency:'USD'},{user_id:'456'},{total_amount:'1.00'},{external_reference:'other'},{type:'point'},{last_updated_date:'invalid'},{transactions:{payments:[]}}]) assert.throws(()=>validateProviderOrder({...p,...bad},a,o,env));
@@ -366,10 +366,27 @@ test('Orders: alphanumeric webhook IDs authenticate using lowercase ID in manife
   assert.throws(()=>validateWebhook(new Request(`https://example.com/?data.id=ORDaltered`,{headers:req.headers}),env,Date.now(),true));
 });
 
- test('Orders: rejected attempts allow retry and production remains blocked', async()=>{
+ test('Orders: rejected attempts allow retry and reject cross-environment orders', async()=>{
    const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider('rejected');
    assert.equal((await chargeProviderOrder(env,local,form,p.fetcher)).status,'rejected');
    const stored=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
    assert.equal((await chargeProviderOrder(env,stored,form,p.fetcher)).status,'rejected');assert.equal(p.creates,2);
    await assert.rejects(chargeProviderOrder({...env,MERCADOPAGO_MODE:'production',LIVE_PAYMENTS_ENABLED:'true'},stored,form,p.fetcher));
  });
+
+test('Orders: production requires explicit flags and creates isolated orders without test scope',async()=>{
+  const access=newAccess(), visit=randomUUID();
+  const sandbox=await ensureOrder(env,access,visit);
+  const production={...env,MERCADOPAGO_MODE:'production',LIVE_PAYMENTS_ENABLED:'true'};
+  assert.equal(await findOrder(production,access),null);
+  const real=await ensureOrder(production,access,visit);
+  assert.notEqual(real.id,sandbox.id);assert.equal(real.environment,'production');
+  assert.equal((await findOrder(env,access))?.id,sandbox.id);
+  const p=ordersProvider('approved','production');
+  await assert.rejects(chargeProviderOrder({...production,LIVE_PAYMENTS_ENABLED:'false'},real,form,p.fetcher));
+  assert.equal(p.creates,0);
+  const result=await chargeProviderOrder(production,real,form,p.fetcher);
+  assert.equal(result.status,'approved');assert.equal(p.creates,1);
+  const provider=[...p.rows.values()][0];
+  await assert.rejects(reconcileProviderOrder(env,provider));
+});

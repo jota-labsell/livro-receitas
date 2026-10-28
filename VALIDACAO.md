@@ -1,3 +1,12 @@
+## Preparação de produção e Meta
+
+- 16 testes de backend aprovados, incluindo separação de pedidos por ambiente, ativação explícita e ausência de X-Test-Scope em produção.
+- Build OpenNext/Worker aprovado após atualização transitiva de glob.
+- npm audit: zero vulnerabilidades reportadas nesta instalação.
+- Simulação do deploy de produção aprovada; não houve deploy real nem cobrança de produção nesta entrega.
+- Migration 0002 deve ser aplicada antes de publicar. Deploy de sandbox e de produção verificam a coluna no D1 remoto para não publicar contra schema antigo.
+- Credenciais/webhook de produção, compra real de validação, Pixel Meta, orçamento e campanha continuam pendentes.
+
 ## Integração na versão com vídeo funcional
 
 Base: `9cdcf2b` da branch `feat/150-doces-r10`, incluindo MP4 nativo e botão de reprodução manual. Componente da prévia, layout, estilos e mídia preservados sem alterações.

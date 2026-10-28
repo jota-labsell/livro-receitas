@@ -20,7 +20,8 @@
     "test:commerce": "node scripts/test-commerce.mjs",
     "test:ui": "playwright test",
     "cloudflare:deploy:vitrine": "node scripts/deploy-storefront.mjs",
-    "cloudflare:deploy:sandbox": "node scripts/deploy-sandbox.mjs"
+    "cloudflare:deploy:sandbox": "node scripts/deploy-sandbox.mjs",
+    "cloudflare:deploy:production": "node scripts/deploy-production.mjs"
   },
   "repository": {
     "type": "git",
@@ -55,5 +56,10 @@
     "typescript": "^7.0.2",
     "wrangler": "^4.153.0"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "@node-minify/core": {
+      "glob": "10.5.0"
+    }
+  }
 }

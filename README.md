@@ -1,3 +1,5 @@
+> Próxima publicação: aplicar a migration 0002 primeiro. Veja [produção e Meta Ads](PRODUCAO-META.md). O código aceita produção somente com ativação explícita; nenhum pagamento real é habilitado por este commit.
+
 > Integração atual: [Orders em sandbox](ORDERS-SANDBOX.md). Produção permanece bloqueada até validação oficial.
 
 # 150 Doces para Comer e Vender — oferta de R$ 10

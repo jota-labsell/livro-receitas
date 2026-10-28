@@ -18,7 +18,7 @@ export async function GET() {
   };
   try {
     const runtime = env();
-    if (runtime.MERCADOPAGO_MODE !== "sandbox" || !paymentReady(runtime))
+    if (!paymentReady(runtime))
       return unavailable("configuration");
     stage = "ebook";
     if (!(await getEbook())) return unavailable("ebook");

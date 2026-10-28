@@ -30,6 +30,7 @@ export type CommerceEnv = Pick<
 >;
 type Order = {
   id: string;
+  environment: "sandbox" | "production";
   access_hash: string;
   visit_hash: string;
   product_id: string;
@@ -141,11 +142,14 @@ export async function availableMethods(
         m.id === "pix"),
   );
 }
+export const orderEnvironment = (env: CommerceEnv) => env.MERCADOPAGO_MODE === "production" ? "production" : "sandbox";
+const accessHash = (env: CommerceEnv, access: string) =>
+  hash(orderEnvironment(env) === "production" ? `production:${access}` : access);
 export async function findOrder(env: CommerceEnv, access: string | undefined) {
   if (!access || !/^[a-f0-9]{64}$/.test(access)) return null;
   return db(env)
-    .prepare("SELECT * FROM orders WHERE access_hash = ?")
-    .bind(hash(access))
+    .prepare("SELECT * FROM orders WHERE access_hash = ? AND environment = ?")
+    .bind(accessHash(env, access), orderEnvironment(env))
     .first<Order>();
 }
 export async function ensureOrder(
@@ -158,17 +162,18 @@ export async function ensureOrder(
   const now = Date.now();
   await db(env)
     .prepare(
-      "INSERT OR IGNORE INTO orders (id,access_hash,visit_hash,product_id,amount_cents,currency,status,created_at,updated_at) VALUES (?,?,?,?,?,?,'created',?,?)",
+      "INSERT OR IGNORE INTO orders (id,access_hash,visit_hash,product_id,amount_cents,currency,status,created_at,updated_at,environment) VALUES (?,?,?,?,?,?,'created',?,?,?)",
     )
     .bind(
       randomUUID(),
-      hash(access),
+      accessHash(env, access),
       hash(visit),
       PRODUCT.id,
       PRODUCT.amountCents,
       PRODUCT.currency,
       now,
       now,
+      orderEnvironment(env),
     )
     .run();
   return (await findOrder(env, access))!;

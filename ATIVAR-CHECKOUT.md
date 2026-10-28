@@ -1,3 +1,5 @@
+> **Preparação de produção:** consulte [PRODUCAO-META.md](PRODUCAO-META.md). Aplique a migration 0002 antes de publicar esta versão, inclusive em sandbox. O deploy padrão não ativa vendas reais; a produção usa comando separado e credenciais correspondentes. As instruções históricas abaixo sobre bloqueio absoluto de produção são substituídas por esse guia.
+
 > **Atualização Orders:** a integração HTTP foi migrada para Orders, apenas para sandbox. Siga [ORDERS-SANDBOX.md](ORDERS-SANDBOX.md), que substitui as instruções abaixo sobre Payments, tópico `payment`, Status Screen e ativação de produção por flags. Não habilite cobranças reais.
 
 # Ativar o checkout na página
