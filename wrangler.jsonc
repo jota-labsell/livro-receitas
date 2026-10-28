@@ -39,5 +39,6 @@
     "CHECKOUT_ENABLED": "false",
     "MERCADOPAGO_MODE": "sandbox",
     "LIVE_PAYMENTS_ENABLED": "false"
-  }
+  },
+  "keep_vars": true
 }

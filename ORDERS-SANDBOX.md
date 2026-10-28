@@ -50,3 +50,7 @@ O portal público de documentação retornou uma página de erro neste ambiente;
 ## Base visual preservada
 
 Integração aplicada sobre `9cdcf2b`, que inclui o vídeo MP4 nativo dos commits `38f37fb` e `82d8303`. Componente da prévia, layout, estilos e arquivos de mídia permanecem iguais a essa base. As melhorias de carregamento e envio do Brick de `f9ae6cf` também foram preservadas.
+
+## Variáveis cadastradas no painel
+
+`keep_vars: true` preserva variáveis comuns do painel nos próximos deploys. Os valores explícitos de modo sandbox e bloqueio de cobranças reais continuam definidos pelo comando de publicação. Configure as quatro entradas Mercado Pago como Secrets para não depender da preservação de variáveis comuns. Se a Public Key ou o Collector ID já foram removidos por um deploy anterior, cadastre-os novamente no painel; esta opção não recupera valores apagados. Nunca coloque o Access Token em configuração versionada.
