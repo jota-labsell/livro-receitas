@@ -411,7 +411,7 @@ test('Meta consent, approved production receipt and reload deduplication', async
   await page.addInitScript(() => { (window as any).MercadoPago=class {bricks(){return {create:async()=>({unmount:async()=>{}})}}}; });
   await page.goto('/');
   await expect(page.getByRole('button', {name:'Preferências de privacidade'})).toBeVisible();
-   await expect(page.getByRole('complementary')).toHaveCount(0);
+   await expect(page.locator('#ad-measurement-settings')).toHaveCount(0);
   expect(calls).toEqual([]);
   await page.getByRole('button',{name:'Preferências de privacidade'}).click();
    await page.getByRole('button',{name:'Permitir medição',exact:true}).click();
