@@ -371,7 +371,8 @@ p:not(:where(#payment-brick *, #status-screen *)) {
 .checkout-section {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* Clip decoration without letting SDK focus scroll the whole checkout sideways. */
+  overflow: clip;
   background: var(--wash);
   padding: 48px 0 34px;
   scroll-margin-top: 0;
