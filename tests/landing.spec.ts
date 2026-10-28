@@ -397,6 +397,11 @@ for (const status of ["approved", "pending", "rejected"])
 // Meta SDK double checks our event contract; Events Manager delivery is a separate check.
 test('Meta consent, approved production receipt and reload deduplication', async ({ page }) => {
   const calls: any[][] = [];
+  const capiCalls: Array<{ eventId: string; consent: boolean }> = [];
+  await page.route('**/api/meta/purchase', async route => {
+    capiCalls.push(route.request().postDataJSON());
+    await route.fulfill({ json: { sent: true } });
+  });
   await page.exposeFunction('__recordMeta', (...args: any[]) => { calls.push(args); });
   await page.route('https://connect.facebook.net/**', route => route.fulfill({ contentType:'application/javascript', body:'const f=window.fbq;f.callMethod=(...a)=>window.__recordMeta(...a);for(const a of f.queue)f.callMethod(...a);f.queue=[];' }));
   await page.route('**/api/marketing', route => route.fulfill({json:{enabled:true}}));
@@ -415,6 +420,8 @@ test('Meta consent, approved production receipt and reload deduplication', async
   await expect.poll(()=>calls.filter(c=>c[0]==='trackSingle'&&c[2]==='Purchase').length).toBe(1);
   for (const event of ['PageView', 'ViewContent', 'InitiateCheckout'])
     await expect.poll(() => calls.some(c => c[0] === 'trackSingle' && c[2] === event)).toBe(true);
+  await expect.poll(() => capiCalls.length).toBe(1);
+  expect(capiCalls[0]).toEqual({ eventId: purchase.eventId, consent: true });
   const sent=calls.find(c=>c[2]==='Purchase')!;
   expect(sent[1]).toBe('1150409944170993');expect(sent[3].value).toBe(10);expect(sent[3].currency).toBe('BRL');expect(sent[4].eventID).toBe(purchase.eventId);
   expect(JSON.stringify(sent)).not.toMatch(/email|payer|token|card_number|first_name/);
