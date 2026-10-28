@@ -52,8 +52,16 @@ export default function Privacy() {
           avançada automática. Você pode recusar ou alterar sua escolha em
           “Preferências de medição”, no final da página de venda. A compra e a entrega
           funcionam independentemente dessa escolha. Eventos do sandbox não são
-          enviados ao Pixel. Bloqueadores ou restrições do navegador podem impedir
-          a entrega dos eventos; não há API de Conversões configurada nesta versão.
+          enviados ao Pixel. Quando a API de Conversões estiver habilitada no servidor,
+          também poderemos enviar à Meta uma compra confirmada, somente após sua permissão
+          para medição. Nesse caso, o servidor confere o pagamento e envia identificador
+          de evento, identificador aleatório da visita protegido por hash, valor, moeda,
+          produto e, quando disponíveis, informações técnicas do navegador como agente
+          do usuário e identificador _fbp. Não enviamos número do cartão, código de
+          segurança, e-mail ou nome. O evento do servidor usa o mesmo identificador do
+          Pixel para evitar contagem duplicada. Bloqueadores ou restrições do navegador
+          podem impedir a entrega dos eventos. A API permanece desligada até a ativação
+          explícita no ambiente de produção.
         </p>
         <h2>Serviços e segurança</h2>
         <p>
