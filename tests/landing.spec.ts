@@ -397,6 +397,11 @@ for (const status of ["approved", "pending", "rejected"])
 // Meta SDK double checks our event contract; Events Manager delivery is a separate check.
 test('Meta consent, approved production receipt and reload deduplication', async ({ page }) => {
   const calls: any[][] = [];
+  const capiCalls: Array<{ eventId: string; consent: boolean }> = [];
+  await page.route('**/api/meta/purchase', async route => {
+    capiCalls.push(route.request().postDataJSON());
+    await route.fulfill({ json: { sent: true } });
+  });
   await page.exposeFunction('__recordMeta', (...args: any[]) => { calls.push(args); });
   await page.route('https://connect.facebook.net/**', route => route.fulfill({ contentType:'application/javascript', body:'const f=window.fbq;f.callMethod=(...a)=>window.__recordMeta(...a);for(const a of f.queue)f.callMethod(...a);f.queue=[];' }));
   await page.route('**/api/marketing', route => route.fulfill({json:{enabled:true}}));
@@ -405,14 +410,18 @@ test('Meta consent, approved production receipt and reload deduplication', async
   await page.route('**/api/orders/status', route => route.fulfill({json:{status:'approved',purchase}}));
   await page.addInitScript(() => { (window as any).MercadoPago=class {bricks(){return {create:async()=>({unmount:async()=>{}})}}}; });
   await page.goto('/');
-  await expect(page.getByRole('complementary', {name:'Preferência de medição dos anúncios'})).toBeVisible();
+  await expect(page.getByRole('button', {name:'Preferências de privacidade'})).toBeVisible();
+   await expect(page.locator('#ad-measurement-settings')).toHaveCount(0);
   expect(calls).toEqual([]);
-  await page.getByRole('button',{name:'Permitir',exact:true}).click();
+  await page.getByRole('button',{name:'Preferências de privacidade'}).click();
+   await page.getByRole('button',{name:'Permitir medição',exact:true}).click();
   await page.locator('#checkout').scrollIntoViewIfNeeded();
   await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
   await expect.poll(()=>calls.filter(c=>c[0]==='trackSingle'&&c[2]==='Purchase').length).toBe(1);
   for (const event of ['PageView', 'ViewContent', 'InitiateCheckout'])
     await expect.poll(() => calls.some(c => c[0] === 'trackSingle' && c[2] === event)).toBe(true);
+  await expect.poll(() => capiCalls.length).toBe(1);
+  expect(capiCalls[0]).toEqual({ eventId: purchase.eventId, consent: true });
   const sent=calls.find(c=>c[2]==='Purchase')!;
   expect(sent[1]).toBe('1150409944170993');expect(sent[3].value).toBe(10);expect(sent[3].currency).toBe('BRL');expect(sent[4].eventID).toBe(purchase.eventId);
   expect(JSON.stringify(sent)).not.toMatch(/email|payer|token|card_number|first_name/);
@@ -424,13 +433,14 @@ test('Meta stays disabled in sandbox and can be declined in production', async (
   let scripts=0;await page.route('https://connect.facebook.net/**',route=>{scripts++;return route.fulfill({body:''});});
   await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:false}}));
   await page.goto('/');await page.locator('#checkout').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('complementary',{name:'Preferência de medição dos anúncios'})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Preferências de privacidade'})).toHaveCount(0);
   expect(scripts).toBe(0);
   await page.unroute('**/api/marketing');
   await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:true}}));
-  await page.reload();await page.getByRole('button',{name:'Não permitir',exact:true}).click();
+  await page.reload();await page.getByRole('button',{name:'Preferências de privacidade'}).click();
+   await page.getByRole('button',{name:'Não permitir',exact:true}).click();
   await page.locator('#checkout').scrollIntoViewIfNeeded();
   await page.reload();
-  await expect(page.getByRole('button',{name:'Preferências de medição · desativada'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Preferências de privacidade · medição desativada'})).toBeVisible();
   expect(scripts).toBe(0);
 });

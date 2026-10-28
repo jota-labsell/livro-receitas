@@ -40,6 +40,16 @@ function flush() {
       delivered.add(key);
       if (event.name === "Purchase") { try { localStorage.setItem(storageKey, "sent"); } catch {} }
     }
+    // A second, server-verified copy is sent only after explicit ad consent.
+    // It uses the exact same event_id as the browser Purchase for deduplication.
+    if (event.name === "Purchase") {
+      void fetch("/api/meta/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId: event.id, consent: true }),
+        keepalive: true,
+      }).catch(() => {});
+    }
     pending.delete(key);
   }
 }

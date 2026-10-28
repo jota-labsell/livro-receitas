@@ -127,7 +127,9 @@ export function Checkout() {
           if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
             throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
           }
-          await post("/api/checkout", { visitId: visitId() });
+          let metaConsent = false;
+          try { metaConsent = localStorage.getItem("recipe-ad-measurement") === "allow"; } catch {}
+          await post("/api/checkout", { visitId: visitId(), metaConsent });
           const previous = await post("/api/orders/status");
           if (!cancelled && previous.status !== "created") setResult(previous);
         }
@@ -199,10 +201,20 @@ export function Checkout() {
                 },
                 callbacks: {
                   onReady: () => {},
-                  onError: () =>
-                    setError(
-                      "Confira os dados de pagamento. Se necessário, tente carregar novamente.",
-                    ),
+                  onError: (brickError: unknown) => {
+                    // The provider reports recoverable BIN/card-field validation errors
+                    // while the customer is still typing. They are not a failed charge.
+                    const issue = brickError && typeof brickError === "object"
+                      ? brickError as { type?: unknown; cause?: unknown }
+                      : null;
+                    if (issue?.type === "non_critical") return;
+                    // Never log the full SDK error: it may include payment form details.
+                    const cause = typeof issue?.cause === "string" &&
+                      /^[a-z0-9_]{1,80}$/i.test(issue.cause)
+                      ? issue.cause : "unknown";
+                    console.warn(JSON.stringify({ event: "payment_brick_critical", cause }));
+                    setError("Não foi possível carregar o campo seguro do cartão. Tente recarregar o pagamento ou escolha Pix.");
+                  },
                   onSubmit: async ({ formData }: { formData: unknown }) => {
                     if (sending.current)
                       throw new Error("Pagamento em processamento.");
