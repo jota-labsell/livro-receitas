@@ -52,14 +52,22 @@ GROUP BY o.id, o.status;
 
 ## Meta Ads — configuração ainda pendente
 
-Não há Pixel informado nem acesso ao Gerenciador de Anúncios neste ambiente. A tabela funnel_events não envia conversões à Meta. Não existe campanha publicada por esta entrega.
+O Pixel informado é 1150409944170993 e está integrado pelo navegador, apenas em produção com checkout e cobranças reais habilitados e com permissão de medição do visitante. A tabela funnel_events continua sendo um registro interno separado. Não há API de Conversões configurada nem campanha publicada por esta entrega.
 
 No Gerenciador de Eventos da Meta, selecione a empresa correta, use Conectar dados → Web e crie um Pixel/conjunto de dados. As opções podem variar por conta. Copie o ID numérico e forneça somente esse ID para a integração; não envie token de acesso. Se houver exigência de domínio próprio/verificação de domínio, configure um domínio controlado pelo vendedor.
 
 Depois de integrar, conferir em Testar eventos: PageView/ViewContent na oferta, InitiateCheckout no checkout e Purchase somente para pedidos de PRODUÇÃO confirmados pelo backend. Valor 10.00, moeda BRL, identificador estável do evento para deduplicação. Não enviar nome, e-mail ou dados de pagamento. Definir a preferência de medição e atualizar a política de privacidade conforme a integração realmente ativada. Testes do sandbox não devem alimentar a campanha como compras reais.
 
-Para preparar a campanha faltam ID do Pixel, acesso à conta de anúncios, orçamento diário e criativos. Usar objetivo de Vendas, destino site, evento de compra após validação; público, orçamento e criativos precisam ser definidos pelo anunciante. Nenhum gasto é iniciado automaticamente.
+Para preparar a campanha faltam validação do Pixel no Gerenciador de Eventos, acesso à conta de anúncios, orçamento diário e criativos. Usar objetivo de Vendas, destino site, evento de compra após validação; público, orçamento e criativos precisam ser definidos pelo anunciante. Nenhum gasto é iniciado automaticamente.
 
 ## Dependências
 
 O alerta de quatro vulnerabilidades altas vinha de uma dependência transitiva: glob 10.3.3 no minificador. A dependência foi substituída por glob 10.5.0 dentro da mesma versão principal usando override específico, sem npm audit fix --force e sem trocar Next.js/OpenNext. A auditoria e o build devem ser conferidos após npm ci no computador usado para publicar.
+
+## Pixel 1150409944170993
+
+Eventos: PageView, ViewContent, InitiateCheckout, OfferCTAClick (personalizado) e Purchase. O SDK só carrega após permitir medição. Purchase exige recibo de produção aprovado e confirmado pelo backend. O eventID é derivado do pedido e estável nas consultas. Memória e localStorage evitam reenvio no mesmo navegador; bloqueadores e fechar a página antes da confirmação podem impedir o envio. A contagem interna do D1 independe do Pixel. Não enviar nome, e-mail ou campos de pagamento; autoConfig e correspondência avançada automática não são ativados.
+
+No Gerenciador de Eventos → Pixel 1150409944170993 → Testar eventos, abra o site após publicar em produção, permita a medição e confira os eventos. Purchase deve aparecer após compra real aprovada, value 10 e currency BRL. O sandbox não envia eventos à Meta. Não instale um segundo Purchase pelo Event Setup Tool.
+
+Validação local antes da interrupção do ambiente: 16 testes de backend e seis cenários de Pixel em 360px, 402px e desktop passaram. Foi corrigida uma anotação TypeScript no tratamento da resposta de configuração. O ambiente ficou indisponível antes de executar o build final; executar npm run typecheck, npm run test:commerce, npx playwright test --grep 'Meta ' e npm run cloudflare:build antes de integrar e publicar. Os testes de SDK simulado não comprovam recebimento real pela Meta.

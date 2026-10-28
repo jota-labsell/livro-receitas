@@ -2180,3 +2180,13 @@ footer a:hover {
   .payment-heading h3 { min-width: 0; }
   .payment-heading > span { white-space: nowrap; }
 }
+
+.ad-preference { position: fixed; z-index: 110; right: 16px; bottom: 20px; width: min(390px, calc(100vw - 32px)); padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 6px 28px #26132b26; }
+.ad-preference p { font-size: 12px; line-height: 1.5; }
+.ad-preference a { text-decoration: underline; }
+.ad-preference > div { display: flex; gap: 12px; margin-top: 12px; }
+.ad-preference button { border: 1px solid var(--purple); padding: 8px 12px; border-radius: 7px; background: #fff; color: var(--purple); font-size: 12px; }
+.ad-preference button:first-child { background: var(--purple); color: #fff; }
+.ad-preference-settings { padding: 12px; text-align: center; font-size: 11px; color: var(--muted); }
+.ad-preference-settings button { border: 0; background: transparent; text-decoration: underline; }
+@media(max-width:600px) { .ad-preference { bottom: 88px; } }

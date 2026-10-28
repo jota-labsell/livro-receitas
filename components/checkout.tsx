@@ -1,3 +1,4 @@
+import { metaConfirmedPurchase, type ConfirmedPurchase } from "@/lib/meta-pixel";
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { visitId, track } from "@/lib/analytics";
@@ -24,7 +25,7 @@ type Config = {
   paymentMethods?: Record<string, unknown>;
   mode?: string;
 };
-type Result = { status: string; paymentId?: string | null; pix?: { code: string } };
+type Result = { status: string; paymentId?: string | null; pix?: { code: string }; purchase?: ConfirmedPurchase };
 let sdkPromise: Promise<void> | undefined;
 function loadSdk() {
   if (window.MercadoPago) return Promise.resolve();
@@ -125,6 +126,9 @@ export function Checkout() {
     };
   }, []);
   const status = result?.status;
+  useEffect(() => {
+    if (status === "approved" && result?.purchase) metaConfirmedPurchase(result.purchase);
+  }, [status, result?.purchase]);
   useEffect(() => {
     if (!config?.available || loading) return;
     let disposed = false;

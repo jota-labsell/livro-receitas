@@ -1,3 +1,4 @@
+import { MetaPixel } from "@/components/MetaPixel";
 import { EBOOK_PREVIEW } from "@/lib/ebook-preview";
 import {
   HeroSection,
@@ -27,6 +28,7 @@ export default async function Home() {
       </main>
       <Footer />
       <MobileCTA />
+      <MetaPixel />
     </>
   );
 }
