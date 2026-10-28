@@ -1,9 +1,10 @@
 import { stat, readdir } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
-const compiled = await import(
-  pathToFileURL(path.resolve(".open-next/cloudflare/next-env.mjs")).href
-);
+const compiledFile = path.resolve(".open-next/cloudflare/next-env.mjs");
+try { await stat(compiledFile); }
+catch { throw new Error("Build ausente ou incompleto. Execute npm run cloudflare:build e aguarde terminar sem erro antes de publicar."); }
+const compiled = await import(pathToFileURL(compiledFile).href);
 for (const mode of ["development", "production", "test"]) {
   if (
     Object.keys(compiled[mode] ?? {}).some(

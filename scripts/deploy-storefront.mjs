@@ -1,3 +1,4 @@
+import { runLocalCli } from './local-cli.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -24,7 +25,7 @@ await mkdir('.wrangler', { recursive: true });
 const target = path.resolve('.wrangler/storefront.deploy.json');
 await writeFile(target, JSON.stringify(config, null, 2) + '\n');
 console.log('Publicando somente a vitrine: checkout, cobranças e D1 desativados.');
-execFileSync('npx', ['wrangler', 'deploy', '--config', target, ...args], {
+runLocalCli('wrangler', 'wrangler', ['deploy', '--config', target, ...args], {
   stdio: 'inherit',
   env: {
     ...process.env,

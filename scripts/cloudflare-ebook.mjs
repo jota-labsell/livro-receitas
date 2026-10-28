@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { runLocalCli } from "./local-cli.mjs";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 const remote = process.argv.includes("--remote");
@@ -6,10 +6,9 @@ const manifest = JSON.parse(readFileSync("public/ebook/manifest.json", "utf8"));
 const pdf = readFileSync("private/150-doces.pdf");
 if (createHash("sha256").update(pdf).digest("hex") !== manifest.sha256)
   throw Error("O PDF não corresponde às prévias");
-execFileSync(
-  "npx",
+runLocalCli(
+  "wrangler", "wrangler",
   [
-    "wrangler",
     "r2",
     "object",
     "put",

@@ -1,8 +1,9 @@
+import { runLocalCli } from "./local-cli.mjs";
 import { execFileSync } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import path from "node:path";
-execFileSync("npx", ["opennextjs-cloudflare", "build"], { stdio: "inherit" });
+runLocalCli("@opennextjs/cloudflare", "opennextjs-cloudflare", ["build"], { stdio: "inherit" });
 // OpenNext compiles .env files; keep only explicitly public build variables.
 // All private values must come from runtime Worker secrets, never the bundle.
 const file = path.resolve(".open-next/cloudflare/next-env.mjs");
@@ -18,4 +19,4 @@ console.log(
   "Worker preparado: variáveis privadas removidas do módulo de ambiente gerado.",
 );
 
-execFileSync("node", ["scripts/check-worker-build.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["scripts/check-worker-build.mjs"], { stdio: "inherit" });
