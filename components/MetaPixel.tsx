@@ -14,7 +14,7 @@ export function MetaPixel() {
       let preference: string | null = null;
       try { preference = localStorage.getItem(KEY); } catch {}
       const enabled = typeof config === "object" && config !== null && "enabled" in config && config.enabled === true;
-      setChoice(preference); setActive(enabled); setOpen(enabled && !preference);
+      setChoice(preference); setActive(enabled); setOpen(false);
       configureMetaPixel(enabled, preference === "allow", preference === "deny");
       metaPageView(visitId());
     }).catch(() => configureMetaPixel(false, false));
@@ -27,10 +27,10 @@ export function MetaPixel() {
   }
   if (!active) return null;
   return <>
-    {open && <aside className="ad-preference" aria-label="Preferência de medição dos anúncios">
-      <p>Permitir cookies da Meta para medir nossos anúncios? Sua escolha não interfere na compra. <a href="/privacidade">Privacidade</a></p>
-      <div><button type="button" onClick={() => select("allow")}>Permitir</button><button type="button" onClick={() => select("deny")}>Não permitir</button></div>
+    <div className="ad-preference-settings"><button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-controls="ad-measurement-settings">Preferências de privacidade{choice === "deny" ? " · medição desativada" : ""}</button></div>
+    {open && <aside id="ad-measurement-settings" className="ad-preference" aria-label="Preferências de privacidade e medição de anúncios">
+      <p>Você pode permitir ou recusar a medição de anúncios da Meta. Sua escolha não interfere na compra. <a href="/privacidade">Política de privacidade</a></p>
+      <div><button type="button" onClick={() => select("allow")}>Permitir medição</button><button type="button" onClick={() => select("deny")}>Não permitir</button></div>
     </aside>}
-    <div className="ad-preference-settings"><button type="button" onClick={() => setOpen(true)}>Preferências de medição{choice === "deny" ? " · desativada" : ""}</button></div>
   </>;
 }
