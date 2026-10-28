@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHmac, randomUUID } from "node:crypto";
 import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { sendMetaPurchase } from "../lib/meta-capi";
 import {
   ensureOrder,
   newAccess,
@@ -38,7 +39,7 @@ before(async () => {
   );
   db = (await mf.getD1Database("ORDERS")) as any;
   env.ORDERS = db;
-  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8"));
+  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8")) + (await readFile("migrations/0004_meta_capi.sql", "utf8"));
   for (const statement of sql.split(";").filter((s) => s.trim()))
     await db.prepare(statement).run();
 });
@@ -490,4 +491,36 @@ test('JotaFy records production Pix and approval once, without sandbox events', 
  await reconcileProviderOrder(production,row); await reconcileProviderOrder(production,row);
  const events=await db.prepare('SELECT kind,COUNT(*) AS n FROM jotafy_events WHERE order_id=? GROUP BY kind').bind(local.id).all<any>();
  assert.deepEqual(events.results.map(e=>[e.kind,e.n]).sort(),[['approved',1],['pix_generated',1]]);
+});
+
+
+test("Meta CAPI sends only opted-in, verified production purchases once", async () => {
+  const production = { ...env, MERCADOPAGO_MODE: "production", LIVE_PAYMENTS_ENABLED: "true",
+    META_CAPI_ENABLED: "true", META_CAPI_ACCESS_TOKEN: "TEST-only-meta-token" };
+  const order = await ensureOrder(production, newAccess(), randomUUID());
+  const eventId = hash(`meta-purchase:${order.id}`);
+  await db.prepare("UPDATE orders SET status='approved' WHERE id=?").bind(order.id).run();
+  await db.prepare("INSERT INTO funnel_events(event_key,name,visit_hash,order_id,amount_cents,currency,created_at) VALUES (?,?,?,?,?,?,?)")
+    .bind(`purchase:${order.id}`, "purchase_approved", order.visit_hash, order.id, 1000, "BRL", Date.now()).run();
+  let calls = 0;
+  const provider = (async (url: string | URL | Request, init?: RequestInit) => {
+    calls++;
+    assert.equal(new URL(String(url)).pathname, "/v26.0/1150409944170993/events");
+    const payload = JSON.parse(String(init?.body));
+    assert.equal(payload.data[0].event_id, eventId);
+    assert.equal(payload.data[0].event_name, "Purchase");
+    assert.equal(payload.data[0].custom_data.value, 10);
+    assert.equal(payload.data[0].custom_data.currency, "BRL");
+    assert.equal(payload.data[0].user_data.client_user_agent, "UnitTest");
+    assert.equal(JSON.stringify(payload).includes("TEST-only-meta-token"), false);
+    return Response.json({ events_received: 1 });
+  }) as typeof fetch;
+  assert.equal(await sendMetaPurchase(production, order.id, eventId, "UnitTest", undefined, provider), false);
+  assert.equal(calls, 0);
+  await db.prepare("UPDATE orders SET meta_consent=1 WHERE id=?").bind(order.id).run();
+  assert.equal(await sendMetaPurchase(production, order.id, eventId, "UnitTest", undefined, provider), true);
+  assert.equal(await sendMetaPurchase(production, order.id, eventId, "UnitTest", undefined, provider), false);
+  assert.equal(calls, 1);
+  const row = await db.prepare("SELECT state,attempts FROM meta_purchase_delivery WHERE order_id=?").bind(order.id).first<any>();
+  assert.equal(row.state, "sent"); assert.equal(row.attempts, 1);
 });
