@@ -472,12 +472,11 @@ export function OfferSection() {
     <section className="checkout-section" id="checkout">
       <div className="curve curve-checkout" aria-hidden="true" />
       <div className="wrap">
-        <p className="section-label">CHECKOUT MERCADO PAGO</p>
+        <p className="section-label">ÚLTIMA ETAPA • PAGAMENTO</p>
         <h2>
-          Leve as 150 receitas
-          <br />
-          por <span className="magenta">R$ 10.</span>
+          Finalize sua compra <span className="magenta">com segurança</span>
         </h2>
+        <p className="checkout-intro">Este é o local para pagar e receber suas 150 receitas. Confira o pedido abaixo e escolha o meio de pagamento disponível.</p>
         <div className="order-summary">
           <div>
             <h3>150 Doces para Comer e Vender</h3>
