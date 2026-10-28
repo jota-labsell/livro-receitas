@@ -57,6 +57,7 @@ export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder)
 function result(o: LocalOrder, p?: ProviderOrder) {
   const method = p?.transactions?.payments?.[0]?.payment_method;
   return { status: o.status, paymentId: null, providerOrderId: p?.id || null,
+    ...(o.environment === "production" && o.status === "approved" && p ? { purchase: { eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: "BRL" } } : {}),
     ...(o.status === 'pending' && method?.qr_code ? { pix: { code: method.qr_code } } : {}) };
 }
 export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, fetcher: typeof fetch = fetch) {

@@ -37,10 +37,23 @@ export default function Privacy() {
           Medimos visualização da oferta, clique no botão, início do checkout e
           compra confirmada. Os eventos usam um identificador aleatório da
           visita, transformado no servidor. Não contêm nome, e-mail ou dados de
-          pagamento e não são enviados a plataformas de publicidade nesta
-          implementação. O identificador da visita fica no armazenamento da
+          pagamento. Esses registros internos são mantidos no D1. O identificador da visita fica no armazenamento da
           sessão do navegador. A compra é registrada somente pelo backend após
           validação.
+        </p>
+        <h2>Medição de anúncios da Meta</h2>
+        <p>
+          Em produção, se você permitir a medição, usamos o Pixel da Meta para
+          registrar visitas, visualização do produto, início do checkout e compras
+          confirmadas. Enviamos produto, valor, moeda e um identificador do evento;
+          não enviamos nome, e-mail, número de cartão ou dados preenchidos no checkout.
+          A Meta também recebe informações técnicas do navegador e pode usar cookies
+          conforme sua própria política de privacidade. Não usamos correspondência
+          avançada automática. Você pode recusar ou alterar sua escolha em
+          “Preferências de medição”, no final da página de venda. A compra e a entrega
+          funcionam independentemente dessa escolha. Eventos do sandbox não são
+          enviados ao Pixel. Bloqueadores ou restrições do navegador podem impedir
+          a entrega dos eventos; não há API de Conversões configurada nesta versão.
         </p>
         <h2>Serviços e segurança</h2>
         <p>

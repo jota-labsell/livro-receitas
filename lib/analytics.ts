@@ -1,4 +1,5 @@
 "use client";
+import { metaFunnel } from "./meta-pixel";
 export function visitId() {
   try {
     let id = sessionStorage.getItem("recipe-visit");
@@ -12,6 +13,7 @@ export function visitId() {
   }
 }
 export function track(name: "offer_view" | "cta_click" | "checkout_start") {
+  metaFunnel(name, visitId());
   const payload = JSON.stringify({
     name,
     visitId: visitId(),

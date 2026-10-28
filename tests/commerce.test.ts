@@ -328,7 +328,7 @@ function ordersProvider(initial = 'approved', mode = 'sandbox') {
 test('Orders: concurrent submissions persist one provider order and one purchase event',async()=>{
   const local = await ensureOrder(env,newAccess(),randomUUID()), p=ordersProvider();
   const r=await Promise.all([chargeProviderOrder(env,local,form,p.fetcher),chargeProviderOrder(env,local,form,p.fetcher)]);
-  assert.ok(r.every(x=>x.status==='approved'));assert.equal(p.creates,1);
+  assert.ok(r.every(x=>x.status==='approved'));assert.ok(r.every(x=>!x.purchase));assert.equal(p.creates,1);
   const events=await db.prepare("SELECT COUNT(*) AS count FROM funnel_events WHERE order_id=? AND name='purchase_approved'").bind(local.id).first<any>();assert.equal(events.count,1);
   const refreshed=await refreshProviderOrder(env,(await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>())!,p.fetcher);assert.equal(refreshed.status,'approved');
 });
@@ -386,7 +386,10 @@ test('Orders: production requires explicit flags and creates isolated orders wit
   await assert.rejects(chargeProviderOrder({...production,LIVE_PAYMENTS_ENABLED:'false'},real,form,p.fetcher));
   assert.equal(p.creates,0);
   const result=await chargeProviderOrder(production,real,form,p.fetcher);
-  assert.equal(result.status,'approved');assert.equal(p.creates,1);
+  assert.equal(result.status,'approved');assert.equal(p.creates,1);assert.equal(result.purchase?.eventId,hash(`meta-purchase:${real.id}`));
+  assert.equal(result.purchase?.value,10);assert.equal(result.purchase?.currency,'BRL');
+  const storedReal=await findOrder(production,access);
+  assert.equal((await refreshProviderOrder(production,storedReal!,p.fetcher)).purchase?.eventId,result.purchase?.eventId);
   const provider=[...p.rows.values()][0];
   await assert.rejects(reconcileProviderOrder(env,provider));
 });

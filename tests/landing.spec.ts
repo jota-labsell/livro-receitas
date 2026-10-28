@@ -308,3 +308,43 @@ for (const status of ["approved", "pending", "rejected"])
       ).toBeVisible();
     expect(submissions).toBe(1);
   });
+
+
+// Meta SDK double checks our event contract; Events Manager delivery is a separate check.
+test('Meta consent, approved production receipt and reload deduplication', async ({ page }) => {
+  const calls: any[][] = [];
+  await page.exposeFunction('__recordMeta', (...args: any[]) => { calls.push(args); });
+  await page.route('https://connect.facebook.net/**', route => route.fulfill({ contentType:'application/javascript', body:'const f=window.fbq;f.callMethod=(...a)=>window.__recordMeta(...a);for(const a of f.queue)f.callMethod(...a);f.queue=[];' }));
+  await page.route('**/api/marketing', route => route.fulfill({json:{enabled:true}}));
+  await page.route('**/api/checkout', route => route.fulfill({json:route.request().method()==='GET'?{available:true,publicKey:'TEST',amount:10,paymentMethods:{creditCard:'all'},mode:'production'}:{ready:true}}));
+  const purchase={eventId:'a'.repeat(64),value:10,currency:'BRL'};
+  await page.route('**/api/orders/status', route => route.fulfill({json:{status:'approved',purchase}}));
+  await page.addInitScript(() => { (window as any).MercadoPago=class {bricks(){return {create:async()=>({unmount:async()=>{}})}}}; });
+  await page.goto('/');
+  await expect(page.getByRole('complementary', {name:'Preferência de medição dos anúncios'})).toBeVisible();
+  expect(calls).toEqual([]);
+  await page.getByRole('button',{name:'Permitir',exact:true}).click();
+  await page.locator('#checkout').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
+  await expect.poll(()=>calls.filter(c=>c[0]==='trackSingle'&&c[2]==='Purchase').length).toBe(1);
+  const sent=calls.find(c=>c[2]==='Purchase')!;
+  expect(sent[1]).toBe('1150409944170993');expect(sent[3].value).toBe(10);expect(sent[3].currency).toBe('BRL');expect(sent[4].eventID).toBe(purchase.eventId);
+  expect(JSON.stringify(sent)).not.toMatch(/email|payer|token|card_number|first_name/);
+  await page.reload();await page.locator('#checkout').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
+  expect(calls.filter(c=>c[2]==='Purchase').length).toBe(1);
+});
+test('Meta stays disabled in sandbox and can be declined in production', async ({ page }) => {
+  let scripts=0;await page.route('https://connect.facebook.net/**',route=>{scripts++;return route.fulfill({body:''});});
+  await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:false}}));
+  await page.goto('/');await page.locator('#checkout').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('complementary',{name:'Preferência de medição dos anúncios'})).toHaveCount(0);
+  expect(scripts).toBe(0);
+  await page.unroute('**/api/marketing');
+  await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:true}}));
+  await page.reload();await page.getByRole('button',{name:'Não permitir',exact:true}).click();
+  await page.locator('#checkout').scrollIntoViewIfNeeded();
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Preferências de medição · desativada'})).toBeVisible();
+  expect(scripts).toBe(0);
+});
