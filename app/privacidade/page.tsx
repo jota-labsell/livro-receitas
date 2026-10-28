@@ -50,7 +50,7 @@ export default function Privacy() {
           A Meta também recebe informações técnicas do navegador e pode usar cookies
           conforme sua própria política de privacidade. Não usamos correspondência
           avançada automática. Você pode recusar ou alterar sua escolha em
-          “Preferências de medição”, no final da página de venda. A compra e a entrega
+          “Preferências de privacidade”, no final da página de venda. A compra e a entrega
           funcionam independentemente dessa escolha. Eventos do sandbox não são
           enviados ao Pixel. Quando a API de Conversões estiver habilitada no servidor,
           também poderemos enviar à Meta uma compra confirmada, somente após sua permissão
