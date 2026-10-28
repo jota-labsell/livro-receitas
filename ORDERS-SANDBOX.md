@@ -21,7 +21,7 @@ Webhook de teste: evento **Order (Mercado Pago)**, tópico `order`, destino `/ap
 
 ## Publicação do sandbox
 
-Use a branch `fix/checkout-activation-gif` com esta entrega, build `npm run cloudflare:build` e deploy `npm run cloudflare:deploy:sandbox`. O comando `cloudflare:deploy:vitrine` omite D1 e desativa pagamentos; não serve para testar o checkout.
+Use a branch `feat/150-doces-r10` com esta entrega, build `npm run cloudflare:build` e deploy `npm run cloudflare:deploy:sandbox`. O comando `cloudflare:deploy:vitrine` omite D1 e desativa pagamentos; não serve para testar o checkout.
 
 Depois de confirmar os secrets e bindings, publique com o comando acima. Ele gera uma configuração local ignorada pelo Git com checkout de teste habilitado, origem HTTPS definida e cobranças reais desativadas. O `wrangler.jsonc` padrão continua desativado. Para conferir sem publicar: `npm run cloudflare:deploy:sandbox -- --dry-run`. Confira `GET /api/checkout`: `available:true` exige que o PDF esteja acessível e que a conta retorne meios de pagamento ativos. Não publique o token em logs ou capturas.
 
@@ -46,3 +46,7 @@ SDK Node.js oficial do Mercado Pago (tipos e endpoints Orders):
 - https://github.com/mercadopago/sdk-nodejs/blob/master/src/clients/order/search/index.ts
 
 O portal público de documentação retornou uma página de erro neste ambiente; as particularidades de sandbox, os estados e a compatibilidade do Brick ainda precisam ser conferidos no teste oficial.
+
+## Base visual preservada
+
+Integração aplicada sobre `9cdcf2b`, que inclui o vídeo MP4 nativo dos commits `38f37fb` e `82d8303`. Componente da prévia, layout, estilos e arquivos de mídia permanecem iguais a essa base. As melhorias de carregamento e envio do Brick de `f9ae6cf` também foram preservadas.

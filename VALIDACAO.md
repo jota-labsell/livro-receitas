@@ -1,3 +1,12 @@
+## Integração na versão com vídeo funcional
+
+Base: `9cdcf2b` da branch `feat/150-doces-r10`, incluindo MP4 nativo e botão de reprodução manual. Componente da prévia, layout, estilos e mídia preservados sem alterações.
+
+- 15 testes de backend aprovados.
+- 18 cenários de interface aprovados em 360px, 402px e desktop, incluindo avanço real do vídeo, pausa, retomada, fallback GIF e estados do checkout.
+- Outros três cenários de bloqueio de autoplay aprovados após corrigir o teste para impedir que o autoplay nativo antecipasse o clique simulado. Nenhuma alteração no componente de vídeo foi necessária.
+- Credenciais e sandbox oficial continuam pendentes de validação no Worker.
+
 ## Atualização Orders
 
 - 15 testes de backend passaram, incluindo seis cenários de Orders com dados simulados.

@@ -6,7 +6,7 @@ test("requested purchase sequence, real testimonials, premium benefits and check
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Receba 150 receitas, dos clássicos aos doces virais do TikTok e Instagram, para fazer e vender!",
+    /Descubra.*150 receitas de doces.*Instagram.*TikTok.*renda extra!/s,
   );
   expect(
     await page
@@ -20,14 +20,14 @@ test("requested purchase sequence, real testimonials, premium benefits and check
     "checkout",
     "por-dentro",
   ]);
-  await expect(page.locator("#oferta h1 + .product-demo")).toBeVisible();
+  await expect(page.locator("#oferta .product-demo")).toBeVisible();
   await expect(page.locator("#oferta .instagram-proof")).toHaveCount(0);
-  await expect(page.locator("#beneficios .premium-list article")).toHaveCount(
-    4,
+  await expect(page.locator("#beneficios .delivery-checklist li")).toHaveCount(
+    6,
   );
   await expect(page.locator("#beneficios")).toContainText("renda extra");
   await expect(page.locator("#beneficios")).toContainText(
-    "Acesso direto pelo celular",
+    "consultar no celular ou computador",
   );
   await expect(page.locator("#garantia")).toContainText("7 dias de garantia");
   await expect(page.locator("#garantia + #checkout")).toBeVisible();
@@ -165,50 +165,45 @@ test("delivery fails closed and free access is gone", async ({ request }) => {
   ).toBe(403);
   expect((await request.get("/private/150-doces.pdf")).status()).toBe(404);
 });
-test("GIF asset, reduced motion, pause and resume", async ({
-  page,
-  request,
-}) => {
-  const gifRequests: string[] = [];
-  page.on("request", (req) => {
-    if (req.url().includes("/product-video/1027-loop.gif"))
-      gifRequests.push(req.url());
-  });
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("working native MP4 plays, pauses, resumes and has GIF fallback", async ({ page, request }) => {
   await page.goto("/");
-  const image = page.locator(".product-gif");
-  await expect(image).toHaveAttribute("src", "/product-video/poster.webp");
-  await expect(page.locator(".product-demo video")).toHaveCount(0);
-  expect(gifRequests).toEqual([]);
-  await page.keyboard.press("Tab");
-  await expect(
-    page.getByRole("link", { name: "Pular para o conteúdo" }),
-  ).toBeFocused();
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await image.scrollIntoViewIfNeeded();
-  await expect(image).toHaveAttribute("src", "/product-video/1027-loop.gif");
-  await expect
-    .poll(() =>
-      image.evaluate(
-        (img: HTMLImageElement) => img.complete && img.naturalWidth,
-      ),
-    )
-    .toBe(400);
-  const response = await request.get("/product-video/1027-loop.gif");
-  expect(response.headers()["content-type"]).toContain("image/gif");
-  const bytes = await response.body();
-  expect(bytes.subarray(0, 6).toString()).toMatch(/^GIF8[79]a$/);
-  expect(bytes.includes(Buffer.from("NETSCAPE2.0"))).toBe(true);
-  await page.getByRole("button", { name: "Pausar prévia" }).click();
-  await expect(
-    page.getByRole("button", { name: "Reproduzir prévia" }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(image).not.toHaveAttribute(
-    "src",
-    "/product-video/1027-loop.gif",
-  );
-  await page.getByRole("button", { name: "Reproduzir prévia" }).click();
-  await expect(image).toHaveAttribute("src", "/product-video/1027-loop.gif");
+  const video = page.locator(".product-demo video");
+  await expect(video).toHaveAttribute("autoplay", "");
+  await expect(video).toHaveAttribute("loop", "");
+  await expect(video).toHaveAttribute("playsinline", "");
+  await expect(video.locator("source")).toHaveAttribute("src", "/product-video/1027-loop.mp4");
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.muted && v.videoWidth > 0 && !v.paused && v.currentTime > 0)).toBe(true);
+  const start = await video.evaluate((v: HTMLVideoElement) => v.currentTime);
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(start);
+  await page.getByRole("button", { name: "Pausar vídeo", exact: true }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.paused)).toBe(true);
+  await page.getByRole("button", { name: "Reproduzir vídeo", exact: true }).click();
+  await expect.poll(() => video.evaluate((v: HTMLVideoElement) => !v.paused)).toBe(true);
+  const response = await request.get("/product-video/1027-loop.mp4");
+  expect(response.ok()).toBe(true);
+  expect(response.headers()["content-type"]).toContain("video/mp4");
+  await video.dispatchEvent("error");
+  await expect(page.locator(".product-demo img")).toHaveAttribute("src", "/product-video/1027-loop.gif");
+});
+test("blocked autoplay offers manual play", async ({ page }) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/product-video/1027-loop.mp4", async route => { await gate; await route.continue(); });
+  await page.addInitScript(() => {
+    const play = HTMLMediaElement.prototype.play;
+    let blocked = true;
+    HTMLMediaElement.prototype.play = function () {
+      if (blocked) { blocked = false; return Promise.reject(new DOMException("Autoplay blocked", "NotAllowedError")); }
+      return play.call(this);
+    };
+  });
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const play = page.getByRole("button", { name: "▶ Reproduzir prévia", exact: true });
+  await expect(play).toBeVisible();
+  await play.click();
+  release();
+  await expect.poll(() => page.locator(".product-demo video").evaluate((v: HTMLVideoElement) => !v.paused && v.currentTime > 0)).toBe(true);
+  await expect(play).toHaveCount(0);
 });
 // SDK and API doubles below exercise UI states only. They are not Mercado Pago sandbox validation.
 for (const status of ["approved", "pending", "rejected"])
