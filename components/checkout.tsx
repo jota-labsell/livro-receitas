@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { visitId, track } from "@/lib/analytics";
+import { LockKeyhole, ShieldCheck, CheckCircle2 } from "lucide-react";
 type Controller = { unmount: () => Promise<void> };
 type Bricks = {
   create: (
@@ -64,6 +65,7 @@ export function Checkout() {
     [result, setResult] = useState<Result | null>(null),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
+    [brickReady, setBrickReady] = useState(false),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
   const root = useRef<HTMLDivElement>(null),
@@ -87,20 +89,9 @@ export function Checkout() {
   }, []);
   useEffect(() => {
     let cancelled = false;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !seen.current) {
-          seen.current = true;
-          track("checkout_start");
-          void initialize();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 },
-    );
     async function initialize() {
       try {
-        const response = await fetch("/api/checkout");
+        const response = await fetch("/api/checkout", { cache: "no-store" });
         const c = (await response.json()) as Config;
         if (cancelled) return;
         setConfig(c);
@@ -108,9 +99,13 @@ export function Checkout() {
           if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
             throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
           }
+          // Download the official SDK in parallel with the order/session round trips.
+          // This never charges the customer; charging still requires onSubmit.
+          const sdk = loadSdk();
           await post("/api/checkout", { visitId: visitId() });
           const previous = await post("/api/orders/status");
           if (!cancelled && previous.status !== "created") setResult(previous);
+          await sdk;
         }
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
@@ -118,17 +113,28 @@ export function Checkout() {
         if (!cancelled) setLoading(false);
       }
     }
-    if (root.current) observer.observe(root.current);
-    return () => {
-      cancelled = true;
-      observer.disconnect();
-    };
+    void initialize();
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    const node = root.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !seen.current) {
+        seen.current = true;
+        track("checkout_start");
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    observer.observe(node);
+    return () => observer.disconnect();
   }, []);
   const status = result?.status;
   useEffect(() => {
     if (!config?.available || loading) return;
     let disposed = false;
     async function mount() {
+      setBrickReady(false);
       try {
         await loadSdk();
         if (disposed) return;
@@ -154,7 +160,7 @@ export function Checkout() {
             ? {
                 initialization: { paymentId: result!.paymentId },
                 callbacks: {
-                  onReady: () => {},
+                  onReady: () => setBrickReady(true),
                   onError: () =>
                     setError(
                       "Consulte o status abaixo para acompanhar seu pagamento.",
@@ -184,7 +190,7 @@ export function Checkout() {
                   },
                 },
                 callbacks: {
-                  onReady: () => {},
+                  onReady: () => setBrickReady(true),
                   onError: () =>
                     setError(
                       "Confira os dados de pagamento. Se necessário, tente carregar novamente.",
@@ -239,15 +245,22 @@ export function Checkout() {
   };
   return (
     <div className="payment-area" ref={root} aria-busy={busy || loading}>
+      <div className="checkout-secure-banner">
+        <span className="checkout-secure-icon"><LockKeyhole size={22} aria-hidden="true" /></span>
+        <span><strong>Você está na etapa de pagamento</strong><small>Finalize sua compra aqui, com o Mercado Pago.</small></span>
+        <ShieldCheck className="checkout-secure-shield" size={26} aria-hidden="true" />
+      </div>
       <div className="payment-heading">
-        <h3>Conclua sua compra</h3>
+        <h3>Escolha como pagar</h3>
         <span>R$ 10,00</span>
       </div>
-      <p className="checkout-caption">Pagamento único. Sem criar conta.</p>
+      <p className="checkout-caption">Pagamento único de R$ 10,00. Sem assinatura.</p>
+      <div className="checkout-progress"><span className="checkout-progress-done"><CheckCircle2 size={16} aria-hidden="true" /> Pedido</span><span className="checkout-progress-current">2. Pagamento</span><span>3. Download</span></div>
       {loading && (
-        <p className="payment-notice" role="status">
-          Carregando o pagamento…
-        </p>
+        <div className="checkout-loading" role="status" aria-live="polite">
+          <span className="checkout-spinner" aria-hidden="true" />
+          <div><strong>Preparando seu pagamento...</strong><p>Carregando os meios de pagamento disponíveis.</p></div>
+        </div>
       )}
       {!loading && !config?.available && (
         <div className="payment-notice" role="status">
@@ -305,6 +318,12 @@ export function Checkout() {
                   </p>
                 </div>
               )}
+              {(!brickReady && !status) && (
+                <div className="checkout-loading" role="status">
+                  <span className="checkout-spinner" aria-hidden="true" />
+                  <div><strong>Abrindo formulário de pagamento...</strong><p>Você poderá preencher os dados aqui mesmo.</p></div>
+                </div>
+              )}
               <div
                 className={busy ? "brick-blocked" : ""}
                 inert={busy}
@@ -353,6 +372,7 @@ export function Checkout() {
           Carregar pagamento novamente
         </button>
       )}
+      <div className="checkout-trust-footer"><LockKeyhole size={15} aria-hidden="true" /><span>Dados do pagamento tratados pelo Mercado Pago. Acesso ao PDF após aprovação.</span></div>
       <p className="small delivery-note">
         Baixe o PDF nesta página após a confirmação do pagamento. Mantenha este
         navegador para consultar sua compra.
