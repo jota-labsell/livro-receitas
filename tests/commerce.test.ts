@@ -38,7 +38,7 @@ before(async () => {
   );
   db = (await mf.getD1Database("ORDERS")) as any;
   env.ORDERS = db;
-  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8"));
+  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8"));
   for (const statement of sql.split(";").filter((s) => s.trim()))
     await db.prepare(statement).run();
 });
@@ -472,4 +472,22 @@ test('Orders: observed Pix shape remains pending with aligned identity; all 16 v
   [{...p,transactions:{payments:[{...p.transactions.payments[0],amount:'1.00'}]}},a,o],
  ];
  for(const [provider,attempt,order] of bad) assert.throws(()=>validateProviderOrder(provider,attempt,order,env),e=>(e as any).status===409);
+});
+
+test('JotaFy records production Pix and approval once, without sandbox events', async () => {
+ const production={...env,MERCADOPAGO_MODE:'production',LIVE_PAYMENTS_ENABLED:'true'};
+ const local=await ensureOrder(production,newAccess(),randomUUID());
+ const p=ordersProvider('pending','production');
+ await chargeProviderOrder(production,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);
+ const stored=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
+ const a=await db.prepare('SELECT * FROM payment_attempts WHERE id=?').bind(stored.active_attempt).first<any>();
+ const row=[...p.rows.values()][0];
+ // Fixture declares the authoritative provider payment method.
+ row.transactions.payments[0].payment_method.id='pix';
+ await reconcileProviderOrder(production,row);
+ await reconcileProviderOrder(production,row);
+ row.status='processed'; row.status_detail='accredited';row.total_paid_amount='10.00';row.transactions.payments[0].status='processed';row.last_updated_date=new Date(Date.now()+1000).toISOString();
+ await reconcileProviderOrder(production,row); await reconcileProviderOrder(production,row);
+ const events=await db.prepare('SELECT kind,COUNT(*) AS n FROM jotafy_events WHERE order_id=? GROUP BY kind').bind(local.id).all<any>();
+ assert.deepEqual(events.results.map(e=>[e.kind,e.n]).sort(),[['approved',1],['pix_generated',1]]);
 });
