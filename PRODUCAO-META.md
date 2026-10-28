@@ -54,7 +54,7 @@ GROUP BY o.id, o.status;
 
 O Pixel informado é 1150409944170993 e está integrado pelo navegador, apenas em produção com checkout e cobranças reais habilitados e com permissão de medição do visitante. A tabela funnel_events continua sendo um registro interno separado. Não há API de Conversões configurada nem campanha publicada por esta entrega.
 
-No Gerenciador de Eventos da Meta, selecione a empresa correta, use Conectar dados → Web e crie um Pixel/conjunto de dados. As opções podem variar por conta. Copie o ID numérico e forneça somente esse ID para a integração; não envie token de acesso. Se houver exigência de domínio próprio/verificação de domínio, configure um domínio controlado pelo vendedor.
+No Gerenciador de Eventos da Meta, selecione a empresa correta e o Pixel/conjunto de dados existente `1150409944170993`. Não crie outro Pixel para esta validação. Se houver exigência de domínio próprio/verificação de domínio, configure um domínio controlado pelo vendedor. Não envie tokens de acesso pelo chat.
 
 Depois de integrar, conferir em Testar eventos: PageView/ViewContent na oferta, InitiateCheckout no checkout e Purchase somente para pedidos de PRODUÇÃO confirmados pelo backend. Valor 10.00, moeda BRL, identificador estável do evento para deduplicação. Não enviar nome, e-mail ou dados de pagamento. Definir a preferência de medição e atualizar a política de privacidade conforme a integração realmente ativada. Testes do sandbox não devem alimentar a campanha como compras reais.
 

@@ -1,4 +1,4 @@
-> Próxima publicação: aplicar a migration 0002 primeiro. Veja [produção e Meta Ads](PRODUCAO-META.md). O código aceita produção somente com ativação explícita; nenhum pagamento real é habilitado por este commit.
+> Operação: veja [produção e Meta Ads](PRODUCAO-META.md) e [relatório da validação](RELATORIO-PRODUCAO-META.md). Produção exige credenciais e webhook reais, ativação explícita e validação de uma compra autorizada. O build sozinho não comprova vendas reais.
 
 > Integração atual: [Orders em sandbox](ORDERS-SANDBOX.md). Produção permanece bloqueada até validação oficial.
 
@@ -10,11 +10,11 @@ Página de venda com sequência vertical explícita em celular e desktop: **head
 
 Next.js + TypeScript + OpenNext + Cloudflare Workers preservados. Payment Brick e Status Screen oficiais integrados pelo SDK `https://sdk.mercadopago.com/js/v2`. O backend HTTP usa a API de Orders do Mercado Pago em sandbox; consulte [ORDERS-SANDBOX.md](ORDERS-SANDBOX.md). O código de Payments permanece somente como referência de regressão dos testes legados; não há pagamento fictício ou liberação gratuita. O checkout permanece **desabilitado** até configurar infraestrutura e credenciais e testar oficialmente. A interface comunica indisponibilidade sem expor detalhes de implementação ao comprador.
 
-O ambiente fornecido não tem credenciais Mercado Pago. A consulta à lista de D1 na Cloudflare retornou erro de autenticação 10000; não foi possível provisionar a base remota. O ID zerado em `wrangler.jsonc` é um marcador explícito para configuração, não uma base existente. A publicação da vitrine pode ser feita independentemente desses bloqueios com `npm run cloudflare:deploy:vitrine`. Esse comando omite o D1 e mantém cobranças e downloads bloqueados. A medição persistida requer o D1 configurado.
+O D1 `receitas-premium-150-orders` está configurado no binding `ORDERS`, ID `e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a`. Em 28/10/2026, o acesso remoto e as migrations 0001/0002 foram confirmados. O R2 `receitas-premium-150-ebooks`, binding `EBOOKS`, permanece privado. Credenciais presentes no Worker não comprovam que sejam de produção: siga a troca segura em PRODUCAO-META.md antes de executar `cloudflare:deploy:production`.
 
 ## Executar e conferir
 
-Node 22+ e Chromium em `/usr/bin/chromium` (ajuste o caminho em `playwright.config.ts` em outra máquina):
+Node 22+ e Chromium em `/usr/bin/chromium` no Linux ou Google Chrome no Windows. Para outro executável, use `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. No PowerShell com scripts desabilitados, use `npm.cmd`. O caminho original validado é `C:\Windows\System32\livro-receitas`, preservando a capitalização de `System32`:
 
 ```sh
 npm ci --cache /tmp/npm-cache
