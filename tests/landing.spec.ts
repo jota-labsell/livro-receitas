@@ -223,7 +223,7 @@ for (const status of ["approved", "pending", "rejected"])
                 title.className = "provider-title-fixture";
                 title.textContent = "Pagamento";
                 const style = document.createElement("style");
-                style.textContent = ".provider-title-fixture { font-size: 20px; letter-spacing: normal; }";
+                style.textContent = ".provider-title-fixture { font-size: 20px; letter-spacing: normal; line-height: 1.6; }";
                 root.appendChild(style);
                 root.appendChild(title);
                 const field = document.createElement("input");
@@ -237,6 +237,7 @@ for (const status of ["approved", "pending", "rejected"])
                     formData: { test: true },
                   });
                 root.appendChild(button);
+                settings.callbacks.onReady();
               } else root.textContent = "Instruções do provedor de teste";
               return {
                 unmount: async () => {
@@ -275,8 +276,10 @@ for (const status of ["approved", "pending", "rejected"])
     expect(await page.evaluate(() => (window as any).__brickVisual.style.customVariables.formPadding)).toBe("0px");
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("font-size", "20px");
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("letter-spacing", "normal");
+    await expect(page.locator(".provider-title-fixture")).toHaveCSS("line-height", "32px");
     const field = await page.getByRole("textbox", { name: "Campo de teste do formulário" }).boundingBox();
     const host = await page.locator("#payment-brick").boundingBox();
+    expect(host!.width).toBeGreaterThanOrEqual(320);
     expect(field!.x).toBeGreaterThanOrEqual(host!.x);
     expect(field!.x + field!.width).toBeLessThanOrEqual(host!.x + host!.width + 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

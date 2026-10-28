@@ -2185,7 +2185,7 @@ footer a:hover {
 .checkout-section { background: linear-gradient(180deg,#faf4fc 0%,#fff 100%); padding: 52px 0 42px; }
 .checkout-section > .wrap { max-width: 890px; }
 .checkout-section .section-label { color: #702691; font-weight: 850; letter-spacing: .11em; }
-.checkout-section h2 { color: #231b30; line-height: 1.15; text-wrap: balance; }
+.checkout-section > .wrap > h2 { color: #231b30; line-height: 1.15; text-wrap: balance; }
 .checkout-intro { color:#504459; font-size: 15px; line-height:1.65; max-width:660px; margin: 13px 0 22px; }
 .checkout-section .order-summary { background:#fff; border:1px solid #e8dce9; border-radius:18px; padding:22px 24px; margin-top:20px; box-shadow:0 8px 30px #421e4910; }
 .checkout-section .payment-area { background:#fff; border:2px solid #d9b8df; border-radius:20px; box-shadow:0 18px 48px #50246019; padding:0 26px 23px; margin-top:17px; }
@@ -2231,3 +2231,25 @@ footer a:hover {
   .checkout-loading { padding:18px 12px; }
 }
 @media(prefers-reduced-motion:reduce) { .checkout-spinner { animation:none; border-top-color:#872c9e; } }
+
+/* Checkout comfort: preserve the provider settings and give fields room to grow. */
+.checkout-section .payment-area { padding-bottom: 28px; }
+.checkout-section .payment-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
+.checkout-section .payment-heading h3 { min-width: 0; }
+.checkout-section .payment-heading > span { white-space: nowrap; }
+.checkout-section .checkout-caption { line-height: 1.65; margin-bottom: 22px; }
+.checkout-progress { column-gap: 12px; row-gap: 8px; padding-block: 15px; margin-bottom: 24px; }
+#payment-brick { margin-top: 8px; }
+.checkout-section .status-button { margin-top: 26px; padding-block: 12px; }
+.checkout-trust-footer { margin-top: 24px; padding: 15px; line-height: 1.65; }
+@media (max-width: 600px) {
+  .checkout-section > .wrap { width: calc(100% - 16px); }
+  .checkout-section .payment-area { padding: 0 10px 24px; }
+  .checkout-secure-banner { margin-inline: -10px; margin-bottom: 24px; padding: 18px 14px; align-items: flex-start; gap: 12px; }
+  .checkout-secure-banner strong { line-height: 1.45; }
+  .checkout-secure-banner small { margin-top: 6px; line-height: 1.55; }
+  .checkout-secure-shield { margin-top: 8px; }
+  .checkout-section .checkout-caption { margin-top: 9px; font-size: 12px; }
+  .checkout-progress { column-gap: 8px; row-gap: 10px; line-height: 1.6; }
+  .checkout-trust-footer { padding: 14px 12px; }
+}
