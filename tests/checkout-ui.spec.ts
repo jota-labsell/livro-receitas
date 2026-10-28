@@ -89,7 +89,7 @@ test("card field non-critical SDK errors do not appear as payment failures", asy
   await page.evaluate(() => (window as any).__brickOnError({ type: "non_critical", cause: "invalid_card_number" }));
   await expect(page.locator(".payment-error")).toHaveCount(0);
   await page.evaluate(() => (window as any).__brickOnError({ type: "critical", cause: "fields_setup_failed" }));
-  await expect(page.getByRole("alert")).toContainText("Não foi possível carregar o campo seguro do cartão");
+  await expect(page.locator(".payment-error")).toContainText("Não foi possível carregar o campo seguro do cartão");
   await expect(page.getByRole("button", { name: "Carregar pagamento novamente" })).toBeVisible();
 });
 
