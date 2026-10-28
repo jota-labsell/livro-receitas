@@ -273,7 +273,7 @@ for (const status of ["approved", "pending", "rejected"])
     await page.goto("/");
     await page.locator(".initial-offer .button").click();
     await expect.poll(() => page.evaluate(() => (window as any).__brickVisual?.defaultPaymentOption?.creditCardForm)).toBe(true);
-    expect(await page.evaluate(() => (window as any).__brickVisual.style.customVariables.formPadding)).toBe("0px");
+    expect(await page.evaluate(() => (window as any).__brickVisual.style.customVariables.formPadding)).toBe("16px");
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("font-size", "20px");
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("letter-spacing", "normal");
     await expect(page.locator(".provider-title-fixture")).toHaveCSS("line-height", "32px");

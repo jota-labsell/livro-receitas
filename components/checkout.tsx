@@ -217,7 +217,7 @@ export function Checkout() {
                         inputHorizontalPadding: "16px",
                         inputBorderWidth: "1px",
                         inputFocusedBorderWidth: "2px",
-                        formPadding: "0px",
+                        formPadding: "16px",
                         fontSizeSmall: "13px",
                         fontSizeMedium: "15px",
                         fontSizeLarge: "17px",

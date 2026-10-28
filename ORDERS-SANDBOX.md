@@ -59,8 +59,10 @@ Integração aplicada sobre `9cdcf2b`, que inclui o vídeo MP4 nativo dos commit
 
 ## Espaço e seleção inicial do Brick
 
-A versão responsiva reduz o espaço acumulado no celular, mantém a altura sob controle do SDK e usa `visual.style.customVariables.formPadding: "0px"`. As regras gerais de títulos e textos da página excluem os nós dos Bricks. `visual.defaultPaymentOption.creditCardForm: true` solicita o cartão de crédito aberto quando disponível; se não houver crédito, seleciona transferência ou débito conforme os métodos retornados.
+A versão responsiva reduz o espaço acumulado no celular, mantém a altura sob controle do SDK e usa `visual.style.customVariables.formPadding: "16px"`. As regras gerais de títulos e textos da página excluem os nós dos Bricks. `visual.defaultPaymentOption.creditCardForm: true` solicita o cartão de crédito aberto quando disponível; se não houver crédito, seleciona transferência ou débito conforme os métodos retornados.
 
 Contrato consultado: https://github.com/mercadopago/sdk-react/blob/main/src/bricks/payment/type.ts e https://github.com/mercadopago/sdk-react/blob/main/src/bricks/util/types/common.ts .
 
 A consulta pública do checkout retornou crédito e débito, sem transferência/Pix. O frontend não deve fabricar a opção de Pix. É necessário conferir a disponibilidade com a conta e credenciais correspondentes no Mercado Pago. Os testes de layout usam um SDK simulado e não substituem a inspeção do Brick real após publicação.
+
+Correção de espaçamento: formPadding permanece em 16px, padrão do SDK. Não zerar para ganhar largura: o SDK deriva dessa variável outros espaçamentos internos e pode deixar as opções de pagamento e o formulário sem respiro. A largura externa continua responsiva.
