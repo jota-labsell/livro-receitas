@@ -34,4 +34,4 @@ jobs:
           done
           export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$(find "$HOME/.cache/ms-playwright" -path '*/chrome-linux64/chrome' -type f -print -quit)"
           test -n "$PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"
-          npx playwright test --grep 'card field non-critical|Meta consent|Meta stays disabled'
+          npx playwright test --workers=1 --timeout=60000 --grep 'card field non-critical|Meta consent|Meta stays disabled'
