@@ -1,8 +1,8 @@
+import { refreshProviderOrder as refreshOrder } from "@/lib/mercadopago-orders";
 import { NextRequest } from "next/server";
 import { env, json, failure, ORDER_COOKIE, sameOrigin } from "@/lib/http";
 import {
   findOrder,
-  refreshOrder,
   requireReady,
   CommerceError,
 } from "@/lib/commerce";

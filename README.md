@@ -1,10 +1,12 @@
+> Integração atual: [Orders em sandbox](ORDERS-SANDBOX.md). Produção permanece bloqueada até validação oficial.
+
 # 150 Doces para Comer e Vender — oferta de R$ 10
 
 Página de venda com sequência vertical explícita em celular e desktop: **headline → GIF do e-book → depoimentos → benefícios → garantia de 7 dias → checkout Mercado Pago → demais detalhes do livro**. Fundo branco, curvas roxas/magenta, oferta de R$ 10 e CTAs para `#checkout`. O material tem 150 receitas, 10 capítulos e 167 páginas em PDF, sem cadastro, assinatura ou produtos adicionais.
 
 ## Estado desta entrega
 
-Next.js + TypeScript + OpenNext + Cloudflare Workers preservados. Payment Brick e Status Screen oficiais integrados pelo SDK `https://sdk.mercadopago.com/js/v2`. O backend usa a Payments API do Mercado Pago; não há pagamento fictício ou liberação gratuita. O checkout permanece **desabilitado** até configurar infraestrutura e credenciais e testar oficialmente. A interface comunica indisponibilidade sem expor detalhes de implementação ao comprador.
+Next.js + TypeScript + OpenNext + Cloudflare Workers preservados. Payment Brick e Status Screen oficiais integrados pelo SDK `https://sdk.mercadopago.com/js/v2`. O backend HTTP usa a API de Orders do Mercado Pago em sandbox; consulte [ORDERS-SANDBOX.md](ORDERS-SANDBOX.md). O código de Payments permanece somente como referência de regressão dos testes legados; não há pagamento fictício ou liberação gratuita. O checkout permanece **desabilitado** até configurar infraestrutura e credenciais e testar oficialmente. A interface comunica indisponibilidade sem expor detalhes de implementação ao comprador.
 
 O ambiente fornecido não tem credenciais Mercado Pago. A consulta à lista de D1 na Cloudflare retornou erro de autenticação 10000; não foi possível provisionar a base remota. O ID zerado em `wrangler.jsonc` é um marcador explícito para configuração, não uma base existente. A publicação da vitrine pode ser feita independentemente desses bloqueios com `npm run cloudflare:deploy:vitrine`. Esse comando omite o D1 e mantém cobranças e downloads bloqueados. A medição persistida requer o D1 configurado.
 

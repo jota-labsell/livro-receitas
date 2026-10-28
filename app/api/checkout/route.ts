@@ -13,7 +13,7 @@ import { getEbook } from "@/lib/ebook";
 export async function GET() {
   try {
     const runtime = env();
-    if (!paymentReady(runtime) || !(await getEbook()))
+    if (runtime.MERCADOPAGO_MODE !== "sandbox" || !paymentReady(runtime) || !(await getEbook()))
       return json({ available: false });
     const methods = await availableMethods(runtime);
     return json({

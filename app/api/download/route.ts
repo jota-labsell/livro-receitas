@@ -1,6 +1,7 @@
+import { refreshProviderOrder as refreshOrder } from "@/lib/mercadopago-orders";
 import { NextRequest } from "next/server";
 import { env, json, failure, ORDER_COOKIE } from "@/lib/http";
-import { findOrder, refreshOrder, CommerceError } from "@/lib/commerce";
+import { findOrder, CommerceError } from "@/lib/commerce";
 import { getEbook, getEbookBody } from "@/lib/ebook";
 export async function GET(req: NextRequest) {
   try {

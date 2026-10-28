@@ -1,7 +1,7 @@
+import { chargeProviderOrder as charge } from "@/lib/mercadopago-orders";
 import { NextRequest } from "next/server";
 import { env, body, sameOrigin, json, failure, ORDER_COOKIE } from "@/lib/http";
 import {
-  charge,
   ensureOrder,
   findOrder,
   newAccess,

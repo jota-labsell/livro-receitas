@@ -260,7 +260,7 @@ for (const status of ["approved", "pending", "rejected"])
     await page.route("**/api/payments", async (route) => {
       submissions++;
       await new Promise((r) => setTimeout(r, 250));
-      await route.fulfill({ json: { status, paymentId: "123" } });
+      await route.fulfill({ json: { status, paymentId: null, providerOrderId: "ORDfixture", ...(status === "pending" ? { pix: { code: "pix-fixture-copy-code" } } : {}) } });
     });
     await page.goto("/");
     await page.locator(".initial-offer .button").click();
@@ -275,6 +275,7 @@ for (const status of ["approved", "pending", "rejected"])
         page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" }),
       ).toBeVisible();
     if (status === "pending") {
+      await expect(page.getByLabel("Pix copia e cola")).toHaveValue("pix-fixture-copy-code");
       await expect(
         page.getByText("Seu pagamento aguarda confirmação."),
       ).toBeVisible();

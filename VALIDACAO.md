@@ -1,3 +1,11 @@
+## Atualização Orders
+
+- 15 testes de backend passaram, incluindo seis cenários de Orders com dados simulados.
+- 18 testes de interface passaram em 360px, 402px e desktop; os nove cenários de checkout foram repetidos após incluir Pix copia e cola e IDs de Orders.
+- Credenciais do Mercado Pago não disponíveis no executor: sandbox oficial, webhook real e entrega remota ainda pendentes.
+- Produção bloqueada no adaptador. Publicação de teste preparada por `cloudflare:deploy:sandbox`.
+- Fluxo e instruções atuais em ORDERS-SANDBOX.md; as referências legadas abaixo não comprovam a nova integração no provedor.
+
 # Validação da página de venda
 
 ## Sequência atual
