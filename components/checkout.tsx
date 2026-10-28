@@ -166,9 +166,20 @@ export function Checkout() {
                 customization: {
                   paymentMethods: config!.paymentMethods,
                   visual: {
+                    defaultPaymentOption: config!.paymentMethods?.creditCard
+                      ? { creditCardForm: true }
+                      : config!.paymentMethods?.bankTransfer
+                        ? { bankTransferForm: true }
+                        : { debitCardForm: true },
                     style: {
                       theme: "default",
-                      customVariables: { baseColor: "#c81f8b" },
+                      customVariables: {
+                        baseColor: "#c81f8b",
+                        formPadding: "0px",
+                        fontSizeMedium: "16px",
+                        fontSizeLarge: "18px",
+                        fontSizeExtraLarge: "20px",
+                      },
                     },
                   },
                 },

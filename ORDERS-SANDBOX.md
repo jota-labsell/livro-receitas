@@ -54,3 +54,11 @@ Integração aplicada sobre `9cdcf2b`, que inclui o vídeo MP4 nativo dos commit
 ## Variáveis cadastradas no painel
 
 `keep_vars: true` preserva variáveis comuns do painel nos próximos deploys. Os valores explícitos de modo sandbox e bloqueio de cobranças reais continuam definidos pelo comando de publicação. Configure as quatro entradas Mercado Pago como Secrets para não depender da preservação de variáveis comuns. Se a Public Key ou o Collector ID já foram removidos por um deploy anterior, cadastre-os novamente no painel; esta opção não recupera valores apagados. Nunca coloque o Access Token em configuração versionada.
+
+## Espaço e seleção inicial do Brick
+
+A versão responsiva reduz o espaço acumulado no celular, mantém a altura sob controle do SDK e usa `visual.style.customVariables.formPadding: "0px"`. As regras gerais de títulos e textos da página excluem os nós dos Bricks. `visual.defaultPaymentOption.creditCardForm: true` solicita o cartão de crédito aberto quando disponível; se não houver crédito, seleciona transferência ou débito conforme os métodos retornados.
+
+Contrato consultado: https://github.com/mercadopago/sdk-react/blob/main/src/bricks/payment/type.ts e https://github.com/mercadopago/sdk-react/blob/main/src/bricks/util/types/common.ts .
+
+A consulta pública do checkout retornou crédito e débito, sem transferência/Pix. O frontend não deve fabricar a opção de Pix. É necessário conferir a disponibilidade com a conta e credenciais correspondentes no Mercado Pago. Os testes de layout usam um SDK simulado e não substituem a inspeção do Brick real após publicação.

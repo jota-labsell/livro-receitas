@@ -50,28 +50,28 @@ summary:focus-visible {
   outline: 3px solid var(--purple);
   outline-offset: 5px;
 }
-h1,
-h2,
-h3,
-p,
-figure {
+h1:not(:where(#payment-brick *, #status-screen *)),
+h2:not(:where(#payment-brick *, #status-screen *)),
+h3:not(:where(#payment-brick *, #status-screen *)),
+p:not(:where(#payment-brick *, #status-screen *)),
+figure:not(:where(#payment-brick *, #status-screen *)) {
   margin: 0;
 }
-h1,
-h2 {
+h1:not(:where(#payment-brick *, #status-screen *)),
+h2:not(:where(#payment-brick *, #status-screen *)) {
   font-weight: 600;
   letter-spacing: -1.7px;
 }
-h2 {
+h2:not(:where(#payment-brick *, #status-screen *)) {
   font-size: clamp(30px, 4vw, 46px);
   line-height: 1.14;
 }
-h3 {
+h3:not(:where(#payment-brick *, #status-screen *)) {
   font-size: 17px;
   line-height: 1.4;
   font-weight: 700;
 }
-p {
+p:not(:where(#payment-brick *, #status-screen *)) {
   line-height: 1.6;
 }
 .wrap {
@@ -829,7 +829,7 @@ footer a:hover {
   .checkout-section {
     padding: 35px 0 24px;
   }
-  .checkout-section h2 {
+  .checkout-section > .wrap > h2 {
     font-size: 32px;
   }
   .curve-checkout {
@@ -2152,3 +2152,31 @@ footer a:hover {
   box-shadow: 0 8px 22px #22062666; cursor: pointer;
 }
 .preview-play-overlay:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* Give the official Brick the full available width; it manages its own height. */
+.payment-area,
+#payment-brick,
+#status-screen {
+  min-width: 0;
+  max-width: 100%;
+}
+#payment-brick,
+#status-screen {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+#payment-brick > iframe,
+#status-screen > iframe {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 0;
+}
+@media (max-width: 600px) {
+  .checkout-section > .wrap { width: calc(100% - 24px); }
+  .payment-area { padding: 20px 12px; }
+  .payment-heading { align-items: baseline; flex-wrap: wrap; }
+  .payment-heading h3 { min-width: 0; }
+  .payment-heading > span { white-space: nowrap; }
+}

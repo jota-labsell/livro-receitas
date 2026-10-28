@@ -218,6 +218,18 @@ for (const status of ["approved", "pending", "rejected"])
             create: async (type: string, id: string, settings: any) => {
               const root = document.getElementById(id)!;
               if (type === "payment") {
+                (window as any).__brickVisual = settings.customization.visual;
+                const title = document.createElement("h2");
+                title.className = "provider-title-fixture";
+                title.textContent = "Pagamento";
+                const style = document.createElement("style");
+                style.textContent = ".provider-title-fixture { font-size: 20px; letter-spacing: normal; }";
+                root.appendChild(style);
+                root.appendChild(title);
+                const field = document.createElement("input");
+                field.setAttribute("aria-label", "Campo de teste do formulário");
+                field.style.width = "100%";
+                root.appendChild(field);
                 const button = document.createElement("button");
                 button.textContent = "Pagar no teste de interface";
                 button.onclick = () =>
@@ -259,6 +271,15 @@ for (const status of ["approved", "pending", "rejected"])
     });
     await page.goto("/");
     await page.locator(".initial-offer .button").click();
+    await expect.poll(() => page.evaluate(() => (window as any).__brickVisual?.defaultPaymentOption?.creditCardForm)).toBe(true);
+    expect(await page.evaluate(() => (window as any).__brickVisual.style.customVariables.formPadding)).toBe("0px");
+    await expect(page.locator(".provider-title-fixture")).toHaveCSS("font-size", "20px");
+    await expect(page.locator(".provider-title-fixture")).toHaveCSS("letter-spacing", "normal");
+    const field = await page.getByRole("textbox", { name: "Campo de teste do formulário" }).boundingBox();
+    const host = await page.locator("#payment-brick").boundingBox();
+    expect(field!.x).toBeGreaterThanOrEqual(host!.x);
+    expect(field!.x + field!.width).toBeLessThanOrEqual(host!.x + host!.width + 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page
       .getByRole("button", { name: "Pagar no teste de interface" })
       .click();
