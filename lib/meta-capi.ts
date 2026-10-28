@@ -22,7 +22,7 @@ export async function sendMetaPurchase(
       !env.ORDERS || !env.SITE_URL?.startsWith("https://")) return false;
   const db = env.ORDERS;
   const approved = await db.prepare(
-    "SELECT f.created_at, o.visit_hash, o.amount_cents, o.currency FROM orders o JOIN funnel_events f ON f.order_id=o.id AND f.name='purchase_approved' WHERE o.id=? AND o.status='approved' AND o.environment='production' AND o.amount_cents=1000 AND o.currency='BRL'"
+    "SELECT f.created_at, o.visit_hash, o.amount_cents, o.currency FROM orders o JOIN funnel_events f ON f.order_id=o.id AND f.name='purchase_approved' WHERE o.id=? AND o.status='approved' AND o.environment='production' AND o.meta_consent=1 AND o.amount_cents=1000 AND o.currency='BRL'"
   ).bind(orderId).first<ApprovedEvent>();
   if (!approved || eventId !== sha256(`meta-purchase:${orderId}`)) return false;
   const now = Date.now();
