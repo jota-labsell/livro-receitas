@@ -1,3 +1,5 @@
+> Versao 2.0: veja [a entrega, o APK de previa e a configuracao Firebase](UPGRADE-2.0.md). As instrucoes abaixo registram a versao inicial 1.0.
+
 # JotaFy — monitor Android de vendas
 
 Primeira versão nativa Android 8+, sem credenciais de Mercado Pago no APK.

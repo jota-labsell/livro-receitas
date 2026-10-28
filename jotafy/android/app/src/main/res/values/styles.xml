@@ -1,0 +1,13 @@
+<resources>
+ <style name="JotaFyTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+  <item name="android:fontFamily">sans</item>
+  <item name="android:colorAccent">#276454</item>
+  <item name="android:windowLightStatusBar">true</item>
+
+  <item name="android:windowActionModeOverlay">true</item>
+  <item name="android:windowBackground">#F3F6F1</item>
+  <item name="android:statusBarColor">#F3F6F1</item>
+  <item name="android:navigationBarColor">#102D2C</item>
+ </style>
+ <color name="launcher_background">#102D2C</color>
+</resources>
