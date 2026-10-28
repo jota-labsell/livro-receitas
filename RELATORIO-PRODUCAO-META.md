@@ -1,6 +1,24 @@
 # Relatório de produção e Meta Ads — 28/10/2026
 
-## Resultado
+## Atualização: produção publicada
+
+O responsável confirmou a configuração das credenciais e do webhook de produção. A publicação foi executada com `npm.cmd run cloudflare:deploy:production`, usando `XDG_CONFIG_HOME` apontado para a autenticação Cloudflare local já validada, sem copiar credenciais.
+
+- Branch conferida: `feat/150-doces-r10`, ponta remota `25a6db656bb7e5f3678cc05287bab6e26c2c5389` antes deste registro. A aplicação na cópia validada coincide com a branch; diferenças de finais de linha e commits de preparação locais foram preservadas.
+- Conta Cloudflare reconfirmada: `48a86816b0ea33a5e9da7eb156dd98b1`.
+- D1 reconfirmado: `receitas-premium-150-orders`, binding ORDERS, ID `e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a`. Migrations apply remoto sem pendências. A consulta `SELECT environment FROM orders LIMIT 0` passou na conferência e novamente dentro do script de deploy.
+- Artefato OpenNext já validado e sem mudanças na aplicação; não foram repetidos testes/build aprovados sem necessidade.
+- Versão publicada: `374f597e-9a43-454d-a38c-af2a460dc22c`.
+- URL: https://livro-receitas.joaolucasqtb.workers.dev
+- GET /api/checkout após publicação: **available:true**, **mode:production**, **amount:10**. Cartão de crédito/débito e parcela única disponíveis na configuração retornada; Pix não anunciado.
+- GET /api/marketing após publicação: **enabled:true**.
+- Nenhuma cobrança, envio de pagamento ou compra foi realizado nesta etapa. Nenhum anúncio foi ativado.
+- **Pronto para o responsável realizar a compra real de validação de R$ 10.** Aprovação, vendedor, webhook processado, download, evento interno único e recebimento de Purchase na Meta continuam pendentes dessa compra e da confirmação nos serviços reais.
+- Marketing habilitado confirma a configuração de produção; não comprova recebimento de eventos pela Meta. O consentimento do visitante continua obrigatório.
+
+As seções seguintes preservam o diagnóstico anterior à ativação; a indisponibilidade e a pendência de configuração de credenciais descritas nelas foram superadas pela atualização acima.
+
+## Diagnóstico anterior à ativação
 
 **Ainda não liberado para vendas reais nem campanhas.** A infraestrutura e o build foram validados, mas as credenciais e o webhook de produção precisam ser confirmados pelo responsável. O checkout foi temporariamente desabilitado antes da troca segura. Não houve cobrança real nem ativação de anúncios.
 
