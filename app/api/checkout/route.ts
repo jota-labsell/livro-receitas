@@ -62,7 +62,14 @@ export async function POST(req: NextRequest) {
     const access = req.cookies.get(ORDER_COOKIE)?.value;
     const token =
       access && /^[a-f0-9]{64}$/.test(access) ? access : newAccess();
-    await ensureOrder(runtime, token, input.visitId);
+    const order = await ensureOrder(runtime, token, input.visitId);
+    // Missing optional migration must never interrupt a customer's checkout.
+    try {
+      await runtime.ORDERS!.prepare("UPDATE orders SET meta_consent=? WHERE id=? AND status NOT IN ('approved','refunded','charged_back')")
+        .bind(input.metaConsent === true ? 1 : 0, order.id).run();
+    } catch {
+      console.warn(JSON.stringify({ event: "meta_consent_storage_unavailable" }));
+    }
     const response = json({ ready: true });
     response.cookies.set(ORDER_COOKIE, token, {
       httpOnly: true,
