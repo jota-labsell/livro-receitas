@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { configureMetaPixel, metaPageView, setMetaConsent } from "@/lib/meta-pixel";
 import { visitId } from "@/lib/analytics";
 const KEY = "recipe-ad-measurement";
@@ -7,6 +7,7 @@ export function MetaPixel() {
   const [active, setActive] = useState(false);
   const [choice, setChoice] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const selectionVersion = useRef(0);
   useEffect(() => {
     let disposed = false;
     void fetch("/api/marketing").then(r => { if (!r.ok) throw new Error(); return r.json(); }).then(config => {
@@ -22,10 +23,17 @@ export function MetaPixel() {
   }, []);
   function select(value: "allow" | "deny") {
     try { localStorage.setItem(KEY, value); } catch {}
-    setChoice(value); setOpen(false); setMetaConsent(value === "allow");
-    void fetch("/api/marketing", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ consent: value === "allow" }), keepalive: true }).catch(() => {});
-    if (value === "allow") metaPageView(visitId());
+    const version = ++selectionVersion.current;
+    setChoice(value); setOpen(false);
+    if (value === "deny") setMetaConsent(false);
+    // Sync order-level consent before flushing any queued Purchase to the server.
+    const sync = fetch("/api/marketing", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consent: value === "allow" }), keepalive: true,
+      signal: AbortSignal.timeout(3000) }).catch(() => {});
+    if (value === "allow") void sync.finally(() => {
+      if (selectionVersion.current !== version) return;
+      setMetaConsent(true); metaPageView(visitId());
+    });
   }
   if (!active) return null;
   return <>
