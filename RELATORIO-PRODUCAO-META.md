@@ -1,6 +1,24 @@
 # Relatório de produção e Meta Ads — 28/10/2026
 
-## Atualização: produção publicada
+## Atualização Pix e recorte do checkout
+
+- O provedor passou a retornar Pix ativo; a integração já incluía `bankTransfer:all` quando esse método estava disponível. Nenhum Pix foi forçado ou simulado.
+- Foi encontrada uma publicação posterior (`668d2a14-0ff2-45c4-9603-56a3f3c96e58`) em sandbox, após a publicação de produção. A chave pública e o vendedor configurado eram iguais aos da versão anterior. Produção foi restaurada pelo comando autorizado, sem trocar credenciais.
+- A origem dessa publicação posterior não foi confirmada: a API de Workers Builds retornou 403 para o login local. Não se atribui a alteração a automação sem essa confirmação.
+- No SDK real, Pix aparece abaixo das opções de cartão. Ao selecioná-lo, surge o campo de e-mail para receber o código Pix.
+- A seleção fazia o SDK deslocar internamente a seção checkout: scrollLeft 77 em 360px e 310 em desktop, cortando campos. A correção em `app/globals.css` usa `overflow:clip` na seção para preservar o recorte da decoração sem permitir essa rolagem.
+- Commit da correção na branch `feat/150-doces-r10`: `a38e1bff94605269e93e5398c080afe192d680a4`.
+- Build Next.js/TypeScript/OpenNext e validação do artefato passaram; dry-run de produção passou. A consulta remota à coluna environment do D1 passou novamente no deploy.
+- Versão publicada com a correção: `2293b365-2644-4dee-baf6-660eff019471`.
+- GET /api/checkout: available:true, mode:production, amount:10, creditCard:all, debitCard:all, bankTransfer:all, maxInstallments:1.
+- GET /api/marketing: enabled:true.
+- Validação **no SDK real publicado**, sem substituição de SDK: Pix selecionado e campo de e-mail visível em 360px, 402px e 1440px. ScrollLeft 0 nos três; limites do formulário [8,352], [8,394] e [275,1165], respectivamente; nenhuma rolagem horizontal da página.
+- Capturas locais: `work/screenshots/pix-fixed-production-{360,402,1440}.png`.
+- Todas as chamadas a /api/payments foram bloqueadas preventivamente no navegador de validação; houve **zero tentativas de envio**. Não se preencheram dados de comprador, não se gerou QR Code e não se criou cobrança.
+- Cartão inicial, personalizações do Brick, MP4, PDF privado, preço de R$ 10 e validações financeiras preservados. O exemplo de R$ 50 com pagador fictício não foi enviado.
+- **Pendente:** compra real autorizada para comprovar geração e pagamento do Pix, aprovação, webhook, download, evento interno único e Purchase na Meta. O aparecimento do método no SDK não comprova essas etapas.
+
+## Histórico: primeira publicação de produção
 
 O responsável confirmou a configuração das credenciais e do webhook de produção. A publicação foi executada com `npm.cmd run cloudflare:deploy:production`, usando `XDG_CONFIG_HOME` apontado para a autenticação Cloudflare local já validada, sem copiar credenciais.
 
