@@ -9,8 +9,9 @@ const args = process.argv.slice(2);
 if (args.some(arg => arg !== '--dry-run')) {
   throw new Error('Use somente --dry-run para simular a publicação da vitrine.');
 }
-execFileSync(process.execPath, ['scripts/check-worker-build.mjs'], { stdio: 'inherit' });
 const config = JSON.parse(await readFile('wrangler.jsonc', 'utf8'));
+if (config.name === 'livro-receitas') throw new Error('Vitrine bloqueada: este nome pertence ao Worker de producao. Use um Worker separado.');
+execFileSync(process.execPath, ['scripts/check-worker-build.mjs'], { stdio: 'inherit' });
 delete config.$schema;
 delete config.d1_databases;
 config.main = path.resolve(config.main);
