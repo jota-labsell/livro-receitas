@@ -27,6 +27,8 @@ export type CommerceEnv = Pick<
   | "MERCADOPAGO_MODE"
   | "CHECKOUT_ENABLED"
   | "LIVE_PAYMENTS_ENABLED"
+  | "META_CAPI_ENABLED"
+  | "META_CAPI_ACCESS_TOKEN"
 >;
 type Order = {
   id: string;
