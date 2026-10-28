@@ -14,6 +14,7 @@ async function checkout(page: Page, status = "created") {
     window.MercadoPago = class {
       bricks() { return { create: async (_type: string, id: string, settings: any) => {
         (window as any).__uiVisual = settings.customization.visual;
+        (window as any).__brickOnError = settings.callbacks.onError;
         const host = document.getElementById(id)!;
         const label = document.createElement("label");
         label.textContent = "Nome no cartão (simulado)";
@@ -80,6 +81,16 @@ test("green theme stays inside checkout; sections, touch targets, focus and cont
   const input = await page.getByLabel("E-mail", { exact: true }).boundingBox();
   expect(input!.x).toBeGreaterThan(panel!.x);
   expect(input!.x + input!.width).toBeLessThan(panel!.x + panel!.width);
+});
+
+test("card field non-critical SDK errors do not appear as payment failures", async ({ page }) => {
+  await checkout(page);
+  await expect(page.getByLabel("Nome no cartão (simulado)")).toBeVisible();
+  await page.evaluate(() => (window as any).__brickOnError({ type: "non_critical", cause: "invalid_card_number" }));
+  await expect(page.locator(".payment-error")).toHaveCount(0);
+  await page.evaluate(() => (window as any).__brickOnError({ type: "critical", cause: "fields_setup_failed" }));
+  await expect(page.getByRole("alert")).toContainText("Não foi possível carregar o campo seguro do cartão");
+  await expect(page.getByRole("button", { name: "Carregar pagamento novamente" })).toBeVisible();
 });
 
 test("Pix copy is a visible button with temporary feedback and manual fallback", async ({ page }) => {
