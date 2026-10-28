@@ -41,7 +41,26 @@ Esta atualização substitui as conclusões históricas preservadas ao final. Ve
 - TypeScript e build Next.js/OpenNext aprovados; rota marketing presente nos dois manifestos.
 - Backend: 21 testes aprovados após a integração das extensões de resposta.
 - Interface: testes direcionados a checkout e Meta, sem repetir a suíte de vídeo inalterada. A execução inicial teve 35 aprovações e uma falha transitória: a janela de 250ms do mock terminou antes da asserção de carregamento sob carga. O teste foi corrigido para liberar a resposta só após a asserção; os nove casos afetados passaram. Nenhum comportamento do produto foi alterado para isso.
-- Resultados da publicação e das chamadas reais do navegador serão registrados abaixo após o deploy.
+- Meta: seis casos adicionais aprovados após ampliar as asserções de PageView, ViewContent e InitiateCheckout. As fixtures de Purchase permaneceram restritas ao SDK substituído nos testes.
+- Proteção de deploy: quatro testes aprovados. Sandbox/vitrine recusam o Worker de produção antes de qualquer publicação; deploy padrão usa o procedimento explícito de produção; a configuração com nome de produção usa somente flags de produção.
+
+## Publicação e verificação atual
+
+- Publicação pelo procedimento de produção: versão `554d31a9-060b-459b-a298-baf9de40bc55`, Worker `livro-receitas`, código da árvore correspondente ao commit remoto `a5a70c2f8a1128cb548e98bee00f2ff353bae234`. A confirmação de tráfego e flags vem da API da Cloudflare e das consultas HTTP, não do push Git.
+- Código integrado no remoto: `5e89721144afad63c60e5e08c17529408b339f4b`, árvore `3ace953966f48887316f6fbf5a73f97b790dd3a5`, idêntica à árvore local validada. Proteções adicionais de publicação: `a5a70c2f8a1128cb548e98bee00f2ff353bae234`, árvore `347739618443f2b6296a5a251d45db16867f65f8`, também idêntica à árvore local correspondente.
+- Uma publicação concorrente `ba385ee7-33b6-42db-b7be-05c2ab9cfca5`, às 19:08:21 UTC, substituiu a primeira publicação desta entrega e retornou as flags para sandbox. O histórico da Cloudflare comprova a publicação, mas informa apenas origem `wrangler`. A API de Builds recusou acesso com HTTP 403: não foi possível atribuir a publicação a uma automação específica.
+- Rollback do código não restaurou as variáveis. A produção foi restaurada pelo procedimento `cloudflare:deploy:production`, sem alterar segredos, recursos privados ou status financeiros. A comparação de fingerprints dos bindings confirmou preservação das configurações originais de produção.
+- Corrigido o risco comprovado no repositório: sandbox e vitrine antes usavam o mesmo nome de Worker da produção. Agora recusam esse destino; o comando padrão também usa o procedimento de produção, e `wrangler.jsonc` não publica mais flags de sandbox sobre `livro-receitas`.
+- Verificação HTTP após restauração: `/` 200; `/api/checkout` 200, `available:true`, `mode:production`, `amount:10`, Pix disponível; `/api/marketing` 200, `enabled:true`; `/api/download` sem sessão retorna 401.
+- Navegador real, viewport 360px: checkout verde, sem overflow horizontal, `scrollLeft=0`; negar consentimento persiste após recarga, permitir também persiste. Nenhuma requisição de criação de pagamento nem Purchase foi realizada.
+- SDK Meta e configuração pública do Pixel responderam HTTP 200; `fbq` inicializado com o ID correto e contador interno de eventos. Entretanto, a sessão automatizada não observou chamadas para `facebook.com/tr`, nem respostas de transporte desses eventos. Não se afirma envio real nem recebimento no Gerenciador de Eventos. Não há evidência suficiente para atribuir isso a bloqueio, consentimento, automação ou restrição da conta.
+- A configuração pública consultada não listou eventos restritos nem origens proibidas. Isso não substitui a conferência autenticada na Meta. A lógica dos quatro eventos e a deduplicação passaram nos testes com SDK substituído.
+
+## Pendências que exigem o responsável
+
+1. Na Cloudflare, Worker `livro-receitas` → Settings → Builds: conferir o histórico às 19:08 UTC e a origem da publicação concorrente. Conferir branch de produção `feat/150-doces-r10`, build `npm run cloudflare:build` e deploy `npm run cloudflare:deploy:production`. Não usar comandos de sandbox/vitrine nem um override para essas flags. O agente não teve permissão para ler/alterar Builds.
+2. No Gerenciador de Eventos, seguir `META-ADS-PREPARACAO.md`: verificar os três eventos de navegação após consentimento em um navegador do responsável. Purchase real permanece pendente até evidência legítima; não fabricar nem repetir compra para testar.
+3. Definir os campos de campanha ainda em aberto no documento de anúncios e aprovar criativos. Nenhum anúncio foi publicado ou gasto iniciado.
 
 
 ---
