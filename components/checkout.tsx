@@ -127,7 +127,9 @@ export function Checkout() {
           if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
             throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
           }
-          await post("/api/checkout", { visitId: visitId() });
+          let metaConsent = false;
+          try { metaConsent = localStorage.getItem("recipe-ad-measurement") === "allow"; } catch {}
+          await post("/api/checkout", { visitId: visitId(), metaConsent });
           const previous = await post("/api/orders/status");
           if (!cancelled && previous.status !== "created") setResult(previous);
         }
