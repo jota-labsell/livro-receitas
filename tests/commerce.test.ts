@@ -524,3 +524,16 @@ test("Meta CAPI sends only opted-in, verified production purchases once", async 
   const row = await db.prepare("SELECT state,attempts FROM meta_purchase_delivery WHERE order_id=?").bind(order.id).first<any>();
   assert.equal(row.state, "sent"); assert.equal(row.attempts, 1);
 });
+
+
+test("Orders: prepaid Visa keeps provider type, R$10 and authoritative confirmation",async()=>{
+ const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider();
+ let submitted:any;
+ const fetcher:typeof fetch=async(url,init)=>{if(new URL(String(url)).pathname==='/v1/orders'&&init?.method==='POST')submitted=JSON.parse(String(init.body));return p.fetcher(url,init)};
+ const result=await chargeProviderOrder(env,local,{...form,payment_type_id:'prepaid_card'},fetcher);
+ assert.equal(submitted.transactions.payments[0].payment_method.type,'prepaid_card');
+ assert.equal(submitted.total_amount,'10.00');assert.equal(result.status,'approved');
+ assert.throws(()=>safePaymentData({...form,payment_type_id:'debit_card'},[{id:'visa',payment_type_id:'credit_card',status:'active'}]));
+ assert.throws(()=>safePaymentData({...form,payment_method_id:'pix',payment_type_id:'prepaid_card'},[{id:'pix',payment_type_id:'bank_transfer',status:'active'}]));
+ assert.throws(()=>safePaymentData({...form,payment_method_id:'unknown',payment_type_id:'prepaid_card'},[{id:'visa',payment_type_id:'credit_card',status:'active'}]));
+});

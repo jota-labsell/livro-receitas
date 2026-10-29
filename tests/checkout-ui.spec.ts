@@ -13,6 +13,8 @@ async function checkout(page: Page, status = "created") {
     } });
     window.MercadoPago = class {
       bricks() { return { create: async (_type: string, id: string, settings: any) => {
+        (window as any).__uiMethods = settings.customization.paymentMethods;
+        (window as any).__brickOnSubmit = settings.callbacks.onSubmit;
         (window as any).__uiVisual = settings.customization.visual;
         (window as any).__brickOnError = settings.callbacks.onError;
         const host = document.getElementById(id)!;
@@ -30,7 +32,7 @@ async function checkout(page: Page, status = "created") {
     } as any;
   });
   await page.route("**/api/checkout", route => route.fulfill({ json: route.request().method() === "GET"
-    ? { available: true, publicKey: "TEST-UI", amount: 10, paymentMethods: { creditCard: "all", bankTransfer: "all" } }
+    ? { available: true, publicKey: "TEST-UI", amount: 10, paymentMethods: { creditCard: "all", prepaidCard: ["visa"], bankTransfer: "all" } }
     : { ready: true } }));
   await page.route("**/api/orders/status", route => route.fulfill({ json: { status, ...(status === "pending" ? { pix: {
     code: fixtureCode,
@@ -130,3 +132,15 @@ for (const state of ["card", "pix-form", "pix-pending"]) {
     await expect(page.locator("#checkout")).toHaveScreenshot(`${state}.png`, { animations: "disabled" });
   });
 }
+
+
+test("prepaid Visa is enabled and submitted without changing its type", async ({page}) => {
+ await checkout(page);
+ expect(await page.evaluate(() => (window as any).__uiMethods.prepaidCard)).toEqual(["visa"]);
+ let submitted:any;
+ await page.route("**/api/payments",async route=>{submitted=route.request().postDataJSON();await route.fulfill({json:{status:"pending"}})});
+ await page.evaluate(async()=>{await (window as any).__brickOnSubmit({selectedPaymentMethod:"prepaidCard",formData:{payment_method_id:"visa",token:"fixture-only-token",installments:1,payer:{email:"fixture@example.com"}}})});
+ expect(submitted.formData.payment_type_id).toBe("prepaid_card");
+ expect(submitted.formData.payment_method_id).toBe("visa");
+ expect(submitted.formData.transaction_amount).toBeUndefined();
+});

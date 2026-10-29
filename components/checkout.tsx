@@ -122,7 +122,7 @@ export function Checkout() {
         const c = (await response.json()) as Config;
         if (cancelled) return;
         setConfig(c);
-        if (!c.paymentMethods?.creditCard) setMethod("pix");
+        if (!c.paymentMethods?.creditCard && !c.paymentMethods?.prepaidCard) setMethod("pix");
         if (c.available) {
           if (!c.publicKey || !Number.isFinite(c.amount) || (c.amount ?? 0) <= 0) {
             throw new Error("Configuração de pagamento incompleta. Entre em contato com o suporte.");
@@ -166,7 +166,7 @@ export function Checkout() {
           "payment", "payment-brick", {
                 initialization: { amount: config!.amount },
                 customization: {
-                  paymentMethods: { creditCard: config!.paymentMethods?.creditCard, maxInstallments: 1 },
+                  paymentMethods: { creditCard: config!.paymentMethods?.creditCard, prepaidCard: config!.paymentMethods?.prepaidCard, maxInstallments: 1 },
                   visual: {
                     hideFormTitle: true,
                     defaultPaymentOption: { creditCardForm: true },
@@ -215,7 +215,7 @@ export function Checkout() {
                     console.warn(JSON.stringify({ event: "payment_brick_critical", cause }));
                     setError("Não foi possível carregar o campo seguro do cartão. Tente recarregar o pagamento ou escolha Pix.");
                   },
-                  onSubmit: async ({ formData }: { formData: unknown }) => {
+                  onSubmit: async ({ formData, selectedPaymentMethod, paymentType }: { formData: unknown; selectedPaymentMethod?: string; paymentType?: string }) => {
                     if (sending.current)
                       throw new Error("Pagamento em processamento.");
                     sending.current = true;
@@ -224,7 +224,12 @@ export function Checkout() {
                     try {
                       const payment = await post("/api/payments", {
                         visitId: visitId(),
-                        formData,
+                        formData: {
+                          ...(formData as Record<string, unknown>),
+                          ...([selectedPaymentMethod, paymentType].some(type => type === "prepaidCard" || type === "prepaid_card")
+                            ? { payment_type_id: "prepaid_card" }
+                            : {}),
+                        },
                       });
                       setResult(payment);
                     } catch (e) {
@@ -323,10 +328,10 @@ export function Checkout() {
             <div className={`checkout-fields ${styles.fields}`}>
               <fieldset disabled={busy} className={`payment-methods ${styles.methods}`}>
                 <legend>Forma de pagamento</legend>
-                {!!config.paymentMethods?.creditCard && <label className={styles.method}>
-                  <input type="radio" name="payment-method" aria-label="Cartão de crédito" checked={method === "card"} onChange={() => setMethod("card")} />
+                {(!!config.paymentMethods?.creditCard || !!config.paymentMethods?.prepaidCard) && <label className={styles.method}>
+                  <input type="radio" name="payment-method" aria-label="Cartão de crédito ou pré-pago" checked={method === "card"} onChange={() => setMethod("card")} />
                   <CreditCard size={22} aria-hidden="true" />
-                  <span className={styles.methodCopy}><strong>Cartão de crédito</strong><small>À vista, sem assinatura</small></span>
+                  <span className={styles.methodCopy}><strong>Cartão de crédito ou pré-pago</strong><small>À vista, sem assinatura</small></span>
                 </label>}
                 {!!config.paymentMethods?.bankTransfer && <label className={styles.method}>
                   <input type="radio" name="payment-method" aria-label="Pix" checked={method === "pix"} onChange={() => setMethod("pix")} />

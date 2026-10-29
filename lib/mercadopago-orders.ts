@@ -107,7 +107,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
   try {
     created = await mp<ProviderOrder>(env,'/v1/orders', {method:'POST', headers:{...headers,'X-Idempotency-Key':a.id},body:JSON.stringify({
       type:'online',processing_mode:'automatic',total_amount:'10.00',currency:'BRL',external_reference:a.id,description:PRODUCT.name,payer:data.payer,
-      transactions:{payments:[{amount:'10.00',payment_method:{id:method.id,type:method.payment_type_id,...(data.token ? {token:data.token,installments:1}: {})}}]},
+      transactions:{payments:[{amount:'10.00',payment_method:{id:method.id,type:data.payment_type_id || method.payment_type_id,...(data.token ? {token:data.token,installments:1}: {})}}]},
     })},fetcher);
   } catch(error) {
     // An ambiguous response remains processing. Never create another attempt automatically.

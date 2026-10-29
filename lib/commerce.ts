@@ -146,7 +146,7 @@ export async function availableMethods(
   return methods.filter(
     (m) =>
       m.status === "active" &&
-      (m.payment_type_id === "credit_card" ||
+      (m.payment_type_id === "credit_card" || m.payment_type_id === "prepaid_card" ||
         m.id === "pix"),
   );
 }
@@ -235,6 +235,16 @@ export function safePaymentData(input: unknown, allowed: Method[]) {
     !allowed.some((m) => m.id === f.payment_method_id)
   )
     throw new CommerceError(400, "Selecione um meio de pagamento disponível.");
+  // A brand can be credit or prepaid depending on its eight-digit BIN.
+  // The type is a payment intent, not authorization: only an active card brand
+  // is accepted, and the provider remains authoritative for processing/delivery.
+  if (f.payment_type_id !== undefined && (
+    f.payment_method_id === "pix" ||
+    !["credit_card", "prepaid_card"].includes(String(f.payment_type_id)) ||
+    !allowed.some(m => m.id === f.payment_method_id &&
+      (m.payment_type_id === f.payment_type_id ||
+       f.payment_type_id === "prepaid_card" && m.payment_type_id === "credit_card"))
+  )) throw new CommerceError(400, "Selecione um tipo de cartão disponível.");
   const payer = f.payer as
     | {
         email?: unknown;
@@ -274,6 +284,7 @@ export function safePaymentData(input: unknown, allowed: Method[]) {
       throw new CommerceError(400, "Confira os dados do cartão.");
     if (f.installments !== 1)
       throw new CommerceError(400, "Esta compra tem pagamento único.");
+    if (f.payment_type_id !== undefined) result.payment_type_id = f.payment_type_id;
     result.token = f.token;
     result.installments = 1;
     if (typeof f.issuer_id === "string" || typeof f.issuer_id === "number")

@@ -36,6 +36,9 @@ export async function GET() {
         ...(methods.some((m) => m.payment_type_id === "credit_card")
           ? { creditCard: "all" }
           : {}),
+        ...(methods.some(m => m.payment_type_id === "credit_card" || m.payment_type_id === "prepaid_card")
+          ? { prepaidCard: [...new Set(methods.filter(m => m.payment_type_id === "credit_card" || m.payment_type_id === "prepaid_card").map(m => m.id))] }
+          : {}),
         ...(methods.some((m) => m.id === "pix") ? { bankTransfer: "all" } : {}),
         maxInstallments: 1,
       },
