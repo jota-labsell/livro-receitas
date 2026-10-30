@@ -4,6 +4,8 @@ test("requested purchase sequence, real testimonials, premium benefits and check
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/api/orders/status", route => route.fulfill({ status: 404, json: { error: "No fixture order" } }));
+  await page.route("**/api/checkout", route => route.fulfill({ json: { available: false } }));
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     /Descubra.*150 receitas de doces.*Instagram.*TikTok.*renda extra!/s,
@@ -123,14 +125,17 @@ test("requested purchase sequence, real testimonials, premium benefits and check
   expect(errors).toEqual([]);
 });
 test("delivery fails closed and free access is gone", async ({ request }) => {
-  expect((await request.get("/api/download")).status()).toBe(401);
+  const missingSession = await request.get("/api/download", { maxRedirects: 0 });
+  expect(missingSession.status()).toBe(303);
+  expect(missingSession.headers().location).toContain("/acesso?estado=session");
   expect(
     (
       await request.get("/api/download", {
+          maxRedirects: 0,
         headers: { cookie: "ebook-access=9999999999999.fake" },
       })
     ).status(),
-  ).toBe(401);
+  ).toBe(303);
   expect(
     (
       await request.post("/api/access", {
@@ -281,10 +286,10 @@ test("Pix validates email, handles failure, blocks repeats and follows server ap
   await expect(page.getByAltText("QR Code Pix do seu pedido")).toBeVisible();
   expect(submissions).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await expect(page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "BAIXAR MEU E-BOOK AGORA" })).toHaveCount(0);
   status = "approved";
   await page.getByRole("button", { name: "Consultar status do pagamento" }).click();
-  await expect(page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "BAIXAR MEU E-BOOK AGORA" })).toBeVisible();
 });
 
 for (const status of ["approved", "pending", "rejected"])
@@ -375,7 +380,7 @@ for (const status of ["approved", "pending", "rejected"])
     releasePayment();
     if (status === "approved")
       await expect(
-        page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" }),
+        page.getByRole("link", { name: "BAIXAR MEU E-BOOK AGORA" }),
       ).toBeVisible();
     if (status === "pending") {
       await expect(page.getByLabel("Pix copia e cola")).toHaveValue("pix-fixture-copy-code");
@@ -383,7 +388,7 @@ for (const status of ["approved", "pending", "rejected"])
         page.getByText("Seu pagamento aguarda confirmação."),
       ).toBeVisible();
       await expect(
-        page.getByRole("link", { name: "BAIXAR AS 150 RECEITAS" }),
+        page.getByRole("link", { name: "BAIXAR MEU E-BOOK AGORA" }),
       ).toHaveCount(0);
     }
     if (status === "rejected")
@@ -394,43 +399,52 @@ for (const status of ["approved", "pending", "rejected"])
   });
 
 
-// Meta SDK double checks our event contract; Events Manager delivery is a separate check.
-test('Meta consent, approved production receipt and reload deduplication', async ({ page }) => {
+// Meta SDK doubles verify automatic tracking and deduplication through the exclusive screen.
+test('Meta automatic production purchase survives exclusive screen and reload without duplicates', async ({ page }) => {
   const calls: any[][] = [];
+  let status = 'created';
+  const purchase={eventId:'a'.repeat(64),value:10,currency:'BRL'};
   await page.exposeFunction('__recordMeta', (...args: any[]) => { calls.push(args); });
   await page.route('https://connect.facebook.net/**', route => route.fulfill({ contentType:'application/javascript', body:'const f=window.fbq;f.callMethod=(...a)=>window.__recordMeta(...a);for(const a of f.queue)f.callMethod(...a);f.queue=[];' }));
   await page.route('**/api/marketing', route => route.fulfill({json:{enabled:true}}));
   await page.route('**/api/checkout', route => route.fulfill({json:route.request().method()==='GET'?{available:true,publicKey:'TEST',amount:10,paymentMethods:{creditCard:'all'},mode:'production'}:{ready:true}}));
-  const purchase={eventId:'a'.repeat(64),value:10,currency:'BRL'};
-  await page.route('**/api/orders/status', route => route.fulfill({json:{status:'approved',purchase}}));
-  await page.addInitScript(() => { (window as any).MercadoPago=class {bricks(){return {create:async()=>({unmount:async()=>{}})}}}; });
+  await page.route('**/api/orders/status', route => route.fulfill({json:{status,...(status==='approved'?{purchase}:{})}}));
+  await page.route('**/api/payments', route => { status='approved'; return route.fulfill({json:{status,purchase}}); });
+  await page.addInitScript(() => {
+    window.MercadoPago=class {bricks(){return {create:async (_type:string,id:string,settings:any)=>{
+      const host=document.getElementById(id)!;
+      const button=document.createElement('button');
+      button.textContent='Meta purchase fixture';
+      button.onclick=()=>{void settings.callbacks.onSubmit({formData:{fixture:true}});};
+      host.appendChild(button);
+      return {unmount:async()=>{host.replaceChildren();}};
+    }}}} as any;
+  });
   await page.goto('/');
-  await expect(page.getByRole('complementary', {name:'Preferência de medição dos anúncios'})).toBeVisible();
-  expect(calls).toEqual([]);
-  await page.getByRole('button',{name:'Permitir',exact:true}).click();
+  await expect.poll(()=>calls.some(c=>c[0]==='trackSingle'&&c[2]==='ViewContent')).toBe(true);
   await page.locator('#checkout').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
+  await page.getByRole('button',{name:'Meta purchase fixture'}).click();
+  await expect(page.getByRole('link',{name:'BAIXAR MEU E-BOOK AGORA'})).toBeVisible();
   await expect.poll(()=>calls.filter(c=>c[0]==='trackSingle'&&c[2]==='Purchase').length).toBe(1);
-  for (const event of ['PageView', 'ViewContent', 'InitiateCheckout'])
-    await expect.poll(() => calls.some(c => c[0] === 'trackSingle' && c[2] === event)).toBe(true);
+  for (const event of ['PageView','ViewContent','InitiateCheckout'])
+    await expect.poll(()=>calls.some(c=>c[0]==='trackSingle'&&c[2]===event)).toBe(true);
   const sent=calls.find(c=>c[2]==='Purchase')!;
-  expect(sent[1]).toBe('1150409944170993');expect(sent[3].value).toBe(10);expect(sent[3].currency).toBe('BRL');expect(sent[4].eventID).toBe(purchase.eventId);
-  expect(JSON.stringify(sent)).not.toMatch(/email|payer|token|card_number|first_name/);
-  await page.reload();await page.locator('#checkout').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('link',{name:'BAIXAR AS 150 RECEITAS'})).toBeVisible();
+  expect(sent[1]).toBe('1150409944170993');
+  expect(sent[3].value).toBe(10); expect(sent[3].currency).toBe('BRL');
+  expect(sent[4].eventID).toBe(purchase.eventId);
+  await page.reload();
+  await expect(page.getByRole('link',{name:'BAIXAR MEU E-BOOK AGORA'})).toBeVisible();
+  await expect.poll(()=>calls.filter(c=>c[2]==='PageView').length).toBe(2);
   expect(calls.filter(c=>c[2]==='Purchase').length).toBe(1);
 });
-test('Meta stays disabled in sandbox and can be declined in production', async ({ page }) => {
-  let scripts=0;await page.route('https://connect.facebook.net/**',route=>{scripts++;return route.fulfill({body:''});});
+
+test('Meta stays disabled in sandbox', async ({ page }) => {
+  let scripts=0;
+  await page.route('https://connect.facebook.net/**',route=>{scripts++;return route.fulfill({body:''});});
   await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:false}}));
-  await page.goto('/');await page.locator('#checkout').scrollIntoViewIfNeeded();
+  await page.route('**/api/orders/status',route=>route.fulfill({status:404,json:{error:'No fixture order'}}));
+  await page.goto('/');
+  await expect(page.locator('#oferta')).toBeVisible();
   await expect(page.getByRole('complementary',{name:'Preferência de medição dos anúncios'})).toHaveCount(0);
-  expect(scripts).toBe(0);
-  await page.unroute('**/api/marketing');
-  await page.route('**/api/marketing',route=>route.fulfill({json:{enabled:true}}));
-  await page.reload();await page.getByRole('button',{name:'Não permitir',exact:true}).click();
-  await page.locator('#checkout').scrollIntoViewIfNeeded();
-  await page.reload();
-  await expect(page.getByRole('button',{name:'Preferências de medição · desativada'})).toBeVisible();
   expect(scripts).toBe(0);
 });

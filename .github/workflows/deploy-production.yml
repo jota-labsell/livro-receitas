@@ -1,0 +1,64 @@
+name: Publicar produção na Cloudflare
+
+on:
+  push:
+    branches: [feat/150-doces-r10]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: livro-receitas-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/feat/150-doces-r10'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler-logs
+      WRANGLER_CACHE_DIR: ${{ runner.temp }}/wrangler-cache
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Conferir secrets de publicação
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          for variable in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!variable}" ]; then
+              echo "::error::Cadastre o secret $variable nas configurações de Actions do repositório."
+              exit 1
+            fi
+          done
+      - run: npm ci
+      - name: Verificar tipos e regras de comércio e acesso
+        run: |
+          npm run typecheck
+          npm run test:commerce
+          npm run test:access
+          npm run test:access:credential
+          npm run test:meta
+      - name: Gerar e validar Worker
+        run: npm run cloudflare:build
+      - name: Publicar preservando secrets e configuração de pagamentos
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm run cloudflare:deploy:production
+      - name: Conferir proteção do novo endpoint
+        run: |
+          node --input-type=module <<'NODE'
+          const response = await fetch('https://livro-receitas.joaolucasqtb.workers.dev/api/admin/meta', {redirect:'manual', signal:AbortSignal.timeout(30000)});
+          if(response.status !== 401) throw new Error(`Endpoint administrativo não respondeu como esperado: HTTP ${response.status}`);
+          console.log('Painel publicado: API administrativa exige autenticação. Teste de recebimento pela Meta deve ser feito no painel.');
+          NODE

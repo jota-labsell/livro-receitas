@@ -32,6 +32,21 @@ export default function Privacy() {
           protegido contra acesso por JavaScript, identifica sua compra neste
           navegador por até 30 dias. Não é necessário criar conta.
         </p>
+        <h2>Recuperação de acesso</h2>
+        <p>
+          Quando necessário, o atendimento pode conferir sua compra e emitir um
+          link privado válido por sete dias. Guardamos somente uma impressão
+          criptográfica do token, vinculada ao pedido. O link permite abrir o
+          acesso em outro navegador após nova verificação do pagamento. Um
+          cookie essencial de recuperação dura no máximo até o vencimento do
+          link; a revogação também bloqueia as sessões recuperadas. Não
+          compartilhe esse link publicamente. A abertura de uma prévia automática
+          não consome o acesso. Não há envio automático de e-mail de recuperação.
+          O prazo definido para os registros de emissão e revogação é de 180 dias;
+          para vínculos expirados de recuperação, 30 dias após o vencimento.
+          A exclusão ocorre na próxima rotina de manutenção, acionada pelo uso
+          do serviço de recuperação.
+        </p>
         <h2>Medição da página</h2>
         <p>
           Medimos visualização da oferta, clique no botão, início do checkout e

@@ -2,6 +2,7 @@ import { runLocalCli } from './local-cli.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
+import { tmpdir } from 'node:os';
 const args = process.argv.slice(2);
 if (args.some(arg => arg !== '--dry-run')) throw new Error('Use somente --dry-run para simular.');
 execFileSync(process.execPath, ['scripts/check-worker-build.mjs'], { stdio: 'inherit' });
@@ -20,5 +21,14 @@ await writeFile(target,JSON.stringify(config,null,2)+'\n');
 console.log('Publicação de PRODUÇÃO: cobranças reais habilitadas. Use somente após configurar credenciais, vendedor e webhook de produção no Worker.');
 if (!args.includes('--dry-run')) {
   runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT environment FROM orders LIMIT 0"],{stdio:'inherit'});
+  // Do not publish recovery routes without their additive migration on the existing database.
+  runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT id,order_id,token_hash,expires_at,revoked_at FROM product_access_grants LIMIT 0; SELECT token_hash,grant_id,expires_at FROM product_access_sessions LIMIT 0; SELECT id,action,actor,previous_status FROM product_access_audit LIMIT 0; SELECT bucket,count,expires_at FROM product_access_limits LIMIT 0"],{stdio:'inherit'});
 }
-runLocalCli('wrangler','wrangler',['deploy','--config',target,...args],{stdio:'inherit',env:{...process.env,WRANGLER_SEND_METRICS:'false',XDG_CONFIG_HOME:process.env.XDG_CONFIG_HOME || path.resolve('work/cloudflare-config'),WRANGLER_LOG_PATH:process.env.WRANGLER_LOG_PATH || path.resolve('work/wrangler-logs')}});
+const deployEnv = {
+  ...process.env,
+  WRANGLER_SEND_METRICS:'false',
+  WRANGLER_LOG_PATH:process.env.WRANGLER_LOG_PATH || path.join(tmpdir(), 'livro-receitas-wrangler-logs'),
+  WRANGLER_CACHE_DIR:process.env.WRANGLER_CACHE_DIR || path.join(tmpdir(), 'livro-receitas-wrangler-cache'),
+  ...(process.env.XDG_CONFIG_HOME ? {XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME} : {}),
+};
+runLocalCli('wrangler','wrangler',['deploy','--keep-vars','--config',target,...args],{stdio:'inherit',env:deployEnv});

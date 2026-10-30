@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { visitId, track } from "@/lib/analytics";
 import { Check, Copy, CreditCard, LockKeyhole, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
 import styles from "./checkout.module.css";
+import { usePurchaseState } from "./purchase-experience";
 type Controller = { unmount: () => Promise<void> };
 type Bricks = {
   create: (
@@ -74,6 +75,7 @@ async function post(path: string, data?: unknown): Promise<Result> {
   return result;
 }
 export function Checkout() {
+  const reportPurchaseState = usePurchaseState();
   const [method, setMethod] = useState("card");
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
@@ -144,6 +146,9 @@ export function Checkout() {
     };
   }, []);
   const status = result?.status;
+  useEffect(() => {
+    if (result) reportPurchaseState(result);
+  }, [result, reportPurchaseState]);
   useEffect(() => {
     if (status === "approved" && result?.purchase) metaConfirmedPurchase(result.purchase);
   }, [status, result?.purchase]);
@@ -340,14 +345,7 @@ export function Checkout() {
             </p>
           )}
           {status === "approved" ? (
-            <div className={`approved ${styles.approved}`} role="status">
-              <h3>Pagamento aprovado!</h3>
-              <p>Seu livro já pode ir para a cozinha.</p>
-              <a href="/api/download" className={`button ${styles.primary}`}>
-                BAIXAR AS 150 RECEITAS
-              </a>
-              <p className="small">O download é autorizado ao abrir o link.</p>
-            </div>
+            null
           ) : status === "refunded" || status === "charged_back" ? (
             <p role="status" className={`payment-notice ${styles.notice}`}>
               Este pagamento foi estornado ou contestado. O download está

@@ -40,6 +40,8 @@ function flush() {
       delivered.add(key);
       if (event.name === "Purchase") { try { localStorage.setItem(storageKey, "sent"); } catch {} }
     }
+    // The server emits the matching CAPI Purchase from the authoritative
+    // Mercado Pago reconciliation, using this same event_id for deduplication.
     pending.delete(key);
   }
 }

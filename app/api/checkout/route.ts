@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set(ORDER_COOKIE, token, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/api",
       maxAge: 60 * 60 * 24 * 30,
     });
