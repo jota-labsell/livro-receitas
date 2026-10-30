@@ -33,6 +33,7 @@ jobs:
           npm run test:access:credential
           npm run test:meta
           npm run test:operations
+          node scripts/test-catalog-meta.mjs
       - name: Build Next.js
         run: npm run build
       - name: Chromium para testes visuais
