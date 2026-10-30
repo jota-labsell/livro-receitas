@@ -12,7 +12,7 @@
 ## Produção e banco confirmados
 
 - Site: https://livro-receitas.joaolucasqtb.workers.dev.
-- Última versão ativa consultada antes desta publicação: `c5533b1f-4a1b-4837-9695-507160a229ac`, 100% do tráfego, deploy manual de 30/10/2026 04:22 UTC. A central nova AINDA NÃO foi publicada nesta retomada.
+- Produção publicada e verificada nesta retomada: versão `88ac37cf-fcaa-4b05-bb67-4349c0ad493e`, 100% do tráfego, deployment `9aa42ed5-e578-42b7-ae1d-42c251a0751f`, 30/10/2026 06:08 UTC. Fonte registrada na tag/mensagem: `fe0ea125f8b30af043faf1ba6dfb8f95159cfcf0`. Versão anterior preservada no histórico: `c5533b1f-4a1b-4837-9695-507160a229ac`.
 - Conta Cloudflare: `48a86816b0ea33a5e9da7eb156dd98b1`.
 - Identidade atual: OAuth do Wrangler, e-mail do proprietário; nenhuma variável `CLOUDFLARE_API_TOKEN` no processo. OAuth tem D1 write e Workers write. Não houve novo login ou rotação de secrets.
 - D1: `receitas-premium-150-orders`, ID `e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a`.
@@ -55,16 +55,16 @@ Para repetir: iniciar `node node_modules/wrangler/bin/wrangler.js dev --local --
 - NÃO afirmar causa dos builds sem ler o primeiro erro. Alterar Actions não corrige Workers Builds.
 - Referência: https://developers.cloudflare.com/workers/ci-cd/builds/api-reference/.
 
-## Próximos passos obrigatórios
+## Estado final e pendências
 
 1. Testes concluídos; manter no relatório o timeout da suíte completa e o sucesso das duas repetições isoladas.
 2. Smoke test autenticado do artefato Cloudflare local concluído. Não confundir esse teste com acesso real do proprietário.
-3. Com acesso aos logs, diagnosticar e corrigir a primeira causa do Workers Builds; revisar branch/raiz, Node/lockfile, build OpenNext, deploy com guards, permissões D1/build, variáveis e integrações concorrentes. Sem esse acesso, registrar a pendência precisa.
-4. Commitar tudo que foi revisado; fazer fetch e conferir novamente ambas as branches antes do push. `feat/central-gestao` já descende da fonte atual de produção, portanto a integração prevista é fast-forward, sem sobrescrever novas mudanças remotas.
-5. Publicar por `npm.cmd run cloudflare:deploy:production`, com os guards do D1, R2, secrets e cron preservados. Registrar commit, tag e version ID real. Não declarar publicação pelo push.
-6. Verificar tráfego/versão ativa, `/api/checkout` GET disponível com amount 10, APIs administrativas 401 sem sessão, redirecionamento de `/admin`, login acessível, bloqueio de download com interface adequada e cron preservado. Sem cobranças reais e sem reenviar conversões.
-7. Push das branches central e produção coerentes com o commit publicado. Monitorar os builds nativos que o push disparar para confirmar que não substituíram a versão por outra fonte.
-8. Atualizar este documento e relatório final com resultados reais e limitações. Recuperação com pedido real e acesso do proprietário dependem da identidade/autorização adequada; não inventar a conclusão.
+3. PENDENTE DE PERMISSÃO: diagnosticar e corrigir a primeira causa do Workers Builds. Ler os logs e revisar branch/raiz, Node/lockfile, OpenNext, comando de deploy, permissões e variáveis do build. Não foi feita correção especulativa nem desativação de integrações. Após o push final, o check nativo de livro-receitas também falhou no build `7f62a142-6825-4097-b1a7-325e02d72a36`; os logs continuam inacessíveis com OAuth.
+4. CONCLUÍDO: alterações preservadas nos commits `c5a7ef3` e `fe0ea12`, enviados a `feat/central-gestao`. Integração por fast-forward de `feat/150-doces-r10`, sem force push ou modificação da cópia original suja. Ambas as branches chegaram ao código publicado `fe0ea12`. Commits posteriores apenas de relatório não alteram o artefato.
+5. CONCLUÍDO: deploy manual pelo script de produção, com todas as consultas de guarda D1 passando. Secrets, flags e cron mantidos; versão e commit registrados acima. O fluxo principal operacional validado é `cloudflare:build` seguido de `cloudflare:deploy:production` pelo terminal OAuth; a automação nativa ainda precisa ser corrigida com acesso aos logs.
+6. CONCLUÍDO: verificação real em produção — checkout GET `available:true`, amount 10, modo production, cartão e Pix; APIs operations/ebook/meta 401; account POST sem sessão 401; sessão POST de origem estrangeira 403; /admin redireciona ao login. Navegador real em 360 e 1440px confirmou login e download bloqueado com interface de recuperação. `/api/download` sem autorização retorna 303 para /acesso, sem link de download disponível. Cron confirmado via API. Nenhuma cobrança, pedido fictício ou conversão foi gerada pelos testes. Total de pedidos permaneceu 44, conta de operador permaneceu ausente.
+7. PENDENTE: monitorar os builds automáticos após os pushes e confirmar novamente a versão ativa. Pages tem pipeline independente; Actions continua skipped por falta de ativação/configuração. Não confundir sucesso de Pages com deploy do Worker.
+8. PENDENTE DO PROPRIETÁRIO: cadastrar e-mail/senha pelo procedimento seguro abaixo. Teste autenticado foi concluído no Worker local; nenhum cadastro fictício foi criado em produção. Recuperação de um cliente real precisa de pedido e identidade autorizados; não foi emitido link real. Testes simulados não comprovam recebimento externo Meta/FCM ou atribuição a campanha.
 
 ## Primeiro cadastro seguro
 
@@ -75,5 +75,7 @@ Executar `npm.cmd run gestao:configurar` em terminal interativo do checkout. Inf
 Os checkpoints de código são commits na branch local e são enviados a `feat/central-gestao` quando indicado. Os backups periódicos ficam fora do repositório, em `C:\Users\João\Documents\Backup-livro-receitas-central`. Cada snapshot contém um manifesto, patch das mudanças rastreadas e arquivos novos de código; bundles Git por commit permitem recuperar o histórico. Credenciais e diretórios ignorados, PDF privado, node_modules e assets gerados não entram no backup periódico.
 
 Rotina Windows registrada: `LivroReceitas-Central-Backup10min`, a cada 10 minutos, executando `scripts/backup-progress.mjs` com Node. Funciona na sessão do usuário, inclusive após reiniciar e entrar no Windows; não executa enquanto o notebook estiver desligado. Sem alteração de código, apenas atualiza a conferência, evitando cópias redundantes. Verificar `latest.json` e `last-run.json` na pasta de backup; falhas ficam em `last-error.txt`. Executar manualmente com `node scripts/backup-progress.mjs`. Consultar o agendamento com `Get-ScheduledTaskInfo -TaskName LivroReceitas-Central-Backup10min`. A rotina não faz deploy nem push automático, não altera o checkout e não remove snapshots antigos.
+
+Execução agendada verificada com `LastTaskResult: 0`. A ação usa PowerShell com janela oculta. Restauração do bundle `fe0ea12` testada com clone em `work/backup-restore-check`, em pasta separada; o commit foi recuperado corretamente.
 
 Antes de restaurar, guardar o checkout atual. Consultar `manifest.json`, clonar o bundle correspondente em uma pasta nova, fazer checkout do HEAD registrado, aplicar `tracked.patch` com `git apply --binary` e copiar os arquivos de `untracked` para seus caminhos relativos. Restaurar em pasta nova evita sobrescrever trabalho existente. Executar `npm.cmd ci` e refazer o build. Credenciais operacionais permanecem no armazenamento local já existente e na Cloudflare.
