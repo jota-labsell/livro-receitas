@@ -23,6 +23,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { OperationSummary } from "./operation-summary";
+import { ExecutiveOverview } from "./executive-overview";
 import { OperatorAccount } from "./operator-login";
 import { AccessAdminScreen } from "./access-admin-screen";
 import { MetaDiagnosticsScreen } from "./meta-diagnostics-screen";
@@ -210,7 +211,6 @@ export function ManagementDashboard() {
       setSaving(false);
     }
   }
-  const max = Math.max(1, ...(data?.days.map((d) => d.revenue) || []));
   const link =
     site +
     "/?" +
@@ -347,7 +347,7 @@ export function ManagementDashboard() {
             </p>
           )}
           {["overview", "orders", "operation"].includes(tab) && (
-            <div className={styles.filters} aria-label="Filtros de período e tráfego">
+            <div className={tab === "overview" ? [styles.filters, styles.overviewFilters].join(" ") : styles.filters} aria-label="Filtros de período e tráfego">
               <div className={styles.filterTitle}><CalendarRange size={16}/><strong>Filtros do relatório</strong></div>
               <label>
                 Período de visualização
@@ -392,12 +392,16 @@ export function ManagementDashboard() {
                   ))}
                 </select>
               </label>
-              <label>
+              {tab !== "overview" && <label>
                 Conta de anúncio
                 <select disabled aria-label="Conta de anúncio">
                   <option>Meta Ads não conectada</option>
                 </select>
-              </label>
+              </label>}
+              {tab === "overview" ? (
+                <details className={styles.dateDisclosure} open={period === "custom" ? true : undefined}>
+                  <summary>Selecionar datas específicas</summary>
+                  <div className={styles.dateDisclosureFields}>
               <label>
                 De
                 <input
@@ -422,6 +426,36 @@ export function ManagementDashboard() {
                   }}
                 />
               </label>
+                  </div>
+                </details>
+              ) : (
+                <>
+              <label>
+                De
+                <input
+                  type="date"
+                  value={start}
+                  onChange={(e) => {
+                    setPeriod("custom");
+                    setStart(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </label>
+              <label>
+                Até
+                <input
+                  type="date"
+                  value={end}
+                  onChange={(e) => {
+                    setPeriod("custom");
+                    setEnd(e.target.value);
+                    setPage(1);
+                  }}
+                />
+              </label>
+                </>
+              )}
               <span className={styles.syncStatus} role="status">
                 <CheckCircle2 size={14}/> Horário de Brasília
                 {data && <small>Atualizado: {time(data.checkedAt)}</small>}
@@ -435,106 +469,19 @@ export function ManagementDashboard() {
           )}
           {data && tab === "overview" && (
             <>
-              <OperationSummary
+              <ExecutiveOverview
                 data={data}
-                onOpenMeta={() => setTab("meta")}
-                onOpenSources={() => setTab("operation")}
+                onOrders={() => setTab("orders")}
+                onCampaigns={() => setTab("operation")}
+                onMeta={() => setTab("meta")}
+                onProduct={() => setTab("product")}
               />
-              <div className={styles.grid}>
-                <section className={styles.panel}>
-                  <div className={styles.sectionTitle}>
-                    <div>
-                      <h2>Movimento de vendas</h2>
-                      <p>
-                        Receita dos pedidos criados em cada dia, atualmente
-                        aprovados.
-                      </p>
-                    </div>
-                    <span className={styles.chip}>BRL · Dados internos</span>
-                  </div>
-                  {!data.days.length ? (
-                    <div className={styles.empty}>
-                      Nenhum pedido no período.
-                    </div>
-                  ) : (
-                    <div className={styles.chart} aria-label="Receita aprovada diária, valores em reais">
-                      {data.days.map((d) => (
-                        <div
-                          key={d.day}
-                          title={`${d.day}: ${money(d.revenue)}`}
-                        >
-                          <span>{money(d.revenue)}</span>
-                          <i
-                            style={{
-                              height: Math.max(3, (d.revenue / max) * 155),
-                            }}
-                          />
-                          <small>
-                            {d.day.slice(8)}/{d.day.slice(5, 7)}
-                          </small>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className={styles.chartLegend}><span><i/> Receita aprovada</span><span>Investimento: não conectado</span></div>
-                </section>
-                <section className={styles.panel}>
-                  <h2>Sua operação, agora</h2>
-                  <p className={styles.muted}>
-                    Configuração e observações disponíveis.
-                  </p>
-                  <div className={styles.healthRow}>
-                    <span>Arquivo do e-book</span>
-                    <b>
-                      {data.services.ebook === true
-                        ? "Localizado"
-                        : data.services.ebook === false
-                          ? "Não localizado"
-                          : "Não verificado"}
-                    </b>
-                  </div>
-                  <div className={styles.healthRow}>
-                    <span>API de pagamentos</span>
-                    <b>
-                      {data.services.paymentsConfigured
-                        ? "Configurada"
-                        : "Configuração pendente"}
-                    </b>
-                  </div>
-                  <div className={styles.healthRow}>
-                    <span>Envio Meta</span>
-                    <b>
-                      {data.settings.capiPaused
-                        ? "Pausado"
-                        : data.services.metaConfigured
-                          ? "Habilitado"
-                          : "Desabilitado"}
-                    </b>
-                  </div>
-                  <button
-                    className={styles.textButton}
-                    onClick={() => setTab("health")}
-                  >
-                    Ver diagnóstico dos serviços <ArrowUpRight size={15} />
-                  </button>
-                </section>
-              </div>
-              <section className={styles.panel}>
+              <section className={[styles.panel, styles.recentOrders].join(" ")}>
                 <div className={styles.sectionTitle}>
-                  <div>
-                    <h2>Pedidos recentes</h2>
-                    <p>
-                      Do checkout à aprovação, com histórico de atendimento.
-                    </p>
-                  </div>
-                  <button
-                    className={styles.textButton}
-                    onClick={() => setTab("orders")}
-                  >
-                    Ver todos <ArrowUpRight size={15} />
-                  </button>
+                  <div><h2>Últimos pedidos</h2><p>Pedidos do período selecionado. Status atualizado no servidor.</p></div>
+                  <button className={styles.textButton} onClick={() => setTab("orders")}>Ver histórico <ArrowUpRight size={15}/></button>
                 </div>
-                {orderTable(data.orders)}
+                {orderTable(data.orders.slice(0, 5))}
               </section>
             </>
           )}
