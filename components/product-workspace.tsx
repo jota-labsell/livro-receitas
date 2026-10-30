@@ -101,7 +101,7 @@ export function ProductWorkspace({product,settings,pixel,paused,dirty,saving,onP
       </form>:<p className={styles.readOnly}>A integração de eventos será habilitada quando houver checkout e entrega próprios para esse produto.</p>}</section>}
      {tab==="advanced"&&<section className={styles.section}><h4>Estado do produto</h4><p>ID: {selected?.id||"Gerado ao salvar"}</p><div className={styles.catalogForm}><label>Estado cadastral<select disabled={creating||selected?.status==="live"} value={draft.status} onChange={e=>change("status",e.target.value)}><option value="draft">Rascunho</option><option value="archived">Arquivado</option>{selected?.status==="live"&&<option value="live">Em produção</option>}</select></label></div>
       <p className={styles.readOnly}><LockKeyhole size={15}/> Não é possível ativar novos produtos sem um checkout completo, entrega e validações próprias.</p></section>}
-     <div className={styles.saveBar}><span role="status">{changed?"Alterações no cadastro não salvas":"Cadastro sem alterações pendentes"}</span><button className={styles.primary} type="button" disabled={!changed||sending} onClick={()=>void save()}>{sending?"Salvando…":creating?"Criar rascunho":"Salvar produto"}</button></div>
+     {tab!=="tracking"&&<div className={styles.saveBar}><span role="status">{changed?"Alterações no cadastro não salvas":"Cadastro sem alterações pendentes"}</span><button className={styles.primary} type="button" disabled={!changed||sending} onClick={()=>void save()}>{sending?"Salvando…":creating?"Criar rascunho":"Salvar produto"}</button></div>}
     </div>
    </div>
   </>}
