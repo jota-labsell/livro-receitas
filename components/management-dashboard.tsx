@@ -15,7 +15,10 @@ import {
   LifeBuoy,
   Radio,
   Search,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
+import { OperationSummary } from "./operation-summary";
 import { OperatorAccount } from "./operator-login";
 import { AccessAdminScreen } from "./access-admin-screen";
 import { MetaDiagnosticsScreen } from "./meta-diagnostics-screen";
@@ -36,12 +39,17 @@ type Campaign = {
   revenue: number;
 };
 type Data = {
+  sources?: string[];
   summary: {
     orders: number;
     revenue: number;
     approved: number;
     pending: number;
     reversed: number;
+    pending_amount?: number;
+    refunded_amount?: number;
+    chargeback_amount?: number;
+    rejected?: number;
   };
   days: { day: string; orders: number; revenue: number }[];
   orders: Order[];
@@ -93,6 +101,9 @@ const nav = [
   ["account", "Minha conta", Settings2],
 ] as const;
 export function ManagementDashboard() {
+  const [expanded, setExpanded] = useState(false),
+    [source, setSource] = useState(""),
+    [period, setPeriod] = useState("7");
   const [tab, setTab] = useState("overview"),
     [data, setData] = useState<Data | null>(null),
     [error, setError] = useState(""),
@@ -121,8 +132,9 @@ export function ManagementDashboard() {
     const query = new URLSearchParams({
       start,
       end,
-      status,
-      q: search,
+      source,
+      status: tab === "orders" ? status : "",
+      q: tab === "orders" ? search : "",
       page: String(page),
     });
     fetch("/api/admin/operations?" + query, {
@@ -150,7 +162,7 @@ export function ManagementDashboard() {
         if (!abort.signal.aborted) setBusy(false);
       });
     return () => abort.abort();
-  }, [start, end, status, search, page, revision]);
+  }, [start, end, status, search, page, revision, source, tab]);
   const current = nav.find((x) => x[0] === tab)!;
   const max = Math.max(1, ...(data?.days.map((d) => d.revenue) || []));
   const link =
@@ -191,7 +203,7 @@ export function ManagementDashboard() {
     setTimeout(() => URL.revokeObjectURL(href), 1000);
   }
   return (
-    <div className={styles.app}>
+    <div className={`${styles.app} ${expanded ? styles.expanded : ""}`}>
       <aside className={styles.sidebar}>
         <a className={styles.brand} href="/admin">
           <span>
@@ -201,11 +213,23 @@ export function ManagementDashboard() {
             Receitas Premium<small>CENTRAL DE OPERAÇÃO</small>
           </div>
         </a>
+        <button
+          className={styles.collapse}
+          aria-label={expanded ? "Recolher menu" : "Expandir menu"}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? (
+            <PanelLeftClose size={18} />
+          ) : (
+            <PanelLeftOpen size={18} />
+          )}
+        </button>
         <p className={styles.menuLabel}>WORKSPACE</p>
         <nav aria-label="Gestão">
           {nav.map(([key, label, Icon]) => (
             <button
               key={key}
+              title={label}
               aria-current={tab === key ? "page" : undefined}
               onClick={() => {
                 setTab(key);
@@ -213,7 +237,7 @@ export function ManagementDashboard() {
               }}
             >
               <Icon size={19} />
-              {label}
+              <span>{label}</span>
             </button>
           ))}
         </nav>
@@ -228,7 +252,7 @@ export function ManagementDashboard() {
       <div className={styles.workspace}>
         <header className={styles.topbar}>
           <span>
-            Workspace <span>/</span> {current[1]}
+            Dashboard <span>/</span> {current[1]}
           </span>
           <button
             onClick={async () => {
@@ -251,7 +275,7 @@ export function ManagementDashboard() {
             <div>
               <p className={styles.eyebrow}>RECEITAS PREMIUM / GESTÃO</p>
               <h1>{current[1]}</h1>
-              <p>Uma visão clara de cada etapa da sua operação.</p>
+              <p>Vendas, tráfego e integrações em uma única visão.</p>
             </div>
             <button
               className={styles.refresh}
@@ -278,11 +302,61 @@ export function ManagementDashboard() {
           {["overview", "orders", "operation"].includes(tab) && (
             <div className={styles.filters}>
               <label>
+                Período de visualização
+                <select
+                  aria-label="Período de visualização"
+                  value={period}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPeriod(value);
+                    if (value === "custom") return;
+                    setStart(
+                      value === "yesterday"
+                        ? day(-1)
+                        : day(-(Number(value) - 1)),
+                    );
+                    setEnd(value === "yesterday" ? day(-1) : day());
+                    setPage(1);
+                  }}
+                >
+                  <option value="1">Hoje</option>
+                  <option value="yesterday">Ontem</option>
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </label>
+              <label>
+                Fonte de tráfego
+                <select
+                  aria-label="Fonte de tráfego"
+                  value={source}
+                  onChange={(e) => {
+                    setSource(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">Todas as fontes</option>
+                  {(data?.sources || []).map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Conta de anúncio
+                <select disabled aria-label="Conta de anúncio">
+                  <option>Meta Ads não conectada</option>
+                </select>
+              </label>
+              <label>
                 De
                 <input
                   type="date"
                   value={start}
                   onChange={(e) => {
+                    setPeriod("custom");
                     setStart(e.target.value);
                     setPage(1);
                   }}
@@ -294,6 +368,7 @@ export function ManagementDashboard() {
                   type="date"
                   value={end}
                   onChange={(e) => {
+                    setPeriod("custom");
                     setEnd(e.target.value);
                     setPage(1);
                   }}
@@ -312,46 +387,11 @@ export function ManagementDashboard() {
           )}
           {data && tab === "overview" && (
             <>
-              <div className={styles.metrics}>
-                {[
-                  [
-                    "Receita aprovada",
-                    money(data.summary.revenue),
-                    "Pedidos criados no período",
-                  ],
-                  [
-                    "Compras aprovadas",
-                    data.summary.approved || 0,
-                    "Situação atual dos pedidos",
-                  ],
-                  [
-                    "Ticket médio",
-                    money(
-                      data.summary.approved
-                        ? data.summary.revenue / data.summary.approved
-                        : 0,
-                    ),
-                    "Por compra aprovada",
-                  ],
-                  [
-                    "Em processamento",
-                    data.summary.pending || 0,
-                    `${data.summary.reversed || 0} reembolsos ou contestações`,
-                  ],
-                ].map(([label, value, note], i) => (
-                  <article
-                    className={i === 0 ? styles.featureMetric : styles.metric}
-                    key={label}
-                  >
-                    <p>
-                      {label}
-                      <ArrowUpRight size={17} />
-                    </p>
-                    <strong>{value}</strong>
-                    <small>{note}</small>
-                  </article>
-                ))}
-              </div>
+              <OperationSummary
+                data={data}
+                onOpenMeta={() => setTab("meta")}
+                onOpenSources={() => setTab("operation")}
+              />
               <div className={styles.grid}>
                 <section className={styles.panel}>
                   <div className={styles.sectionTitle}>
@@ -521,59 +561,19 @@ export function ManagementDashboard() {
           )}
           {data && tab === "operation" && (
             <>
-              <section className={styles.panel}>
-                <h2>Funil da operação</h2>
-                <p className={styles.muted}>
-                  Sessões iniciadas no período, acompanhadas até agora. Uma
-                  sessão por navegador/aba; cada etapa é contada uma vez por
-                  sessão. Cliques no anúncio exigem integração Meta Ads.
-                </p>
-                {!data.trackingAvailable ? (
-                  <p className={styles.notice}>
-                    Aplique a migration 0010 para iniciar a coleta. O histórico
-                    anterior não é reconstruído.
-                  </p>
-                ) : (
-                  <div className={styles.funnel}>
-                    {[
-                      ["sessions", "Entradas no site"],
-                      ["views", "Oferta visualizada"],
-                      ["clicks", "Clique no CTA"],
-                      ["checkouts", "Início de checkout"],
-                      ["orders", "Pedido criado"],
-                      ["approved", "Compra aprovada"],
-                    ].map(([key, label], i) => {
-                      const n = data.funnel?.[key] || 0,
-                        total = data.funnel?.sessions || 0;
-                      return (
-                        <article key={key}>
-                          <span>0{i + 1}</span>
-                          <h3>{label}</h3>
-                          <strong>{n}</strong>
-                          <div>
-                            <i
-                              style={{
-                                width:
-                                  (total
-                                    ? Math.min(100, (n / total) * 100)
-                                    : 0) + "%",
-                              }}
-                            />
-                          </div>
-                          <small>
-                            {total ? ((n / total) * 100).toFixed(1) : "0"}% das
-                            entradas
-                          </small>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
+              <OperationSummary
+                data={data}
+                onOpenMeta={() => setTab("meta")}
+                onOpenSources={() =>
+                  document
+                    .getElementById("campaign-sources")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              />
               <section className={styles.panel}>
                 <div className={styles.sectionTitle}>
                   <div>
-                    <h2>Origens e campanhas</h2>
+                    <h2 id="campaign-sources">Origens e campanhas</h2>
                     <p>
                       Origem da sessão de entrada e pedidos associados.
                       Atribuição interna; não equivale à atribuição da Meta.

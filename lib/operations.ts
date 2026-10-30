@@ -5,8 +5,10 @@ export function reportFilter(params: URLSearchParams, now = Date.now()) {
     if (!value) return fallback;
     if (
       !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
-      !Number.isFinite(Date.parse(value + "T00:00:00-03:00"))
-      || new Date(Date.parse(value + "T00:00:00-03:00") - 10800000).toISOString().slice(0,10) !== value
+      !Number.isFinite(Date.parse(value + "T00:00:00-03:00")) ||
+      new Date(Date.parse(value + "T00:00:00-03:00") - 10800000)
+        .toISOString()
+        .slice(0, 10) !== value
     )
       throw new CommerceError(400, "Data inválida.");
     return Date.parse(value + "T00:00:00-03:00");
@@ -35,6 +37,7 @@ export function reportFilter(params: URLSearchParams, now = Date.now()) {
     start,
     end,
     status,
+    source: (params.get("source") || "").trim().slice(0, 160),
     q: (params.get("q") || "").trim().slice(0, 100),
     page: Math.max(
       1,

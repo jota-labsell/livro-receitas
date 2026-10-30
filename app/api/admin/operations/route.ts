@@ -17,12 +17,22 @@ export async function GET(req: NextRequest) {
     const base = `environment='production' AND created_at>=? AND created_at<?`;
     const where =
       base +
-      ` AND (?='' OR status=?) AND (?='' OR id=? OR EXISTS(SELECT 1 FROM payment_attempts a WHERE a.order_id=orders.id AND a.payment_id=?))`;
-    const args = [f.start, f.end, f.status, f.status, f.q, f.q, f.q];
+      ` AND (?='' OR EXISTS(SELECT 1 FROM operation_sessions os WHERE os.visit_hash=orders.visit_hash AND os.source=?)) AND (?='' OR status=?) AND (?='' OR id=? OR EXISTS(SELECT 1 FROM payment_attempts a WHERE a.order_id=orders.id AND a.payment_id=?))`;
+    const args = [
+      f.start,
+      f.end,
+      f.source,
+      f.source,
+      f.status,
+      f.status,
+      f.q,
+      f.q,
+      f.q,
+    ];
     const summary = await db
       .prepare(
         `SELECT COUNT(*) orders,COALESCE(SUM(CASE WHEN status='approved' THEN amount_cents ELSE 0 END),0) revenue,
- SUM(status='approved') approved,SUM(status IN ('pending','processing')) pending,SUM(status IN ('refunded','charged_back')) reversed FROM orders WHERE ${where}`,
+ COALESCE(SUM(CASE WHEN status IN ('pending','processing') THEN amount_cents ELSE 0 END),0) pending_amount, COALESCE(SUM(CASE WHEN status='refunded' THEN amount_cents ELSE 0 END),0) refunded_amount, COALESCE(SUM(CASE WHEN status='charged_back' THEN amount_cents ELSE 0 END),0) chargeback_amount, SUM(status='rejected') rejected, SUM(status='approved') approved,SUM(status IN ('pending','processing')) pending,SUM(status IN ('refunded','charged_back')) reversed FROM orders WHERE ${where}`,
       )
       .bind(...args)
       .first();
@@ -48,9 +58,9 @@ export async function GET(req: NextRequest) {
       campaigns = (
         await db
           .prepare(
-            `SELECT s.source,s.medium,s.campaign,COUNT(DISTINCT s.visit_hash) sessions,COUNT(o.id) orders,SUM(CASE WHEN o.status='approved' THEN 1 ELSE 0 END) approved,COALESCE(SUM(CASE WHEN o.status='approved' THEN o.amount_cents ELSE 0 END),0) revenue FROM operation_sessions s LEFT JOIN orders o ON o.visit_hash=s.visit_hash AND o.environment='production' WHERE s.first_seen>=? AND s.first_seen<? GROUP BY s.source,s.medium,s.campaign ORDER BY sessions DESC LIMIT 100`,
+            `SELECT s.source,s.medium,s.campaign,COUNT(DISTINCT s.visit_hash) sessions,COUNT(o.id) orders,SUM(CASE WHEN o.status='approved' THEN 1 ELSE 0 END) approved,COALESCE(SUM(CASE WHEN o.status='approved' THEN o.amount_cents ELSE 0 END),0) revenue FROM operation_sessions s LEFT JOIN orders o ON o.visit_hash=s.visit_hash AND o.environment='production' WHERE s.first_seen>=? AND s.first_seen<? AND (?='' OR s.source=?) GROUP BY s.source,s.medium,s.campaign ORDER BY sessions DESC LIMIT 100`,
           )
-          .bind(f.start, f.end)
+          .bind(f.start, f.end, f.source, f.source)
           .all()
       ).results;
       funnel = await db
@@ -61,9 +71,9 @@ export async function GET(req: NextRequest) {
  SUM(EXISTS(SELECT 1 FROM funnel_events f WHERE f.visit_hash=s.visit_hash AND f.name='checkout_start')) checkouts,
  SUM(EXISTS(SELECT 1 FROM orders o WHERE o.visit_hash=s.visit_hash AND o.environment='production')) orders,
  SUM(EXISTS(SELECT 1 FROM orders o WHERE o.visit_hash=s.visit_hash AND o.environment='production' AND o.status='approved')) approved
- FROM operation_sessions s WHERE s.first_seen>=? AND s.first_seen<?`,
+ FROM operation_sessions s WHERE s.first_seen>=? AND s.first_seen<? AND (?='' OR s.source=?)`,
         )
-        .bind(f.start, f.end)
+        .bind(f.start, f.end, f.source, f.source)
         .first();
     }
     let meta: unknown = null;
@@ -93,7 +103,18 @@ export async function GET(req: NextRequest) {
     )
       .then((x) => Boolean(x && x.size === EBOOK_PREVIEW.bytes))
       .catch(() => null);
+    const sources = names.has("operation_sessions")
+      ? (
+          await db
+            .prepare(
+              "SELECT DISTINCT source FROM operation_sessions WHERE first_seen>=? AND first_seen<? ORDER BY source LIMIT 200",
+            )
+            .bind(f.start, f.end)
+            .all<{ source: string }>()
+        ).results.map((x) => x.source)
+      : [];
     return json({
+      sources,
       summary,
       days: days.results,
       orders: orders.results.slice(0, 25),
@@ -127,7 +148,10 @@ export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
     const runtime = env(),
-      actor = await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+      actor = await verifyAccessAdmin(
+        runtime,
+        req.cookies.get(ADMIN_COOKIE)?.value,
+      );
     await limitedProductAction(runtime, "operations:" + actor, 10);
     await saveOperationSettings(runtime, actor, await body(req));
     return json({ saved: true });
