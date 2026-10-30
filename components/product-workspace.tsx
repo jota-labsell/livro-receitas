@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ArrowLeft, ArrowUpRight, BookOpen, CheckCircle2, ChevronRight, CreditCard,
   Download, ExternalLink, Eye, FileText, Grid2X2, Info, LayoutList, Link2,
@@ -23,7 +23,7 @@ const brl = (price: number) => price.toLocaleString("pt-BR", { style: "currency"
 function Property({ name, value, note }: { name: string; value: string; note?: string }) {
   return <div className={styles.property}><dt>{name}</dt><dd>{value}</dd>{note && <small>{note}</small>}</div>;
 }
-function ReadOnly({ children }: { children: React.ReactNode }) {
+function ReadOnly({ children }: { children: ReactNode }) {
   return <p className={styles.readOnly}><LockKeyhole size={15} aria-hidden="true" />{children}</p>;
 }
 export function ProductWorkspace({
