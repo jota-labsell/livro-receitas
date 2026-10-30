@@ -1,37 +1,45 @@
-.jf-admin{
-  --jf-bg:#0d1812;
-  --jf-sidebar:#101f18;
-  --jf-surface:#192921;
-  --jf-surface-raised:#203329;
-  --jf-surface-low:#12231a;
-  --jf-border:#30483a;
-  --jf-text:#e9f5ed;
-  --jf-muted:#a9c1b3;
-  --jf-brand:#78e2ac;
-  --jf-brand-hover:#9bf0c2;
-  --jf-success:#77e1a7;
-  --jf-warning:#edca82;
-  --jf-danger:#f2a6ab;
-  --jf-radius-sm:8px;
-  --jf-radius-md:12px;
-  --jf-radius-lg:16px;
-  --jf-space-1:4px;
-  --jf-space-2:8px;
-  --jf-space-3:12px;
-  --jf-space-4:16px;
-  --jf-space-5:20px;
-  --jf-space-6:24px;
-  --jf-space-8:32px;
-  --jf-duration-fast:140ms;
-  background:var(--jf-bg);
-  color:var(--jf-text);
-  min-height:100dvh;
-  color-scheme:dark;
+/* JotaFy / MetaTrack — Graphite V3 administrative design tokens.
+ * Neutral surfaces lead; chromatic colors always have a semantic meaning.
+ * Scoped to /admin. Storefront, checkout and payment UI are untouched.
+ */
+.jf-admin {
+  --jf-bg: #0d0f14;
+  --jf-sidebar: #111319;
+  --jf-surface: #181b23;
+  --jf-surface-raised: #20242e;
+  --jf-surface-low: #141720;
+  --jf-border: #2b303b;
+  --jf-border-strong: #414856;
+  --jf-text: #eef1f7;
+  --jf-muted: #a2aab9;
+  --jf-muted-low: #778194;
+  --jf-brand: #80a9ff;
+  --jf-brand-hover: #a4c0ff;
+  --jf-success: #47cc97;
+  --jf-warning: #f0bc6f;
+  --jf-danger: #f18d91;
+  --jf-cyan: #63c9e3;
+  --jf-chart-blue: #83aaff;
+  --jf-chart-orange: #e4aa71;
+  --jf-radius-sm: 7px;
+  --jf-radius-md: 10px;
+  --jf-radius-lg: 13px;
+  --jf-space-1: 4px;
+  --jf-space-2: 8px;
+  --jf-space-3: 12px;
+  --jf-space-4: 16px;
+  --jf-space-5: 20px;
+  --jf-space-6: 24px;
+  --jf-space-8: 32px;
+  --jf-duration-fast: 140ms;
+  background: var(--jf-bg);
+  color: var(--jf-text);
+  min-height: 100dvh;
+  color-scheme: dark;
+  font-variant-numeric: tabular-nums;
 }
-.jf-admin :focus-visible{
-  outline:2px solid var(--jf-brand);
-  outline-offset:3px;
-}
-@media(prefers-reduced-motion:reduce){
-  .jf-admin,.jf-admin *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+.jf-admin :focus-visible {outline: 2px solid #9dbaff; outline-offset: 3px;}
+.jf-admin ::selection {background: #3b527c; color: white;}
+@media (prefers-reduced-motion: reduce) {
+  .jf-admin, .jf-admin * {scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important;}
 }
