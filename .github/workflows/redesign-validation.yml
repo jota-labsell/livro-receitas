@@ -1,0 +1,38 @@
+name: Validar redesign administrativo (sem deploy)
+on:
+  push:
+    branches:
+      - design/jotafy-premium-workspace-20261030
+  pull_request:
+    branches:
+      - feat/150-doces-r10
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Comércio, acesso e integrações
+        run: |
+          npm run test:commerce
+          npm run test:access
+          npm run test:access:credential
+          npm run test:meta
+          npm run test:operations
+      - name: Build Next.js
+        run: npm run build
+      - name: Chromium para testes visuais
+        run: npx playwright install --with-deps chromium
+      - name: Redesign responsivo e fluxos administrativos
+        run: |
+          npm run test:management:ui
+          npm run test:meta:ui
