@@ -79,11 +79,11 @@ export function MetaAdsWorkspace(){
     </div>
     <section className={styles.panel}><div className={styles.panelHead}><h3>{level==="campaign"?"Campanhas":level==="adset"?"Conjuntos de anúncios":"Anúncios"}</h3>
       <span>Moeda: {data.currency} · Período selecionado</span></div>
-      <div className={styles.scroller}><table><thead><tr><th>Nome</th><th>Gasto</th><th>Impressões</th><th>Cliques totais</th><th>Cliques link</th><th>Saídas</th><th>Visitas destino</th><th>Ações</th></tr></thead>
+      <div className={styles.scroller}><table><thead><tr><th>Nome</th><th>Gasto</th><th>Impressões</th><th>Alcance</th><th>Cliques totais</th><th>Cliques link</th><th>Saídas</th><th>Visitas destino</th><th>Visitas/link</th><th>Custo/visita</th><th>Ações</th></tr></thead>
        <tbody>{data.rows.map(row=><tr key={row.id}><td><strong>{row.name||row.id}</strong><small>{level!=="campaign"?row.campaignName:""}</small></td>
-        <td>{money(row.spend,data.currency)}</td><td>{integer(row.impressions)}</td><td>{integer(row.clicks)}</td>
+        <td>{money(row.spend,data.currency)}</td><td>{integer(row.impressions)}</td><td>{integer(row.reach)}</td><td>{integer(row.clicks)}</td>
         <td>{integer(row.linkClicks)}</td><td>{integer(row.outboundClicks)}</td>
-        <td>{integer(row.landingPageViews)}</td>
+        <td>{integer(row.landingPageViews)}</td><td>{row.linkClicks?((100*row.landingPageViews/row.linkClicks).toFixed(1)+"%"):"—"}</td><td>{row.landingPageViews?money(row.spend/row.landingPageViews,data.currency):"—"}</td>
         <td>{level!=="ad"?<div className={styles.actions}><button disabled={actionBusy} onClick={()=>void changeStatus(row,"PAUSED")}>Pausar</button><button disabled={actionBusy} onClick={()=>void changeStatus(row,"ACTIVE")}>Ativar</button></div>:<span>—</span>}</td></tr>)}</tbody></table></div>
        {!data.rows.length&&<p className={styles.zero}>Nenhuma linha de desempenho para este intervalo.</p>}
        {data.limitedToFirstPage&&<p className={styles.warning}>Exibindo apenas os primeiros 100 registros. Reduza o período ou use filtros para uma análise completa.</p>}
