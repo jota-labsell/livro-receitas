@@ -32,6 +32,8 @@ export async function POST(req:NextRequest){
   else if(input.action==="change_status" && ["campaign","adset"].includes(String(input.level)) && ["ACTIVE","PAUSED"].includes(String(input.status)) && typeof input.id==="string")
    await changeMetaStatus(runtime,input.level as "campaign"|"adset",input.id,input.status as "ACTIVE"|"PAUSED");
   else throw new CommerceError(400,"Ação Meta inválida.");
+  await runtime.ORDERS?.prepare("INSERT INTO operation_audit(id,actor,action,created_at) VALUES(?,?,?,?)")
+    .bind(crypto.randomUUID(),actor,"meta_ads_"+String(input.action).slice(0,35),Date.now()).run();
   return json({saved:true});
  }catch(e){return failure(e);}
 }
