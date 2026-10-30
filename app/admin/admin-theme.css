@@ -1,0 +1,37 @@
+.jf-admin{
+  --jf-bg:#0d1812;
+  --jf-sidebar:#101f18;
+  --jf-surface:#192921;
+  --jf-surface-raised:#203329;
+  --jf-surface-low:#12231a;
+  --jf-border:#30483a;
+  --jf-text:#e9f5ed;
+  --jf-muted:#a9c1b3;
+  --jf-brand:#78e2ac;
+  --jf-brand-hover:#9bf0c2;
+  --jf-success:#77e1a7;
+  --jf-warning:#edca82;
+  --jf-danger:#f2a6ab;
+  --jf-radius-sm:8px;
+  --jf-radius-md:12px;
+  --jf-radius-lg:16px;
+  --jf-space-1:4px;
+  --jf-space-2:8px;
+  --jf-space-3:12px;
+  --jf-space-4:16px;
+  --jf-space-5:20px;
+  --jf-space-6:24px;
+  --jf-space-8:32px;
+  --jf-duration-fast:140ms;
+  background:var(--jf-bg);
+  color:var(--jf-text);
+  min-height:100dvh;
+  color-scheme:dark;
+}
+.jf-admin :focus-visible{
+  outline:2px solid var(--jf-brand);
+  outline-offset:3px;
+}
+@media(prefers-reduced-motion:reduce){
+  .jf-admin,.jf-admin *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
