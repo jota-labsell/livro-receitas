@@ -91,7 +91,7 @@ try {
     assert.deepEqual(posts[0], {pixelId:"1150409944170993",capiPaused:true});
     await page.screenshot({path:`work/management-preview/editor-${width}.png`,fullPage:true});
     await page.getByRole("navigation",{name:"ANÁLISE"}).getByRole("button",{name:"Meta Ads"}).click();
-    await page.getByRole("heading",{name:"Meta Ads"}).waitFor();
+    await page.getByRole("heading",{name:"Meta Ads",level:2}).waitFor();
     await page.getByText("Cliques no link").first().waitFor();
     await page.screenshot({path:`work/management-preview/metaads-${width}.png`,fullPage:true});
     await page.getByRole("button", { name: "Operação e campanhas" }).click();
