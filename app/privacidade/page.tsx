@@ -56,7 +56,7 @@ export default function Privacy() {
           sessão do navegador. A compra é registrada somente pelo backend após
           validação.
         </p>
-        <h2>Medição de anúncios da Meta</h2>
+        <h2>Origem das visitas</h2><p>Quando a medição está permitida, registramos os parâmetros UTM, o caminho de entrada e o identificador transformado da sessão para relacionar visitas e pedidos. Esses dados de atribuição são mantidos por até 90 dias; o histórico de pagamentos é independente.</p><h2>Medição de anúncios da Meta</h2>
         <p>
           Em produção, usamos o Pixel da Meta e a API de Conversões para
           registrar visitas, visualização do produto, início do checkout e compras

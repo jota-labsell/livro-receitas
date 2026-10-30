@@ -11,12 +11,12 @@ export function MetaPixel() {
     void fetch("/api/marketing")
       .then((response) => {
         if (!response.ok) throw new Error("marketing unavailable");
-        return response.json() as Promise<{ enabled?: boolean }>;
+        return response.json() as Promise<{ enabled?: boolean; pixelId?: string }>;
       })
       .then((config) => {
         if (disposed) return;
         const enabled = config.enabled === true;
-        configureMetaPixel(enabled, enabled && attribution.allowed, !attribution.allowed);
+        configureMetaPixel(enabled, enabled && attribution.allowed, !attribution.allowed, config.pixelId);
         if (enabled) metaPageView(visitId());
       })
       .catch(() => configureMetaPixel(false, false));

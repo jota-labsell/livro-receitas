@@ -1,3 +1,4 @@
+import {operationSettings} from './operations-settings';
 import { isIP } from 'node:net';
 import type { NextRequest } from 'next/server';
 import type { CommerceEnv } from './commerce';
@@ -8,6 +9,7 @@ export async function captureMetaContext(runtime: CommerceEnv, orderId: string, 
   if (runtime.META_CAPI_ENABLED !== 'true' || runtime.MERCADOPAGO_MODE !== 'production' || !runtime.ORDERS) return;
   try {
     const data = input && typeof input === 'object' ? input as Record<string, unknown> : {};
+    try {const settings=await operationSettings(runtime);await runtime.ORDERS.prepare('INSERT OR IGNORE INTO operation_order_pixel(order_id,pixel_id) VALUES(?,?)').bind(orderId,settings.pixelId).run()}catch{}
     const previous = await runtime.ORDERS.prepare('SELECT consent FROM meta_order_consent WHERE order_id=?').bind(orderId).first<{ consent: number }>();
     const allowed = request.headers.get('sec-gpc') === '1' ? false : typeof data.allowed === 'boolean' ? data.allowed : previous?.consent !== 0;
     const canonical = new URL(runtime.SITE_URL!);

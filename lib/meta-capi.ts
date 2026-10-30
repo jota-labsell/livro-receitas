@@ -1,3 +1,4 @@
+import {operationSettings,orderPixel} from './operations-settings';
 import type { CommerceEnv } from "./commerce";
 import { isIP } from "node:net";
 
@@ -214,6 +215,9 @@ export async function sendMetaPurchase(
   fetcher: typeof fetch = fetch,
 ): Promise<boolean> {
   if (!enabled(env)) return false;
+  const settings=await operationSettings(env);
+  if(settings.capiPaused)return false;
+  const pixelId=await orderPixel(env,orderId);
   const token = env.META_CAPI_ACCESS_TOKEN!.trim();
   const db = database(env);
   if (!db) return false;
@@ -274,7 +278,7 @@ export async function sendMetaPurchase(
     let retryable = true;
     try {
       const response = await fetcher(
-        `https://graph.facebook.com/${GRAPH_VERSION}/${PIXEL_ID}/events`,
+        `https://graph.facebook.com/${GRAPH_VERSION}/${pixelId}/events`,
         {
           method: "POST",
           redirect: "manual",

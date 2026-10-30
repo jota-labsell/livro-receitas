@@ -5,7 +5,7 @@ import { dispatchMetaPurchases } from './lib/meta-capi';
 export { DOQueueHandler, DOShardedTagCache, BucketCachePurge } from './.open-next/worker.js';
 const paymentRoutes = new Set(['/api/payments', '/api/orders/status', '/api/webhooks/mercadopago']);
 const drain = async (env: CloudflareEnv) => {
-  try { await dispatchMetaPurchases(env); }
+  try { await dispatchMetaPurchases(env); await env.ORDERS?.prepare('DELETE FROM operation_sessions WHERE last_seen<?').bind(Date.now()-90*86400000).run().catch(()=>{}); await env.ORDERS?.prepare("INSERT INTO operation_health(name,last_run) VALUES('meta_dispatch',?) ON CONFLICT(name) DO UPDATE SET last_run=excluded.last_run").bind(Date.now()).run().catch(()=>{}); }
   catch { console.warn(JSON.stringify({ event: 'meta_dispatch_unavailable' })); }
 };
 export default {

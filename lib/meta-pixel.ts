@@ -1,7 +1,7 @@
 "use client";
-export const META_PIXEL_ID = "1150409944170993";
-export type ConfirmedPurchase = { eventId: string; value: number; currency: string };
-type QueuedEvent = { name: string; custom?: boolean; id: string; data: Record<string, unknown> };
+export let META_PIXEL_ID = "1150409944170993";
+export type ConfirmedPurchase = { eventId: string; pixelId?: string; value: number; currency: string };
+type QueuedEvent = { pixelId?: string; name: string; custom?: boolean; id: string; data: Record<string, unknown> };
 type PixelFunction = ((...args: unknown[]) => void) & { queue: unknown[][]; callMethod?: (...args: unknown[]) => void; push?: PixelFunction; loaded?: boolean; version?: string };
 declare global { interface Window { fbq?: PixelFunction; _fbq?: PixelFunction } }
 let enabled: boolean | null = null;
@@ -36,7 +36,9 @@ function flush() {
     let alreadySent = delivered.has(key);
     try { if (event.name === "Purchase") alreadySent ||= localStorage.getItem(storageKey) === "sent"; } catch {}
     if (!alreadySent) {
-      window.fbq!(event.custom ? "trackSingleCustom" : "trackSingle", META_PIXEL_ID, event.name, event.data, { eventID: event.id });
+      const target=event.pixelId || META_PIXEL_ID;
+      if (target!==META_PIXEL_ID) {window.fbq!("set","autoConfig",false,target);window.fbq!("init",target);}
+      window.fbq!(event.custom ? "trackSingleCustom" : "trackSingle", target, event.name, event.data, { eventID: event.id });
       delivered.add(key);
       if (event.name === "Purchase") { try { localStorage.setItem(storageKey, "sent"); } catch {} }
     }
@@ -50,7 +52,8 @@ function queue(key: string, event: QueuedEvent) {
   if (pending.size >= 30) pending.delete(pending.keys().next().value!);
   pending.set(key, event); flush();
 }
-export function configureMetaPixel(active: boolean, allowed: boolean, denied = false) {
+export function configureMetaPixel(active: boolean, allowed: boolean, denied = false, pixelId?: string) {
+  if (!initialized && pixelId && /^\d{5,30}$/.test(pixelId)) META_PIXEL_ID = pixelId;
   enabled = active; consent = allowed; declined = denied;
   if (!active || denied) pending.clear();
   flush();
@@ -71,5 +74,5 @@ export function metaFunnel(name: "offer_view" | "cta_click" | "checkout_start", 
 }
 export function metaConfirmedPurchase(purchase: ConfirmedPurchase) {
   if (!/^[a-f0-9]{64}$/.test(purchase.eventId) || purchase.value !== 10 || purchase.currency !== "BRL") return;
-  queue(`purchase:${purchase.eventId}`, { name: "Purchase", id: purchase.eventId, data: { value: 10, currency: "BRL", content_ids: ["150-doces-comer-vender"], content_type: "product" } });
+  queue(`purchase:${purchase.eventId}`, { name: "Purchase", pixelId: purchase.pixelId && /^\d{5,30}$/.test(purchase.pixelId)?purchase.pixelId:undefined, id: purchase.eventId, data: { value: 10, currency: "BRL", content_ids: ["150-doces-comer-vender"], content_type: "product" } });
 }

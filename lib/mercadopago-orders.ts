@@ -1,3 +1,4 @@
+import {orderPixel} from './operations-settings';
 import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, orderEnvironment, type CommerceEnv } from './commerce';
 import { PRODUCT_CONFIG as PRODUCT } from './product.config';
 import { assertProviderAccount } from './mercadopago-account';
@@ -73,10 +74,10 @@ export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder)
   }
   return fresh;
 }
-function result(o: LocalOrder, p?: ProviderOrder) {
+async function result(o: LocalOrder, p: ProviderOrder | undefined, env: CommerceEnv) {
   const method = p?.transactions?.payments?.[0]?.payment_method;
   return { status: o.status, paymentId: null, expired: p?.status === "expired" || p?.status_detail === "expired" || p?.transactions?.payments?.[0]?.status_detail === "expired", providerOrderId: p?.id || null,
-    ...(o.environment === "production" && o.status === "approved" && p ? { purchase: { eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: "BRL" } } : {}),
+    ...(o.environment === "production" && o.status === "approved" && p ? { purchase: { pixelId: await orderPixel(env,o.id), eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: "BRL" } } : {}),
     ...(o.status === 'pending' && method?.qr_code ? { pix: { code: method.qr_code, qrCodeBase64: method.qr_code_base64 } } : {}) };
 }
 export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, fetcher: typeof fetch = fetch) {
@@ -84,7 +85,7 @@ export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, 
   const stored = await env.ORDERS!.prepare('SELECT * FROM orders WHERE id=?').bind(order.id).first<LocalOrder>();
   if (!stored) throw new CommerceError(404, 'Pedido não encontrado.');
   order = stored;
-  if (!order.active_attempt) return result(order);
+  if (!order.active_attempt) return result(order,undefined,env);
   const attempts = await env.ORDERS!.prepare("SELECT * FROM payment_attempts WHERE order_id=? AND (id=? OR status='approved')").bind(order.id,order.active_attempt).all<Attempt>();
   let active: ProviderOrder | undefined;
   for (const a of attempts.results) {
@@ -98,7 +99,7 @@ export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, 
     }
     if (p) { order = await reconcileProviderOrder(env,p); if (a.id === order.active_attempt) active = p; }
   }
-  return result(order,active);
+  return result(order,active,env);
 }
 export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, form: unknown, fetcher: typeof fetch = fetch) {
   const headers = scope(env);
@@ -122,7 +123,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
         env.ORDERS!.prepare("UPDATE payment_attempts SET status='rejected',updated_at=? WHERE id=? AND payment_id IS NULL AND status='processing'").bind(Date.now(),a.id),
         env.ORDERS!.prepare("UPDATE orders SET status='rejected',updated_at=? WHERE id=? AND active_attempt=? AND status='processing' AND EXISTS(SELECT 1 FROM payment_attempts WHERE id=? AND status='rejected')").bind(Date.now(),order.id,a.id,a.id),
       ]);
-      return result({...order,status:'rejected'});
+      return result({...order,status:'rejected'},undefined,env);
     }
     throw error;
   }
@@ -130,7 +131,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
   // Persist provider ID even if the following authoritative GET times out.
   await env.ORDERS!.prepare('UPDATE payment_attempts SET payment_id=? WHERE id=? AND (payment_id IS NULL OR payment_id=?)').bind(created.id,a.id,created.id).run();
   const confirmed = await get(env,created.id,fetcher);
-  return result(await reconcileProviderOrder(env,confirmed),confirmed);
+  return result(await reconcileProviderOrder(env,confirmed),confirmed,env);
 }
 export async function receiveProviderOrder(env: CommerceEnv, id: string) {
   return reconcileProviderOrder(env,await get(env,id,fetch));

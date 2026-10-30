@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "prepare:ebook": "node scripts/prepare-ebook.mjs",
     "check:release": "node scripts/check-release.mjs",
-    "test": "node scripts/test-commerce.mjs && node scripts/test-product-access.mjs && node scripts/test-meta-diagnostics.mjs && node --test tests/support-credential.test.mjs && playwright test",
+    "test": "node scripts/test-commerce.mjs && node scripts/test-product-access.mjs && node scripts/test-meta-diagnostics.mjs && node --test tests/support-credential.test.mjs && node scripts/test-operations.mjs && playwright test",
     "test:meta": "node scripts/test-meta-diagnostics.mjs",
     "test:meta:ui": "node scripts/test-meta-panel-ui.mjs",
     "cloudflare:build": "node scripts/cloudflare-build.mjs",
@@ -29,7 +29,9 @@
     "test:ui": "playwright test",
     "cloudflare:deploy:vitrine": "node scripts/deploy-storefront.mjs",
     "cloudflare:deploy:sandbox": "node scripts/deploy-sandbox.mjs",
-    "cloudflare:deploy:production": "node scripts/deploy-production.mjs"
+    "cloudflare:deploy:production": "node scripts/deploy-production.mjs",
+    "test:operations": "node scripts/test-operations.mjs",
+    "test:management:ui": "node scripts/test-management-ui.mjs"
   },
   "repository": {
     "type": "git",

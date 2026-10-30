@@ -14,7 +14,7 @@ const equal = (a: string, b: string) => timingSafeEqual(Buffer.from(hash(a), "he
 export function verifyAccessAdmin(env: AccessAdminEnv, session?: string) {
   if (!session || session.length > 200) throw new CommerceError(401, "Entre na área de atendimento.");
   const [nonce, expiry, signature] = session.split(".");
-  if (!/^[a-f0-9]{32}$/.test(nonce || "") || !/^\d{13}$/.test(expiry || "") || !signature || !equal(mac(env, `${nonce}.${expiry}`), signature) || Number(expiry) <= Date.now() || Number(expiry) > Date.now() + 3600000)
+  if (!/^[a-f0-9]{32}$/.test(nonce || "") || !/^\d{13}$/.test(expiry || "") || !signature || !equal(mac(env, `${nonce}.${expiry}`), signature) || Number(expiry) <= Date.now() || Number(expiry) > Date.now() + 7 * 86400000)
     throw new CommerceError(401, "Sua sessão administrativa expirou.");
   return "support:" + hash(nonce).slice(0, 16);
 }

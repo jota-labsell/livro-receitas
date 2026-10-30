@@ -1,3 +1,4 @@
+import {OperationVisit} from '@/components/operation-visit';
 import { MetaPixel } from "@/components/MetaPixel";
 import { PurchaseExperience } from "@/components/purchase-experience";
 import { EBOOK_PREVIEW } from "@/lib/ebook-preview";
@@ -16,7 +17,7 @@ export default async function Home() {
   const ebook = EBOOK_PREVIEW;
   return (
     <>
-      <PurchaseExperience>
+      <PurchaseExperience><OperationVisit/>
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>

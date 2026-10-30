@@ -13,9 +13,9 @@ async function api(url: string, method = "GET", input?: unknown) {
   if (!response.ok) throw new Error(data.error || "Não foi possível concluir a ação.");
   return data;
 }
-export function AccessAdminLogin({ destination = "/admin/acesso" }: { destination?: "/admin/acesso" | "/admin/meta" }) {
+export function AccessAdminLogin({ destination = "/admin/acesso" }: { destination?: "/admin/acesso" | "/admin/meta" | "/admin" }) {
   const [key, setKey] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  return <main className={styles.login}><p className={styles.brand}>JOTAFY · ATENDIMENTO</p><h1>{destination === "/admin/meta" ? "Entrar no painel da Meta" : "Recuperação de acesso"}</h1><p>Área restrita. Use a credencial de atendimento configurada no servidor.</p>
+  return <main className={styles.login}><p className={styles.brand}>JOTAFY · ATENDIMENTO</p><h1>{destination === "/admin" ? "Central de operação" : destination === "/admin/meta" ? "Entrar no painel da Meta" : "Recuperação de acesso"}</h1><p>Área restrita. Use a credencial de atendimento configurada no servidor.</p>
     <form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { await api("/api/admin/ebook/login", "POST", { key }); setKey(""); location.assign(destination); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>
       <label htmlFor="support-key">Credencial administrativa</label><input id="support-key" type="password" autoComplete="current-password" required value={key} onChange={e => setKey(e.target.value)} maxLength={128}/>
       <button disabled={busy}>{busy ? "Validando…" : "Entrar"}</button>
@@ -45,7 +45,7 @@ export function AccessAdminScreen() {
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
   return <div className={styles.shell}><header><div><p className={styles.brand}>JOTAFY · ATENDIMENTO</p><h1>Acesso ao produto</h1><p>Pedidos reais, conferência no provedor e recuperação auditada.</p></div><button onClick={async () => { try { await api("/api/admin/ebook/login", "DELETE"); location.assign("/admin/acesso/entrar"); } catch(e) { setError((e as Error).message); } }}>Sair</button></header>
-    <main><p className={styles.notice}>Não envie o link antes de conferir a identidade do comprador pelos canais de atendimento. Esta área não envia mensagens, não cria pedidos e não realiza cobranças.</p>
+    <main><p><a href="/admin">Central de operação · configurar Minha conta</a></p><p className={styles.notice}>Não envie o link antes de conferir a identidade do comprador pelos canais de atendimento. Esta área não envia mensagens, não cria pedidos e não realiza cobranças.</p>
       <p><a href="/admin/meta">Abrir diagnóstico da API da Meta</a></p>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <section><h2>Localizar pedido</h2><form onSubmit={e => { e.preventDefault(); void select(lookup); }}><label htmlFor="order-search">Identificador interno ou referência da order do Mercado Pago</label><div className={styles.row}><input id="order-search" value={lookup} onChange={e => setLookup(e.target.value)} required maxLength={100}/><button disabled={busy}>Consultar</button></div></form></section>

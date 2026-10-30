@@ -50,6 +50,7 @@ jobs:
           npm run test:access
           npm run test:access:credential
           npm run test:meta
+          npm run test:operations
       - name: Gerar e validar Worker
         run: npm run cloudflare:build
       - name: Publicar preservando secrets e configuração de pagamentos

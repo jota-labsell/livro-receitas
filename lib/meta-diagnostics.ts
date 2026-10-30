@@ -1,3 +1,4 @@
+import {operationSettings} from './operations-settings';
 import { randomUUID } from "node:crypto";
 import { CommerceError, hash, type CommerceEnv } from "./commerce";
 import { metaCapiReady } from './meta-capi';
@@ -28,7 +29,7 @@ export async function metaDiagnosticStatus(runtime: CommerceEnv) {
     ${resultsAvailable ? 'LEFT JOIN meta_delivery_results r ON r.order_id=o.id' : ''}
     WHERE o.environment='production' AND o.status='approved' ORDER BY f.created_at DESC LIMIT 20`).all();
   return {
-    pixelId: DIAGNOSTIC_PIXEL, graphVersion: DIAGNOSTIC_GRAPH_VERSION,
+    pixelId: (await operationSettings(runtime)).pixelId, graphVersion: DIAGNOSTIC_GRAPH_VERSION,
     tokenConfigured: Boolean(runtime.META_CAPI_ACCESS_TOKEN?.trim()),
     automaticEnabled: runtime.META_CAPI_ENABLED === "true",
     tablesAvailable, automaticFlowConnected: metaCapiReady(runtime) && tablesAvailable,
@@ -44,13 +45,14 @@ export async function sendMetaDiagnostic(runtime: CommerceEnv, code: unknown, fe
   if (!token) throw new CommerceError(503, "META_CAPI_ACCESS_TOKEN não está configurado no Worker.");
   if (!runtime.SITE_URL || new URL(runtime.SITE_URL).protocol !== "https:")
     throw new CommerceError(503, "Configure o endereço HTTPS do site no Worker.");
+  const settings=await operationSettings(runtime);
   const eventId = `diagnostic:${randomUUID()}`, checkedAt = Date.now();
   const base: MetaTestResult = { accepted: false, eventId, checkedAt, httpStatus: null,
     eventsReceived: 0, traceId: null, errorCode: null, errorSubcode: null, message: "" };
   const signal = AbortSignal.timeout(15000);
   let response: Response;
   try {
-    response = await fetcher(`https://graph.facebook.com/${DIAGNOSTIC_GRAPH_VERSION}/${DIAGNOSTIC_PIXEL}/events`, {
+    response = await fetcher(`https://graph.facebook.com/${DIAGNOSTIC_GRAPH_VERSION}/${settings.pixelId}/events`, {
       // Workers rejects redirect:error before sending. Manual preserves the
       // no-redirect behavior without forwarding credentials to another host.
       method: "POST", redirect: "manual", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
