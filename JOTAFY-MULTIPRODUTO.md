@@ -1,6 +1,10 @@
 ﻿# JotaFy — plataforma multi-produto
 
-## Estado em 30/10/2026, antes da publicação do código
+## Estado em 30/10/2026, publicado em produção
+
+O código multi-produto está publicado em produção desde 30/10/2026, 18:36 UTC. Consulte “Publicação em produção” ao final para versão, commit e verificações pós-deploy. As seções seguintes preservam o registro anterior à publicação.
+
+## Estado antes da publicação do código
 
 Implementação integrada em feat/jotafy-multiproduto, baseada na produção 5fa52f2. Não confundir migration aplicada com código publicado. Consultar o registro de publicação ao final deste arquivo e as versões reais do Cloudflare.
 
@@ -62,3 +66,12 @@ A conta do proprietário já existe: entrar em /admin/entrar com e-mail/senha ex
 Tarefa LivroReceitas-Central-Backup5min, a cada cinco minutos, última execução verificada com resultado 0. Destino C:\Users\João\Documents\Backup-livro-receitas-central. Bundle Git, patch, fontes novas, manifesto e PROGRESSO.md; excludes de secrets/PDF/gerados preservados. Consulte latest.json/last-run.json. Restaurar em outra pasta, nunca sobrescrever o checkout original sujo.
 
 Checkout de trabalho: C:\Users\João\Projetos\livro-receitas\work\meta-github-release. Não limpar/resetar o checkout principal nem o antigo C:\Windows\System32\livro-receitas. PROMPT-OPENCODE-JOTAFY.md é contexto histórico; este estado e Git/Cloudflare atuais têm precedência.
+
+## Publicação em produção — 30/10/2026
+
+- Worker livro-receitas publicado com `npm.cmd run cloudflare:deploy:production`, versão b126f9f2-ecf8-4dae-af19-1febd577a0e6, tag 76127b95b633, mensagem livro-receitas 76127b95b633eaa228f1fead282c3aa662438045, 100% do tráfego, 30/10/2026 18:36 UTC. O commit publicado é 76127b9, o mesmo revisado e testado.
+- Identidade OAuth joaolucasqtb@gmail.com, conta 48a86816b0ea33a5e9da7eb156dd98b1, com Workers write, D1 write e Workers tail. Nenhum build concorrente entre a revisão e o deploy. D1 remoto sem migrations pendentes antes da publicação.
+- Verificação pós-deploy: `/` 200, `/admin` → login (307), `/admin/produtos` → login, `/checkout/150-doces-comer-vender` 200 com R$10 e Pix, `/api/store/150-doces-comer-vender` 200 com amount_cents 1000, status active, entrega file e Pixel legado; `/api/admin/platform`, `/api/admin/operations` e `/api/admin/meta` retornam 401 sem sessão; `/api/embed/150-doces-comer-vender` 200 JavaScript; `/api/platform/mercadopago/150-doces-comer-vender` e `/api/webhooks/mercadopago` aceitam somente POST (405 em GET); CSP frame-ancestors aplicada em `/checkout/...?embed=1`.
+- Dados intactos após o deploy: 46 pedidos legados, 1 produto ativo R$10/BRL, 0 platform_orders, 0 tentativas, 0 eventos Meta, 0 grants e 0 sessões novas. Nenhuma cobrança, pedido fictício ou conversão foi gerada durante a publicação ou a verificação.
+- Validação executada antes do deploy: typecheck, platform 16/16, commerce 22/22, access 18/18, meta 17/17, operations 10/10, credential 2/2, deploy guards 4/4, platform UI e management UI em 360/1440px, build Cloudflare sem PDF/segredos, Worker local real e Playwright completo 114/114.
+- Pendências inalteradas: integração Meta Ads real depende de token/conta do proprietário com ads_read; Workers Builds nativo continua sem acesso de leitura (403/12004 e 403/10000); webhook de nova compra, entrega de venda nova e exibição FCM só podem ser comprovados com uma venda real autorizada.
