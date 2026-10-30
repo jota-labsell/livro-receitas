@@ -22,6 +22,7 @@ const fixture = {
   services: {database: true, ebook: true, paymentsConfigured: true, metaConfigured: true}, checkedAt: Date.now()
 };
 const server = createServer(async (req,res)=>{
+  if (req.url === "/ebook/page-0.webp") { res.setHeader("Content-Type","image/webp");res.end(await readFile("public/ebook/page-0.webp"));return; }
   const file = req.url === "/panel.js" ? "panel.js" : req.url === "/panel.css" ? "panel.css" : null;
   res.setHeader("Content-Type", file?.endsWith(".js") ? "text/javascript" : file ? "text/css" : "text/html");
   res.end(file ? await readFile("work/management-preview/" + file) :
@@ -43,8 +44,10 @@ try {
     await page.goto(origin);
     await page.getByText("R$ 20,00", { exact: true }).first().waitFor();
     await page.getByText("Lucro estimado", { exact: true }).first().waitFor();
+    await page.screenshot({ path: `work/management-preview/overview-${width}.png`, fullPage: true });
     await page.getByRole("navigation", { name: "GESTÃO" }).getByRole("button", { name: "Produtos", exact: true }).click();
     await page.getByRole("heading", { name: "Seus produtos", exact: true }).waitFor();
+    await page.screenshot({ path: `work/management-preview/catalog-${width}.png`, fullPage: true });
     await page.getByRole("textbox", { name: "Buscar produtos" }).fill("sem resultado");
     await page.getByRole("heading", { name: "Nenhum produto encontrado" }).waitFor();
     await page.getByRole("button", { name: "Limpar busca" }).click();
@@ -54,6 +57,7 @@ try {
     await page.getByLabel("ID do Pixel").fill("1150409944170993");
     await page.getByLabel("Pausar envio automático da CAPI").check();
     await page.getByText("Alterações não salvas", { exact: true }).waitFor();
+    await page.screenshot({ path: `work/management-preview/editor-${width}.png`, fullPage: true });
     await page.getByRole("button", { name: "Salvar alterações" }).click();
     await page.getByText("Configuração salva com sucesso e registrada na auditoria.").waitFor();
     assert.equal(posts.length, 1);
