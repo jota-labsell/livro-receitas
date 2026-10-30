@@ -2,6 +2,7 @@ import { before, after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { build } from 'esbuild';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import { NextRequest } from 'next/server';
 import { CommerceError, ensureOrder, type CommerceEnv } from '../lib/commerce';
@@ -66,7 +67,7 @@ test('test route sends exactly one isolated test event even when automatic mode 
     globalThis.fetch = async (url, init) => {
       calls++;
       assert.equal(String(url), 'https://graph.facebook.com/v26.0/1150409944170993/events');
-      assert.equal(init?.redirect, 'error');
+      assert.equal(init?.redirect, 'manual');
       assert.equal((init?.headers as Record<string, string>).Authorization, `Bearer ${runtime.META_CAPI_ACCESS_TOKEN}`);
       const payload = JSON.parse(init!.body as string);
       assert.equal(payload.test_event_code, 'TEST123'); assert.equal(payload.data.length, 1);
@@ -95,6 +96,11 @@ test('errors, invalid JSON and transport failures do not leak provider bodies or
   assert.equal(zero.accepted, false);
   const offline = await sendMetaDiagnostic(runtime, 'TEST123', async () => { throw new Error('fixture network failure'); });
   assert.equal(offline.httpStatus, null); assert.equal(offline.accepted, false);
+  const timeout = await sendMetaDiagnostic(runtime, 'TEST123', async () => { throw new DOMException('fixture timeout', 'TimeoutError'); });
+  assert.match(timeout.message, /15 segundos/);
+  const unsupported = await sendMetaDiagnostic(runtime, 'TEST123', async () => { throw new TypeError('Unsupported redirect mode'); });
+  assert.match(unsupported.message, /antes do envio/);
+  assert.notEqual(timeout.message, unsupported.message);
 });
 
 test('test endpoint enforces the administrative send quota', async () => {
@@ -102,4 +108,29 @@ test('test endpoint enforces the administrative send quota', async () => {
     const response = await POST(req('POST', { action: 'test', testEventCode: '' }));
     if (i === 5) assert.equal(response.status, 429);
   }
+});
+
+test('actual Workers runtime reaches the mocked Graph endpoint and never follows redirects', async () => {
+  const bundled = await build({ stdin: { contents: `import {sendMetaDiagnostic} from './lib/meta-diagnostics';
+    export default {async fetch(){return Response.json(await sendMetaDiagnostic({SITE_URL:'https://store.example',META_CAPI_ACCESS_TOKEN:'fixture-runtime-token'},'TEST123'));}};`,
+    resolveDir: process.cwd(), loader: 'ts' }, bundle: true, platform: 'neutral', format: 'esm', external: ['node:crypto'], write: false });
+  let calls = 0, redirect = false;
+  const worker = new Miniflare(convertV4MiniflareOptions({ modules: true, script: bundled.outputFiles[0].text,
+    compatibilityDate: '2026-10-27', compatibilityFlags: ['nodejs_compat'],
+    outboundService: async request => {
+      calls++;
+      assert.equal(new URL(request.url).hostname, 'graph.facebook.com');
+      const payload = await request.json() as { test_event_code: string };
+      assert.equal(payload.test_event_code, 'TEST123');
+      return redirect ? Response.redirect('https://unexpected.example/', 302) : Response.json({ events_received: 1, fbtrace_id: 'runtime_fixture' });
+    },
+  }));
+  try {
+    const result = await (await worker.dispatchFetch('https://worker.example/')).json() as Awaited<ReturnType<typeof sendMetaDiagnostic>>;
+    assert.equal(result.accepted, true); assert.equal(calls, 1);
+    redirect = true;
+    const blocked = await (await worker.dispatchFetch('https://worker.example/')).json() as Awaited<ReturnType<typeof sendMetaDiagnostic>>;
+    assert.equal(blocked.accepted, false); assert.equal(blocked.httpStatus, 302);
+    assert.equal(calls, 2, 'A redirect must not resend the authorization header to another host');
+  } finally { await worker.dispose(); }
 });

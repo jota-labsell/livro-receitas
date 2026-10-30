@@ -43,11 +43,14 @@ export async function sendMetaDiagnostic(runtime: CommerceEnv, code: unknown, fe
   const eventId = `diagnostic:${randomUUID()}`, checkedAt = Date.now();
   const base: MetaTestResult = { accepted: false, eventId, checkedAt, httpStatus: null,
     eventsReceived: 0, traceId: null, errorCode: null, errorSubcode: null, message: "" };
+  const signal = AbortSignal.timeout(15000);
   let response: Response;
   try {
     response = await fetcher(`https://graph.facebook.com/${DIAGNOSTIC_GRAPH_VERSION}/${DIAGNOSTIC_PIXEL}/events`, {
-      method: "POST", redirect: "error", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(15000),
+      // Workers rejects redirect:error before sending. Manual preserves the
+      // no-redirect behavior without forwarding credentials to another host.
+      method: "POST", redirect: "manual", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      signal,
       body: JSON.stringify({ test_event_code: code.trim(), data: [{
         event_name: "Purchase", event_id: eventId, event_time: Math.floor(checkedAt / 1000),
         action_source: "website", event_source_url: new URL("/", runtime.SITE_URL).href,
@@ -55,10 +58,20 @@ export async function sendMetaDiagnostic(runtime: CommerceEnv, code: unknown, fe
         custom_data: { value: 10, currency: "BRL", content_ids: ["150-doces-comer-vender"], content_type: "product" },
       }] }),
     });
-  } catch {
-    return { ...base, message: "Não houve resposta da Meta em até 15 segundos ou a conexão falhou. Confira a rede antes de repetir o teste." };
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "";
+    const detail = error instanceof Error ? error.message : "";
+    const timeout = signal.aborted || name === "TimeoutError" || name === "AbortError";
+    const request = name === "TypeError" && /redirect|header|unsupported|invalid.*(?:request|url)/i.test(detail);
+    console.warn(JSON.stringify({ event: "meta_diagnostic_transport_failed", kind: timeout ? "timeout" : request ? "request" : "network" }));
+    return { ...base, message: timeout
+      ? "A conexão do servidor com a Meta atingiu o limite de 15 segundos. Tente novamente em instantes."
+      : request ? "A configuração da requisição foi recusada no servidor antes do envio. O problema precisa ser corrigido na integração."
+      : "Não foi possível completar a conexão do servidor com a Meta. Tente novamente em instantes; se persistir, confira os registros do servidor." };
   }
   base.httpStatus = response.status;
+  if (response.status >= 300 && response.status < 400)
+    return { ...base, message: "A Meta respondeu com um redirecionamento inesperado. O envio foi interrompido sem encaminhar a credencial para outro endereço." };
   const raw: unknown = await response.json().catch(() => null);
   const data = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
   const error = data.error && typeof data.error === "object" ? data.error as Record<string, unknown> : {};

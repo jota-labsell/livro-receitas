@@ -56,7 +56,7 @@ https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_busi
 
 ## Validação local
 
-Seis testes de API passaram: autenticação/origem, consulta com e sem tabelas
+Sete testes de API passaram: autenticação/origem, consulta com e sem tabelas
 Meta, código obrigatório, payload isolado, erros sem exposição de credencial
 e cota de envio. TypeScript passou. A tela foi exercitada com respostas
 simuladas em Chrome a 402px e 1440px: formulário, resposta e ausência de
@@ -64,3 +64,9 @@ rolagem horizontal da página. Capturas em work/meta-panel-preview.
 O instalador foi executado em uma cópia de teste e preservou o arquivo de
 credencial e os scripts existentes. Esses testes não enviam eventos reais à
 Meta. O primeiro teste remoto exige publicação e código da aba Eventos de teste.
+
+A regressão de transporte também roda o código real em workerd/Miniflare,
+com a saída HTTP interceptada: confirma que a requisição chega ao endpoint e
+que redirecionamentos não são seguidos. Workers não aceita `redirect: error`;
+o transporte usa `manual` e trata respostas 3xx explicitamente.
+Referência: https://developers.cloudflare.com/workers/runtime-apis/request/
