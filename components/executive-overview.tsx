@@ -1,7 +1,7 @@
 "use client";
 import {
-  ArrowRight, ArrowUpRight, CheckCircle2, CreditCard, HelpCircle,
-  MousePointerClick, Radio, ShoppingBag, TrendingUp,
+  ArrowRight, ArrowUpRight, CheckCircle2, HelpCircle,
+  MousePointerClick, Radio, TrendingUp,
 } from "lucide-react";
 import styles from "./executive-overview.module.css";
 
@@ -39,22 +39,29 @@ function RevenueLine({ days }: { days: OverviewData["days"] }) {
   }
   const sorted = [...days].sort((a,b) => a.day.localeCompare(b.day));
   const max = Math.max(1, ...sorted.map(d => d.revenue));
-  const coordinates = sorted.map((d,i) => {
-    const x = sorted.length === 1 ? 500 : 35 + (930 * i / (sorted.length - 1));
-    return { x, y: 220 - 185 * (Math.max(0, d.revenue) / max), day: d.day, revenue: d.revenue };
-  });
-  const points = coordinates.map(d => `${d.x},${d.y}`).join(" ");
-  const area = `35,220 ${points} 965,220`;
+  const maxOrders = Math.max(1, ...sorted.map(d => d.orders));
+  const coords = sorted.map((d,i) => ({
+    x: sorted.length === 1 ? 500 : 35 + 930 * i / (sorted.length - 1),
+    revenueY: 220 - 185 * Math.max(0,d.revenue) / max,
+    orderY: 220 - 185 * Math.max(0,d.orders) / maxOrders,
+    ...d,
+  }));
+  const revenuePoints = coords.map(d => `${d.x},${d.revenueY}`).join(" ");
+  const orderPoints = coords.map(d => `${d.x},${d.orderY}`).join(" ");
   const tick = (n: number) => money(Math.round(max * n));
   return <div className={styles.graph}>
     <div className={styles.graphLabel}><span>{tick(1)}</span><span>{tick(.5)}</span><span>R$ 0,00</span></div>
     <div className={styles.svgWrap}>
-      <svg viewBox="0 0 1000 245" preserveAspectRatio="none" role="img" aria-label="Evolução da receita aprovada por dia">
-        <defs><linearGradient id="jotafy-revenue-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#54cc99" stopOpacity=".23"/><stop offset="1" stopColor="#54cc99" stopOpacity="0"/></linearGradient></defs>
-        <path d="M35 35 H965 M35 127 H965 M35 220 H965" stroke="#344438" strokeDasharray="4 8" fill="none"/>
-        {sorted.length > 1 && <polygon points={area} fill="url(#jotafy-revenue-area)"/>}
-        <polyline points={points} stroke="#74ddae" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" fill="none"/>
-        {coordinates.map((d,i)=><circle key={i} cx={d.x} cy={d.y} r="4.5" fill="#b1ffce" stroke="#244b37" strokeWidth="2"><title>{d.day}: {money(d.revenue)}</title></circle>)}
+      <svg viewBox="0 0 1000 245" preserveAspectRatio="none" role="img" aria-label="Evolução diária da receita em reais, azul, e dos pedidos em quantidade, laranja, em escalas independentes">
+        <defs><linearGradient id="jotafy-revenue-area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#86aaff" stopOpacity=".17"/><stop offset="1" stopColor="#86aaff" stopOpacity="0"/></linearGradient></defs>
+        <path d="M35 35 H965 M35 127 H965 M35 220 H965" stroke="#343a47" strokeDasharray="4 8" fill="none"/>
+        {sorted.length > 1 && <polygon points={`35,220 ${revenuePoints} 965,220`} fill="url(#jotafy-revenue-area)"/>}
+        <polyline points={revenuePoints} stroke="#86aaff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" fill="none"/>
+        <polyline points={orderPoints} stroke="#edac71" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" fill="none"/>
+        {coords.map((d,i)=><g key={i}>
+          <circle cx={d.x} cy={d.revenueY} r="4" fill="#b4c8ff" stroke="#252a37" strokeWidth="2"><title>{d.day}: receita {money(d.revenue)}</title></circle>
+          <circle cx={d.x} cy={d.orderY} r="3" fill="#edac71"><title>{d.day}: {d.orders} pedidos</title></circle>
+        </g>)}
       </svg>
       <div className={styles.axisLabels}>
         {sorted.map((d,i) => <span key={d.day} style={{left: `${sorted.length === 1 ? 50 : 3.5 + 93 * i / (sorted.length-1)}%`}} title={d.day}>{d.day.slice(8)}/{d.day.slice(5,7)}</span>)}
@@ -86,15 +93,15 @@ export function ExecutiveOverview({ data, onOrders, onCampaigns, onMeta, onProdu
     </div>
     <div className={styles.headlineGrid}>
       <section className={styles.revenueHero} aria-label="Receita aprovada">
-        <div className={styles.heroEyebrow}><span>Receita aprovada</span><CheckCircle2 size={17}/></div>
+        <div className={styles.heroEyebrow}><span>Receita aprovada</span><CheckCircle2 size={15}/></div>
         <strong className={styles.revenueAmount}>{money(s.revenue)}</strong>
-        <div className={styles.heroFooter}><span>Pedidos criados no período e atualmente aprovados. Antes de taxas.</span><button type="button" onClick={onOrders}>Ver vendas <ArrowUpRight size={15}/></button></div>
+        <div className={styles.heroFooter}><span>Antes de taxas</span><button type="button" onClick={onOrders}>Ver vendas <ArrowUpRight size={14}/></button></div>
       </section>
       <section className={styles.quickStats} aria-label="Resumo de vendas">
         <div><span>Vendas aprovadas</span><strong>{number(s.approved || 0)}</strong><small>Compras confirmadas</small></div>
-        <div><span>Ticket médio</span><strong>{s.approved ? money(s.revenue / s.approved) : "—"}</strong><small>Por venda aprovada</small></div>
+        <div><span>Ticket médio</span><strong>{s.approved ? money(s.revenue / s.approved) : "—"}</strong><small>Por compra</small></div>
         <div><span>Aprovação</span><strong>{percent(s.approved || 0, s.orders)}</strong><small>Dos pedidos criados</small></div>
-        <div><span>Pedidos pendentes</span><strong>{number(s.pending || 0)}</strong><small>{money(s.pending_amount || 0)} aguardando</small></div>
+        <div><span>Pendentes</span><strong>{number(s.pending || 0)}</strong><small>{money(s.pending_amount || 0)} a receber</small></div>
       </section>
     </div>
 
@@ -102,7 +109,7 @@ export function ExecutiveOverview({ data, onOrders, onCampaigns, onMeta, onProdu
       <section className={styles.chartCard}>
         <header className={styles.cardHead}><div><h3>Evolução do faturamento</h3><p>Receita dos pedidos criados no período, atualmente aprovados</p></div><span className={styles.kpiChip}>BRL</span></header>
         <RevenueLine days={data.days}/>
-        <div className={styles.chartFooter}><span><i/> Receita aprovada</span><span>Investimento em anúncios não conectado</span></div>
+        <div className={styles.chartFooter}><span><i/> Receita em R$</span><span className={styles.ordersLegend}><i/> Pedidos (quantidade, escala própria)</span><span>Investimento: não conectado</span></div>
       </section>
       <section className={styles.funnelCard}>
         <header className={styles.cardHead}><div><h3>Funil do site</h3><p>Por sessões registradas</p></div><MousePointerClick size={18} aria-hidden="true"/></header>
