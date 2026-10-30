@@ -92,3 +92,20 @@
 @media(max-width:1050px){.editorLayout{grid-template-columns:210px minmax(0,1fr)}.editorTop{flex-wrap:wrap}.editorTop .editorIdentity{order:-1;width:100%}}
 @media(max-width:700px){.workspace{padding:13px}.hero,.toolbar{flex-wrap:wrap}.hero h2{font-size:21px}.hero .ghost{width:100%;justify-content:center}.productStats{grid-template-columns:1fr;gap:0;padding:5px 15px}.productStats>div{padding:10px 2px}.productStats>div:not(:last-child){border-right:0;border-bottom:1px solid #343d4c}.productStats strong{font-size:20px}.toolbarRight{width:100%;justify-content:space-between}.search{width:100%}.productCard{padding:15px;gap:12px}.productCard>img{width:76px;height:108px}.cardBottom{flex-wrap:wrap}.editorTop .ghost{display:none}.editorTop{padding:12px}.editorIdentity img{width:38px;height:54px}.editorIdentity h2{font-size:15px}.editorLayout{display:block}.editorNav{position:static;display:flex;overflow-x:auto;margin-bottom:16px;gap:6px}.editorNav button{white-space:nowrap;flex:none}.editorNav button svg:last-child{display:none}.sectionHeading{flex-direction:column;align-items:flex-start}.section{padding:16px}.properties{grid-template-columns:1fr}.mediaRow{align-items:flex-start}.saveBar{flex-direction:column;align-items:stretch}.saveBar button{width:100%}}
 @media(prefers-reduced-motion:reduce){.workspace *{transition:none!important}}
+
+/* Final contrast/accessibility refinements based on real browser screenshots. */
+.workspace .ghost,.workspace .back{color:#355781!important;opacity:1!important}
+.workspace .actionLink{color:#285fc3!important}
+@media(max-width:700px){
+  .catalogTable{width:100%;min-width:0}
+  .catalogTable thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+  .catalogTable tbody,.catalogTable tbody tr{display:block;width:100%}
+  .catalogTable tbody tr{padding:12px 13px;border-bottom:1px solid #e5eaf2}
+  .catalogTable td{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 3px;border-bottom:1px solid #edf0f5;text-align:right;white-space:normal}
+  .catalogTable td:first-child{padding:6px 3px 13px;display:block;text-align:left}
+  .catalogTable td:last-child{border-bottom:0}
+  .catalogTable td[data-label]::before{content:attr(data-label);color:#7c889a;font-size:11px;font-weight:700;flex-shrink:0}
+  .catalogTable td .status{margin-left:auto}
+  .tableProduct{align-items:center;text-align:left}
+  .tableProduct small{overflow-wrap:anywhere}
+}
