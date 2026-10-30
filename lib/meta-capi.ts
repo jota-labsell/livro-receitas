@@ -59,7 +59,7 @@ export const metaPurchaseEventId = (orderId: string) =>
   sha256Hex(`meta-purchase:${orderId}`);
 
 export function metaCapiReady(env: MetaEnv) {
-  return env.META_CAPI_ENABLED === "true" && Boolean(env.META_CAPI_ACCESS_TOKEN) &&
+  return env.META_CAPI_ENABLED === "true" && Boolean(env.META_CAPI_ACCESS_TOKEN?.trim()) &&
     env.MERCADOPAGO_MODE === "production" && env.CHECKOUT_ENABLED === "true" && env.LIVE_PAYMENTS_ENABLED === "true";
 }
 const enabled = metaCapiReady;
@@ -214,6 +214,7 @@ export async function sendMetaPurchase(
   fetcher: typeof fetch = fetch,
 ): Promise<boolean> {
   if (!enabled(env)) return false;
+  const token = env.META_CAPI_ACCESS_TOKEN!.trim();
   const db = database(env);
   if (!db) return false;
   try {
@@ -279,7 +280,7 @@ export async function sendMetaPurchase(
           redirect: "manual",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${env.META_CAPI_ACCESS_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ data: [event] }),
           signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
@@ -288,7 +289,7 @@ export async function sendMetaPurchase(
       const data = await response.json().catch(() => ({})) as {
         events_received?: number; fbtrace_id?: unknown; error?: { code?: unknown; fbtrace_id?: unknown; is_transient?: boolean };
       };
-      await deliveryResult(db, orderId, response.status, data.error?.code, data.fbtrace_id ?? data.error?.fbtrace_id, env.META_CAPI_ACCESS_TOKEN!);
+      await deliveryResult(db, orderId, response.status, data.error?.code, data.fbtrace_id ?? data.error?.fbtrace_id, token);
       if (!response.ok || data.error) {
         retryable = response.status === 429 || response.status >= 500 || data.error?.is_transient === true || [1, 2, 4, 17, 32, 341, 613].includes(Number(data.error?.code));
         throw new Error("Meta returned non-success HTTP status");

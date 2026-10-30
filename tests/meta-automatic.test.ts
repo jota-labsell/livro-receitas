@@ -8,7 +8,7 @@ import { NextRequest } from 'next/server';
 import { ensureOrder, newAccess, hash, startAttempt, type CommerceEnv } from '../lib/commerce';
 import { reconcileProviderOrder, type ProviderOrder } from '../lib/mercadopago-orders';
 import { captureMetaContext } from '../lib/meta-context';
-import { dispatchMetaPurchases, recordMetaConsent } from '../lib/meta-capi';
+import { dispatchMetaPurchases, recordMetaConsent, sendMetaPurchase, metaPurchaseEventId } from '../lib/meta-capi';
 import { metaDiagnosticStatus } from '../lib/meta-diagnostics';
 import { POST as webhook } from '../app/api/webhooks/mercadopago/route';
 
@@ -168,4 +168,9 @@ test('transient Graph rate limit with HTTP 400 remains eligible for automatic re
   await db.prepare('UPDATE meta_purchase_delivery SET locked_at=0 WHERE order_id=?').bind(f.order.id).run();
   await tick();
   assert.equal((await db.prepare('SELECT state FROM meta_purchase_delivery WHERE order_id=?').bind(f.order.id).first<{ state: string }>())?.state, 'sent');
+});
+
+test('live transport normalizes token whitespace in the same way as the successful diagnostic test', async () => {
+  const f = await fixture();
+  assert.equal(await sendMetaPurchase({ ...runtime, META_CAPI_ACCESS_TOKEN: ` ${runtime.META_CAPI_ACCESS_TOKEN}\n` }, f.order.id, await metaPurchaseEventId(f.order.id), undefined, undefined, graphFetch), true);
 });
