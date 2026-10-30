@@ -1,3 +1,5 @@
+import { marketingConfig } from "@/lib/marketing-config";
+import { cloudflareEnv } from "@/lib/runtime";
 import {OperationVisit} from '@/components/operation-visit';
 import { MetaPixel } from "@/components/MetaPixel";
 import { PurchaseExperience } from "@/components/purchase-experience";
@@ -15,6 +17,7 @@ import { Testimonials } from "@/components/testimonials";
 export const dynamic = "force-dynamic";
 export default async function Home() {
   const ebook = EBOOK_PREVIEW;
+  const marketing = await marketingConfig(cloudflareEnv());
   return (
     <>
       <PurchaseExperience><OperationVisit/>
@@ -32,7 +35,7 @@ export default async function Home() {
       <Footer />
       <MobileCTA />
       </PurchaseExperience>
-      <MetaPixel />
+      <MetaPixel enabled={marketing.enabled} pixelId={marketing.pixelId} />
     </>
   );
 }
