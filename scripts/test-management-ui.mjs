@@ -43,7 +43,12 @@ try {
     await page.route("**/api/admin/operations", route=>{ posts.push(route.request().postDataJSON()); return route.fulfill({ json: { saved: true } }); });
     await page.goto(origin);
     await page.getByText("R$ 20,00", { exact: true }).first().waitFor();
-    await page.getByText("Lucro estimado", { exact: true }).first().waitFor();
+    await page.getByRole("heading", { name: "Seus resultados, em uma visão." }).waitFor();
+    await page.getByRole("heading", { name: "Evolução do faturamento" }).waitFor();
+    await page.getByRole("heading", { name: "Funil do site" }).waitFor();
+    await page.getByText("Investimento em anúncios não conectado").waitFor();
+    assert.equal(await page.getByText("Lucro estimado", {exact:true}).count(), 0);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth > innerWidth), false, "Overview overflow at "+width+"px");
     await page.screenshot({ path: `work/management-preview/overview-${width}.png`, fullPage: true });
     await page.getByRole("navigation", { name: "GESTÃO" }).getByRole("button", { name: "Produtos", exact: true }).click();
     await page.getByRole("heading", { name: "Seus produtos", exact: true }).waitFor();
