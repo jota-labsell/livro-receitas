@@ -14,7 +14,7 @@ delete config.$schema;
 config.main = path.resolve(config.main);
 config.assets.directory = path.resolve(config.assets.directory);
 for (const db of config.d1_databases) db.migrations_dir = path.resolve(db.migrations_dir);
-config.vars = {...config.vars, SITE_URL:'https://livro-receitas.joaolucasqtb.workers.dev', CHECKOUT_ENABLED:'true',MERCADOPAGO_MODE:'sandbox',LIVE_PAYMENTS_ENABLED:'false'};
+config.vars = {...config.vars, META_PIXEL_ENABLED:'false', SITE_URL:'https://livro-receitas.joaolucasqtb.workers.dev', CHECKOUT_ENABLED:'true',MERCADOPAGO_MODE:'sandbox',LIVE_PAYMENTS_ENABLED:'false'};
 await mkdir('.wrangler',{recursive:true});
 const target = path.resolve('.wrangler/sandbox.deploy.json');
 await writeFile(target,JSON.stringify(config,null,2)+'\n');
