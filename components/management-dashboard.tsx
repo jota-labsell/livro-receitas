@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -17,11 +17,16 @@ import {
   Search,
   PanelLeftClose,
   PanelLeftOpen,
+  CircleHelp,
+  CalendarRange,
+  ChevronDown,
+  CheckCircle2,
 } from "lucide-react";
 import { OperationSummary } from "./operation-summary";
 import { OperatorAccount } from "./operator-login";
 import { AccessAdminScreen } from "./access-admin-screen";
 import { MetaDiagnosticsScreen } from "./meta-diagnostics-screen";
+import { ProductWorkspace } from "./product-workspace";
 import styles from "./management-dashboard.module.css";
 type Order = {
   id: string;
@@ -97,11 +102,16 @@ const nav = [
   ["support", "Atendimento", LifeBuoy],
   ["meta", "API da Meta", Radio],
   ["health", "Saúde dos serviços", Activity],
-  ["product", "Produto e integrações", Settings2],
+  ["product", "Produtos", BookOpen],
   ["account", "Minha conta", Settings2],
 ] as const;
+const navGroups = [
+  { title: "ANÁLISE", keys: ["overview", "operation", "orders"] },
+  { title: "GESTÃO", keys: ["product", "support"] },
+  { title: "SISTEMA", keys: ["meta", "health", "account"] },
+] as const;
 export function ManagementDashboard() {
-  const [expanded, setExpanded] = useState(false),
+  const [expanded, setExpanded] = useState(true),
     [source, setSource] = useState(""),
     [period, setPeriod] = useState("7");
   const [tab, setTab] = useState("overview"),
@@ -124,6 +134,17 @@ export function ManagementDashboard() {
     [linkMedium, setLinkMedium] = useState("paid_social"),
     [linkContent, setLinkContent] = useState("");
   const [site, setSite] = useState("");
+  const [campaignFilter, setCampaignFilter] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    const onUnload = (event: BeforeUnloadEvent) => {
+      if (!dirtyRef.current) return;
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, []);
   useEffect(() => setSite(location.origin), []);
   useEffect(() => {
     const abort = new AbortController();
@@ -151,8 +172,10 @@ export function ManagementDashboard() {
           throw Error(d.error || "Não foi possível carregar os dados.");
         if (!abort.signal.aborted) {
           setData(d);
-          setPixel(d.settings.pixelId);
-          setPaused(d.settings.capiPaused);
+          if (!dirtyRef.current) {
+            setPixel(d.settings.pixelId);
+            setPaused(d.settings.capiPaused);
+          }
         }
       })
       .catch((e) => {
@@ -164,6 +187,29 @@ export function ManagementDashboard() {
     return () => abort.abort();
   }, [start, end, status, search, page, revision, source, tab]);
   const current = nav.find((x) => x[0] === tab)!;
+  const editPixel = (value: string) => { dirtyRef.current = true; setDirty(true); setPixel(value); };
+  const editPaused = (value: boolean) => { dirtyRef.current = true; setDirty(true); setPaused(value); };
+  async function savePixelSettings() {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pixelId: pixel, capiPaused: paused }),
+      });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw Error(result.error || "Falha ao salvar.");
+      dirtyRef.current = false;
+      setDirty(false);
+      setNotice("Configuração salva com sucesso e registrada na auditoria.");
+      setRevision(value => value + 1);
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
   const max = Math.max(1, ...(data?.days.map((d) => d.revenue) || []));
   const link =
     site +
@@ -207,10 +253,10 @@ export function ManagementDashboard() {
       <aside className={styles.sidebar}>
         <a className={styles.brand} href="/admin">
           <span>
-            r<span>p</span>
+            j<span>f</span>
           </span>
           <div>
-            Receitas Premium<small>CENTRAL DE OPERAÇÃO</small>
+            JotaFy<small>METATRACK · OPERAÇÕES</small>
           </div>
         </a>
         <button
@@ -224,26 +270,28 @@ export function ManagementDashboard() {
             <PanelLeftOpen size={18} />
           )}
         </button>
-        <p className={styles.menuLabel}>WORKSPACE</p>
-        <nav aria-label="Gestão">
-          {nav.map(([key, label, Icon]) => (
-            <button
-              key={key}
-              title={label}
-              aria-current={tab === key ? "page" : undefined}
-              onClick={() => {
-                setTab(key);
-                setNotice("");
-              }}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-            </button>
+        <div className={styles.navGroups}>
+          {navGroups.map(group => (
+            <div className={styles.navGroup} key={group.title}>
+              <p className={styles.menuLabel}>{group.title}</p>
+              <nav aria-label={group.title}>
+                {group.keys.map(key => {
+                  const item = nav.find(entry => entry[0] === key)!;
+                  const [, label, Icon] = item;
+                  return <button
+                    key={key}
+                    title={label}
+                    aria-current={tab === key ? "page" : undefined}
+                    onClick={() => { setTab(key); setNotice(""); }}
+                  ><Icon size={18} aria-hidden="true"/><span>{label}</span></button>;
+                })}
+              </nav>
+            </div>
           ))}
-        </nav>
+        </div>
         <div className={styles.sideFoot}>
           <span className={styles.dot} />
-          Operação do e-book<small>Dados de produção · BRL</small>
+          Receitas Premium<small>Workspace · Produção · BRL</small>
           <a href="/" target="_blank" rel="noreferrer">
             Abrir vitrine <ArrowUpRight size={15} />
           </a>
@@ -251,9 +299,8 @@ export function ManagementDashboard() {
       </aside>
       <div className={styles.workspace}>
         <header className={styles.topbar}>
-          <span>
-            Dashboard <span>/</span> {current[1]}
-          </span>
+          <div className={styles.breadcrumb}><span>Workspace</span><ChevronDown size={13}/><strong>JotaFy</strong><span className={styles.crumbDivider}>/</span><span>{current[1]}</span></div>
+          <div className={styles.topbarRight}><span className={styles.livePill}><span className={styles.dot}/> Ambiente de produção</span>
           <button
             onClick={async () => {
               try {
@@ -268,14 +315,14 @@ export function ManagementDashboard() {
             }}
           >
             <LogOut size={16} /> Sair
-          </button>
+          </button></div>
         </header>
         <main className={styles.main}>
           <div className={styles.heading}>
             <div>
-              <p className={styles.eyebrow}>RECEITAS PREMIUM / GESTÃO</p>
+              <p className={styles.eyebrow}>JOTAFY / WORKSPACE</p>
               <h1>{current[1]}</h1>
-              <p>Vendas, tráfego e integrações em uma única visão.</p>
+              <p>{tab === "overview" ? "Acompanhe o desempenho real da sua operação." : tab === "product" ? "Catálogo, configurações e integrações do produto." : "Gerencie sua operação com dados verificados e rastreáveis."}</p>
             </div>
             <button
               className={styles.refresh}
@@ -300,7 +347,8 @@ export function ManagementDashboard() {
             </p>
           )}
           {["overview", "orders", "operation"].includes(tab) && (
-            <div className={styles.filters}>
+            <div className={styles.filters} aria-label="Filtros de período e tráfego">
+              <div className={styles.filterTitle}><CalendarRange size={16}/><strong>Filtros do relatório</strong></div>
               <label>
                 Período de visualização
                 <select
@@ -374,8 +422,8 @@ export function ManagementDashboard() {
                   }}
                 />
               </label>
-              <span>
-                Horário de Brasília
+              <span className={styles.syncStatus} role="status">
+                <CheckCircle2 size={14}/> Horário de Brasília
                 {data && <small>Atualizado: {time(data.checkedAt)}</small>}
               </span>
             </div>
@@ -402,14 +450,14 @@ export function ManagementDashboard() {
                         aprovados.
                       </p>
                     </div>
-                    <span className={styles.chip}>BRL</span>
+                    <span className={styles.chip}>BRL · Dados internos</span>
                   </div>
                   {!data.days.length ? (
                     <div className={styles.empty}>
                       Nenhum pedido no período.
                     </div>
                   ) : (
-                    <div className={styles.chart} aria-label="Receita diária">
+                    <div className={styles.chart} aria-label="Receita aprovada diária, valores em reais">
                       {data.days.map((d) => (
                         <div
                           key={d.day}
@@ -428,6 +476,7 @@ export function ManagementDashboard() {
                       ))}
                     </div>
                   )}
+                  <div className={styles.chartLegend}><span><i/> Receita aprovada</span><span>Investimento: não conectado</span></div>
                 </section>
                 <section className={styles.panel}>
                   <h2>Sua operação, agora</h2>
@@ -587,6 +636,7 @@ export function ManagementDashboard() {
                     Abrir Meta Ads <ArrowUpRight size={15} />
                   </a>
                 </div>
+                <div className={styles.campaignToolbar}><label><Search size={16}/><span className={styles.srOnly}>Pesquisar campanha ou origem</span><input value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)} placeholder="Filtrar campanhas na tabela"/></label><small>Até 100 origens retornadas · Atribuição interna</small></div>
                 <div className={styles.tableScroll}>
                   <table>
                     <thead>
@@ -599,7 +649,7 @@ export function ManagementDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.campaigns.map((c, i) => (
+                      {data.campaigns.filter(c => `${c.campaign} ${c.source} ${c.medium}`.toLowerCase().includes(campaignFilter.trim().toLowerCase())).map((c, i) => (
                         <tr key={i}>
                           <td>
                             <strong>
@@ -617,11 +667,8 @@ export function ManagementDashboard() {
                       ))}
                     </tbody>
                   </table>
-                  {!data.campaigns.length && (
-                    <p className={styles.empty}>
-                      As origens aparecerão após as primeiras visitas
-                      rastreadas.
-                    </p>
+                  {!data.campaigns.filter(c => `${c.campaign} ${c.source} ${c.medium}`.toLowerCase().includes(campaignFilter.trim().toLowerCase())).length && (
+                    <p className={styles.empty}>{campaignFilter ? "Nenhuma campanha corresponde ao filtro." : "As origens aparecerão após as primeiras visitas rastreadas."}</p>
                   )}
                 </div>
                 <p className={styles.notice}>
@@ -752,97 +799,18 @@ export function ManagementDashboard() {
             </section>
           )}
           {data && tab === "product" && (
-            <div className={styles.grid}>
-              <section className={styles.panel}>
-                <BookOpen size={26} />
-                <h2>{data.product.name}</h2>
-                <p className={styles.price}>
-                  {money(data.product.price * 100)}
-                </p>
-                <p>E-book digital · entrega por download autorizado</p>
-                <dl className={styles.productInfo}>
-                  <dt>Identificador</dt>
-                  <dd>{data.product.id}</dd>
-                  <dt>Checkout</dt>
-                  <dd>Mercado Pago</dd>
-                  <dt>Suporte</dt>
-                  <dd>receitaspremium150@gmail.com</dd>
-                </dl>
-                <p className={styles.notice}>
-                  Nome e preço vêm da configuração de produto. Alterações de
-                  preço exigem publicação com validação financeira
-                  correspondente; este painel não muda valores de pedidos
-                  existentes.
-                </p>
-                <button onClick={() => setTab("support")}>
-                  Gerenciar acessos ao produto
-                </button>
-              </section>
-              <section className={styles.panel}>
-                <h2>Pixel e API de Conversões</h2>
-                <p>
-                  A alteração é aplicada a novas páginas e envios. Confira o
-                  acesso do token ao novo Pixel antes de salvar.
-                </p>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setSaving(true);
-                    setError("");
-                    try {
-                      const r = await fetch("/api/admin/operations", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          pixelId: pixel,
-                          capiPaused: paused,
-                        }),
-                      });
-                      const d = (await r.json()) as { error?: string };
-                      if (!r.ok) throw Error(d.error || "Falha ao salvar.");
-                      setNotice(
-                        "Preferências salvas e registradas na auditoria.",
-                      );
-                      setRevision((v) => v + 1);
-                    } catch (e) {
-                      setError((e as Error).message);
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                >
-                  <label>
-                    Identificador do Pixel
-                    <input
-                      required
-                      pattern="[0-9]{5,30}"
-                      value={pixel}
-                      onChange={(e) => setPixel(e.target.value)}
-                    />
-                  </label>
-                  <label className={styles.checkbox}>
-                    <input
-                      type="checkbox"
-                      checked={paused}
-                      onChange={(e) => setPaused(e.target.checked)}
-                    />
-                    Pausar envios automáticos da CAPI
-                  </label>
-                  <p className={styles.muted}>
-                    Pausar não altera pagamentos ou downloads. Eventos pendentes
-                    mantêm seu identificador original e a janela de envio.
-                  </p>
-                  <button disabled={saving || !data.settings.available}>
-                    {saving ? "Salvando…" : "Salvar configuração"}
-                  </button>
-                  {!data.settings.available && (
-                    <p>
-                      Aplique a migration 0010 para habilitar a configuração.
-                    </p>
-                  )}
-                </form>
-              </section>
-            </div>
+            <ProductWorkspace
+              product={data.product}
+              settings={data.settings}
+              pixel={pixel}
+              paused={paused}
+              dirty={dirty}
+              saving={saving}
+              onPixelChange={editPixel}
+              onPausedChange={editPaused}
+              onSave={savePixelSettings}
+              onOpenSupport={() => setTab("support")}
+            />
           )}
           {tab === "account" && <OperatorAccount />}
           {tab === "support" && (
@@ -856,7 +824,7 @@ export function ManagementDashboard() {
             </div>
           )}
           <footer className={styles.footer}>
-            Receitas Premium · Central de operação{" "}
+            JotaFy · Central de operação{" "}
             <span>Valores em reais · Horários de Brasília</span>
           </footer>
         </main>
