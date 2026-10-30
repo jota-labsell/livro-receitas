@@ -7,9 +7,9 @@ const target = path.resolve(process.cwd());
 const manifestPath = path.join(target, 'package.json');
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 if (manifest.name !== 'livro-receitas') throw new Error('Execute dentro da pasta livro-receitas em Projetos.');
-const files = ['lib/meta-diagnostics.ts', 'app/api/admin/meta/route.ts', 'app/admin/meta/page.tsx',
+const files = ['lib/meta-diagnostics.ts', 'app/api/admin/meta/route.ts', 'app/admin/meta/page.tsx', 'app/admin/meta/entrar/page.tsx',
   'components/meta-diagnostics-screen.tsx', 'components/meta-diagnostics.module.css', 'components/access-admin-screen.tsx',
-  'scripts/test-meta-diagnostics.mjs', 'scripts/test-meta-panel-ui.mjs', 'tests/meta-diagnostics.test.ts', 'PAINEL-META.md',
+  'scripts/open-access-admin.mjs', 'scripts/test-meta-diagnostics.mjs', 'scripts/test-meta-panel-ui.mjs', 'tests/meta-diagnostics.test.ts', 'PAINEL-META.md',
   '.github/workflows/deploy-production.yml', 'GITHUB-CLOUDFLARE.md'];
 if (source.toLowerCase() === target.toLowerCase()) throw new Error('Execute na cópia em Projetos, não em System32.');
 const backup = path.join(target, 'work', 'meta-panel-backup', new Date().toISOString().replace(/[:.]/g, '-'));
@@ -27,6 +27,7 @@ for (const file of files) {
   await copyFile(path.join(source, file), destination);
 }
 manifest.scripts['test:meta'] = 'node scripts/test-meta-diagnostics.mjs';
+manifest.scripts['meta:painel'] = 'node scripts/open-access-admin.mjs --meta';
 manifest.scripts['test:meta:ui'] = 'node scripts/test-meta-panel-ui.mjs';
 if (!manifest.scripts.test.includes('scripts/test-meta-diagnostics.mjs'))
   manifest.scripts.test = `node scripts/test-meta-diagnostics.mjs && ${manifest.scripts.test}`;

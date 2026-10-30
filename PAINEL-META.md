@@ -3,6 +3,11 @@
 Endereço: `/admin/meta`. Entre com a mesma sessão administrativa do painel
 de recuperação. Um link no painel de pedidos abre o diagnóstico.
 
+Para copiar a credencial e abrir diretamente a Meta, execute
+`npm.cmd run meta:painel`. Sem sessão, o endereço abre o login específico
+`/admin/meta/entrar`; após entrar, o destino é `/admin/meta`.
+O comando `acesso:painel` continua abrindo o painel de recuperação.
+
 O painel mostra Pixel, versão da Graph API, presença do secret, ativação da
 CAPI, presença das tabelas e últimas 20 compras aprovadas, com horário de
 Brasília. O status de envio refere-se somente ao servidor. Não consulta a

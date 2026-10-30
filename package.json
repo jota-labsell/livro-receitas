@@ -25,6 +25,7 @@
     "test:access:credential": "node --test tests/support-credential.test.mjs",
     "publicar:acesso": "node scripts/publish-product-access.mjs",
     "acesso:painel": "node scripts/open-access-admin.mjs",
+    "meta:painel": "node scripts/open-access-admin.mjs --meta",
     "test:ui": "playwright test",
     "cloudflare:deploy:vitrine": "node scripts/deploy-storefront.mjs",
     "cloudflare:deploy:sandbox": "node scripts/deploy-sandbox.mjs",

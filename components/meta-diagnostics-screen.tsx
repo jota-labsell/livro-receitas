@@ -8,7 +8,7 @@ type Status = { pixelId: string; graphVersion: string; tokenConfigured: boolean;
 const date = (value: number) => new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 async function request<T>(method = "GET", input?: unknown): Promise<T> {
   const response = await fetch("/api/admin/meta", { method, cache: "no-store", signal: AbortSignal.timeout(25000), headers: input ? { "Content-Type": "application/json" } : undefined, body: input ? JSON.stringify(input) : undefined });
-  if (response.status === 401) { location.assign("/admin/acesso/entrar"); throw new Error("Sua sessão expirou. Entre novamente."); }
+  if (response.status === 401) { location.assign("/admin/meta/entrar"); throw new Error("Sua sessão expirou. Entre novamente."); }
   const data: unknown = await response.json();
   if (!response.ok) {
     const message = data && typeof data === "object" && "error" in data ? data.error : null;

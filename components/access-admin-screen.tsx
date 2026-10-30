@@ -13,10 +13,10 @@ async function api(url: string, method = "GET", input?: unknown) {
   if (!response.ok) throw new Error(data.error || "Não foi possível concluir a ação.");
   return data;
 }
-export function AccessAdminLogin() {
+export function AccessAdminLogin({ destination = "/admin/acesso" }: { destination?: "/admin/acesso" | "/admin/meta" }) {
   const [key, setKey] = useState(""), [error, setError] = useState(""), [busy, setBusy] = useState(false);
-  return <main className={styles.login}><p className={styles.brand}>JOTAFY · ATENDIMENTO</p><h1>Recuperação de acesso</h1><p>Área restrita. Use a credencial de atendimento configurada no servidor.</p>
-    <form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { await api("/api/admin/ebook/login", "POST", { key }); setKey(""); location.assign("/admin/acesso"); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>
+  return <main className={styles.login}><p className={styles.brand}>JOTAFY · ATENDIMENTO</p><h1>{destination === "/admin/meta" ? "Entrar no painel da Meta" : "Recuperação de acesso"}</h1><p>Área restrita. Use a credencial de atendimento configurada no servidor.</p>
+    <form onSubmit={async e => { e.preventDefault(); setBusy(true); setError(""); try { await api("/api/admin/ebook/login", "POST", { key }); setKey(""); location.assign(destination); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}>
       <label htmlFor="support-key">Credencial administrativa</label><input id="support-key" type="password" autoComplete="current-password" required value={key} onChange={e => setKey(e.target.value)} maxLength={128}/>
       <button disabled={busy}>{busy ? "Validando…" : "Entrar"}</button>
     </form><p role="alert">{error}</p></main>;
