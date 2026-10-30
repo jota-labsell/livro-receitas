@@ -1,6 +1,6 @@
 // Local recovery snapshots. No network, deployment, secrets, or generated assets.
 import {execFileSync} from 'node:child_process';
-import {readFile,writeFile,mkdir,access,copyFile,unlink} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,access,copyFile,unlink,rename} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -28,7 +28,7 @@ try{
  const files=await Promise.all(paths.map(async p=>({path:p,data:await readFile(path.join(root,p))})));
  const secret=/(?:EAA[A-Za-z0-9]{40,}|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|APP_USR-[A-Za-z0-9_-]{40,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)/;
  if(secret.test(patch)||files.some(f=>secret.test(f.data.toString('utf8'))))throw Error('Snapshot recusado: possível segredo nas alterações. Revise localmente; nenhum valor foi registrado.');
- const digest=createHash('sha256').update(head).update(patch);
+ const digest=createHash('sha256').update(head).update(branch).update(patch);
  for(const f of files)digest.update(f.path).update(f.data);
  const fingerprint=digest.digest('hex');
  let previous;try{previous=JSON.parse(await readFile(path.join(destination,'latest.json'),'utf8'))}catch{}
@@ -38,7 +38,8 @@ try{
  }else{
   const bundles=path.join(destination,'bundles');await mkdir(bundles,{recursive:true});
   const bundle=path.join(bundles,head+'.bundle');
-  try{await access(bundle)}catch{git(['bundle','create',bundle,'HEAD']);git(['bundle','verify',bundle]);}
+  try{await access(bundle)}catch{const temporary=bundle+'.tmp';git(['bundle','create',temporary,'HEAD']);git(['bundle','verify',temporary]);await rename(temporary,bundle);}
+  git(['bundle','verify',bundle]);
   const name=new Date().toISOString().replaceAll(':','-')+'-'+head.slice(0,8);
   const snapshot=path.join(destination,'snapshots',name);await mkdir(snapshot,{recursive:true});
   await writeFile(path.join(snapshot,'tracked.patch'),patch);
@@ -50,5 +51,6 @@ try{
   await writeFile(path.join(destination,'last-run.json'),JSON.stringify({checkedAt:new Date().toISOString(),result:'saved',snapshot},null,2));
   console.log('Ponto de recuperação salvo: '+snapshot);
  }
+ await unlink(path.join(destination,'last-error.txt')).catch(()=>{});
 }catch(e){await writeFile(path.join(destination,'last-error.txt'),new Date().toISOString()+' '+(e.message?.startsWith('Snapshot recusado')?e.message:'Falha no backup; verifique o Git, o espaço e a pasta de destino.'));throw Error('Backup não concluído. Consulte last-error.txt na pasta de backup.');}
 finally{if(locked)await unlink(lock).catch(()=>{});}

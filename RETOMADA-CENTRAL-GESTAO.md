@@ -37,9 +37,11 @@ Build Cloudflare/OpenNext PASSOU e gerou `.open-next/worker.js`; validação de 
 
 Suíte Playwright de 114 testes FINALIZADA: 113 passaram e 1 falhou por timeout em `SDK is reused and Brick teardown finishes before remount`, viewport 360px: `.check()` no radio Pix aguardou estabilidade. O mesmo teste passou em 402px e desktop. Investigar e repetir o teste isoladamente com trace antes de mudar código ou declarar os testes completos. A execução usa `PLAYWRIGHT_USE_PRODUCTION=true` e `next start` local na porta 3000.
 
-Uma nova checagem TypeScript e guards também estava em andamento. Processos de teste não são backup e não sobrevivem ao desligamento. Retomar os comandos conforme necessário.
+Repetição isolada do teste que falhou: DUAS execuções em 360px passaram (5,2s e 4,5s), com trace e um worker, sem alteração do checkout. O timeout da suíte completa permanece registrado como instabilidade observada. A nova checagem TypeScript e os quatro guards passaram. Processos de teste não são backup e não sobrevivem ao desligamento.
 
-Foi criado um D1 SOMENTE LOCAL em `work/management-smoke-state` com as sete migrations do checkout, para preparar smoke test do Worker real. Isso NÃO aplicou migrations no banco remoto. O smoke test autenticado do artefato ainda não foi executado.
+Foi criado um D1 SOMENTE LOCAL em `work/management-smoke-state` com as sete migrations do checkout. Isso NÃO aplicou migrations no banco remoto. `node scripts/test-management-worker.mjs` PASSOU contra o artefato real via Wrangler dev HTTPS local: APIs e cadastro protegidos, origem estrangeira rejeitada, cadastro autenticado, cookies Secure/HttpOnly/Strict e sete dias, dashboard com consultas D1 reais em 360/1440px, senha atual obrigatória, revogação global e logout. Dados exclusivamente locais, sem clientes ou secrets de produção.
+
+Para repetir: iniciar `node node_modules/wrangler/bin/wrangler.js dev --local --ip 127.0.0.1 --port 8787 --local-protocol https --persist-to work/management-smoke-state --var EBOOK_ADMIN_KEY:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa --var SITE_URL:https://127.0.0.1:8787 --var META_CAPI_ENABLED:false --var CHECKOUT_ENABLED:false --var LIVE_PAYMENTS_ENABLED:false` e, em outro terminal, executar o teste acima. A chave a*64 é somente fixture local e NUNCA deve ser configurada em produção.
 
 ## Builds automáticos: bloqueio real, causa ainda desconhecida
 
@@ -55,8 +57,8 @@ Foi criado um D1 SOMENTE LOCAL em `work/management-smoke-state` com as sete migr
 
 ## Próximos passos obrigatórios
 
-1. Finalizar/verificar os testes de interface, investigar o timeout e reexecutar os afetados; conferir TypeScript após a última edição.
-2. Se possível, smoke test autenticado do artefato Cloudflare em ambiente LOCAL isolado, sem secrets ou pedidos de produção. Não confundir esse teste com acesso real do proprietário.
+1. Testes concluídos; manter no relatório o timeout da suíte completa e o sucesso das duas repetições isoladas.
+2. Smoke test autenticado do artefato Cloudflare local concluído. Não confundir esse teste com acesso real do proprietário.
 3. Com acesso aos logs, diagnosticar e corrigir a primeira causa do Workers Builds; revisar branch/raiz, Node/lockfile, build OpenNext, deploy com guards, permissões D1/build, variáveis e integrações concorrentes. Sem esse acesso, registrar a pendência precisa.
 4. Commitar tudo que foi revisado; fazer fetch e conferir novamente ambas as branches antes do push. `feat/central-gestao` já descende da fonte atual de produção, portanto a integração prevista é fast-forward, sem sobrescrever novas mudanças remotas.
 5. Publicar por `npm.cmd run cloudflare:deploy:production`, com os guards do D1, R2, secrets e cron preservados. Registrar commit, tag e version ID real. Não declarar publicação pelo push.
