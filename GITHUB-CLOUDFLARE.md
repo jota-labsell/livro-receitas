@@ -6,7 +6,9 @@ configurado no Windows; não é necessário alterar firewall ou credenciais.
 Nesta publicação o acesso direto falhava, mas o proxy do usuário funcionou.
 
 O workflow `.github/workflows/deploy-production.yml` executa ao enviar commits
-para `feat/150-doces-r10`, ou manualmente por Actions nessa mesma branch.
+para `feat/150-doces-r10` quando a variável de Actions
+`CLOUDFLARE_ACTIONS_DEPLOY=true` estiver configurada, ou manualmente por Actions
+nessa mesma branch. Sem essa ativação, pushes não iniciam um segundo deploy.
 Ele testa comércio/acesso/diagnóstico, gera o Worker em Linux, publica pelo
 script de produção existente e verifica que a API do painel exige login.
 Não aplica migrations, não altera credenciais, não gera cobranças e não envia
@@ -20,11 +22,12 @@ pois o script confere as tabelas antes de publicar. Não usar o token do
 Mercado Pago, da Meta ou a credencial administrativa do e-book para isso.
 Os secrets de pagamentos/Meta continuam no Worker e não entram no build.
 
-Esta configuração não prova que os secrets já estejam cadastrados no GitHub.
-Sem acesso à rede, o agente não pôde consultar o repositório remoto ou
-verificar uma integração nativa Workers Builds já existente na Cloudflare.
-Se ela estiver ativa, escolha um único caminho de deploy para evitar duas
-publicações concorrentes para o mesmo commit.
+Na publicação de 30/10, a consulta confirmou que esses secrets ainda não
+estavam cadastrados no GitHub. Também confirmou integrações nativas Workers
+Builds e Pages no repositório. Por isso o deploy automático de Actions fica
+desativado até a configuração explícita, evitando publicações concorrentes.
+A publicação do painel no Worker foi concluída pelo terminal autenticado;
+não dependeu de configurar ou alterar essas integrações existentes.
 
 Para copiar os novos arquivos para a cópia em Projetos:
 

@@ -14,13 +14,11 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/feat/150-doces-r10'
+    if: github.ref == 'refs/heads/feat/150-doces-r10' && (github.event_name == 'workflow_dispatch' || vars.CLOUDFLARE_ACTIONS_DEPLOY == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       WRANGLER_SEND_METRICS: 'false'
-      WRANGLER_LOG_PATH: ${{ runner.temp }}/wrangler-logs
-      WRANGLER_CACHE_DIR: ${{ runner.temp }}/wrangler-cache
     steps:
       - uses: actions/checkout@v7
         with:
@@ -29,6 +27,10 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Configurar pastas temporárias do Wrangler
+        run: |
+          echo "WRANGLER_LOG_PATH=$RUNNER_TEMP/wrangler-logs" >> "$GITHUB_ENV"
+          echo "WRANGLER_CACHE_DIR=$RUNNER_TEMP/wrangler-cache" >> "$GITHUB_ENV"
       - name: Conferir secrets de publicação
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
