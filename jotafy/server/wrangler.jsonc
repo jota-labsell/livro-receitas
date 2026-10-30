@@ -1,0 +1,4 @@
+{
+ "name":"jotafy", "main":"worker.js", "compatibility_date":"2026-10-27",
+ "d1_databases":[{"binding":"DB","database_name":"receitas-premium-150-orders","database_id":"e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a"}]
+}

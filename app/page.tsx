@@ -1,3 +1,5 @@
+import { MetaPixel } from "@/components/MetaPixel";
+import { PurchaseExperience } from "@/components/purchase-experience";
 import { EBOOK_PREVIEW } from "@/lib/ebook-preview";
 import {
   HeroSection,
@@ -14,6 +16,7 @@ export default async function Home() {
   const ebook = EBOOK_PREVIEW;
   return (
     <>
+      <PurchaseExperience>
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo
       </a>
@@ -27,6 +30,8 @@ export default async function Home() {
       </main>
       <Footer />
       <MobileCTA />
+      </PurchaseExperience>
+      <MetaPixel />
     </>
   );
 }

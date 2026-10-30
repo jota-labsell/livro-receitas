@@ -10,6 +10,7 @@ import {
   CommerceError,
 } from "@/lib/commerce";
 import { getEbook } from "@/lib/ebook";
+import { assertProviderAccount } from "@/lib/mercadopago-account";
 export async function GET() {
   let stage = "configuration";
   const unavailable = (reason: string) => {
@@ -20,6 +21,8 @@ export async function GET() {
     const runtime = env();
     if (!paymentReady(runtime))
       return unavailable("configuration");
+    stage = "provider_account";
+    await assertProviderAccount(runtime);
     stage = "ebook";
     if (!(await getEbook())) return unavailable("ebook");
     stage = "payment_methods";
@@ -32,9 +35,6 @@ export async function GET() {
       paymentMethods: {
         ...(methods.some((m) => m.payment_type_id === "credit_card")
           ? { creditCard: "all" }
-          : {}),
-        ...(methods.some((m) => m.payment_type_id === "debit_card")
-          ? { debitCard: "all" }
           : {}),
         ...(methods.some((m) => m.id === "pix") ? { bankTransfer: "all" } : {}),
         maxInstallments: 1,
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     response.cookies.set(ORDER_COOKIE, token, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/api",
       maxAge: 60 * 60 * 24 * 30,
     });

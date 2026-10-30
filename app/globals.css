@@ -2180,3 +2180,34 @@ footer a:hover {
   .payment-heading h3 { min-width: 0; }
   .payment-heading > span { white-space: nowrap; }
 }
+
+/* Checkout sections keep the provider's internal styles intact. */
+.checkout-fields { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eadfe8; }
+.payment-methods { display: flex; flex-wrap: wrap; gap: 12px; border: 0; padding: 0; margin: 0 0 24px; min-width: 0; }
+.payment-methods legend { font-weight: 750; margin-bottom: 12px; }
+.payment-methods label { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid #d8c4d4; border-radius: 10px; cursor: pointer; min-height: 48px; }
+.payment-methods label:has(:checked) { background: #fff2fa; border-color: #c81f8b; }
+.payment-methods input { accent-color: #c81f8b; }
+.pix-form { display: grid; gap: 12px; margin-bottom: 24px; }
+.pix-form h4 { margin: 0 0 8px; font-size: 18px; }
+.pix-form label, .payment-notice label { display: block; font-weight: 700; }
+.pix-form input, #pix-code { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; border: 1px solid #b99fb3; border-radius: 8px; font: inherit; font-size: 16px; background: white; color: #30203d; }
+.pix-form .button { margin-top: 12px; width: 100%; white-space: normal; }
+.payment-area :is(input, textarea, button, a):focus-visible { outline: 3px solid #712f91; outline-offset: 3px; }
+.payment-area button:disabled { opacity: .65; cursor: wait; }
+.payment-notice { overflow-wrap: anywhere; }
+.pix-qr { display: block; width: 240px; max-width: 100%; height: auto; margin: 0 auto 20px; padding: 12px; background: white; }
+#pix-code { margin-top: 10px; resize: vertical; }
+.payment-heading { gap: 12px; }
+
+/* Preserve the remote checkout clipping fix and consent UI. */
+.checkout-section { overflow: clip; }
+.ad-preference { position: fixed; z-index: 110; right: 16px; bottom: 20px; width: min(390px, calc(100vw - 32px)); padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; box-shadow: 0 6px 28px #26132b26; }
+.ad-preference p { font-size: 12px; line-height: 1.5; }
+.ad-preference a { text-decoration: underline; }
+.ad-preference > div { display: flex; gap: 12px; margin-top: 12px; }
+.ad-preference button { border: 1px solid var(--purple); padding: 8px 12px; border-radius: 7px; background: #fff; color: var(--purple); font-size: 12px; }
+.ad-preference button:first-child { background: var(--purple); color: #fff; }
+.ad-preference-settings { padding: 12px; text-align: center; font-size: 11px; color: var(--muted); }
+.ad-preference-settings button { border: 0; background: transparent; text-decoration: underline; }
+@media(max-width:600px) { .ad-preference { bottom: 88px; } }

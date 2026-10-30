@@ -38,7 +38,7 @@ before(async () => {
   );
   db = (await mf.getD1Database("ORDERS")) as any;
   env.ORDERS = db;
-  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8"));
+  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8"));
   for (const statement of sql.split(";").filter((s) => s.trim()))
     await db.prepare(statement).run();
 });
@@ -301,10 +301,12 @@ test("provider validation refusal permits a new attempt, while ambiguous failure
 
 // Orders fixtures verify backend logic only, not the official sandbox.
 import { chargeProviderOrder, refreshProviderOrder, reconcileProviderOrder, validateProviderOrder } from '../lib/mercadopago-orders';
+import { assertProviderAccount } from '../lib/mercadopago-account';
 function ordersProvider(initial = 'approved', mode = 'sandbox') {
   const rows = new Map<string, any>(); let creates = 0; let lost = false;
   const fetcher = async (url: string | URL | Request, init?: RequestInit) => {
     const u = new URL(String(url));
+    if (u.pathname === '/users/me') return Response.json({ id: 123 });
     if (u.pathname === '/v1/payment_methods') return Response.json([{id:'visa',payment_type_id:'credit_card',status:'active'},{id:'pix',payment_type_id:'bank_transfer',status:'active'}]);
     assert.equal((init?.headers as any)['X-Test-Scope'],mode === 'sandbox' ? 'sandbox' : undefined);
     if (init?.method === 'POST') {
@@ -314,7 +316,7 @@ function ordersProvider(initial = 'approved', mode = 'sandbox') {
       if (!rows.has(key)) { creates++; rows.set(key,{
         id:'ORD'+randomUUID().replaceAll('-',''),type:'online',external_reference:key,user_id:'123',currency:'BRL',total_amount:'10.00',total_paid_amount:initial==='approved'?'10.00':'0.00',
         status:initial==='approved'?'processed':initial==='rejected'?'failed':'action_required',status_detail:initial==='approved'?'accredited':'waiting_payment',last_updated_date:new Date().toISOString(),
-        transactions:{payments:[{id:'PAYfixture',amount:'10.00',status:initial==='approved'?'processed':initial,payment_method:{qr_code:'test-pix-code'}}]},
+        transactions:{payments:[{id:'PAYfixture',amount:'10.00',status:initial==='approved'?'processed':initial,payment_method:{qr_code:'test-pix-code',qr_code_base64:'fixture-base64-not-real'}}]},
       }); }
       if (lost) {lost=false;throw new Error('lost response');}
       return Response.json(rows.get(key));
@@ -328,7 +330,7 @@ function ordersProvider(initial = 'approved', mode = 'sandbox') {
 test('Orders: concurrent submissions persist one provider order and one purchase event',async()=>{
   const local = await ensureOrder(env,newAccess(),randomUUID()), p=ordersProvider();
   const r=await Promise.all([chargeProviderOrder(env,local,form,p.fetcher),chargeProviderOrder(env,local,form,p.fetcher)]);
-  assert.ok(r.every(x=>x.status==='approved'));assert.equal(p.creates,1);
+  assert.ok(r.every(x=>x.status==='approved'));assert.ok(r.every(x=>!x.purchase));assert.equal(p.creates,1);
   const events=await db.prepare("SELECT COUNT(*) AS count FROM funnel_events WHERE order_id=? AND name='purchase_approved'").bind(local.id).first<any>();assert.equal(events.count,1);
   const refreshed=await refreshProviderOrder(env,(await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>())!,p.fetcher);assert.equal(refreshed.status,'approved');
 });
@@ -344,7 +346,7 @@ test('Orders: validates account, currency, amount, product, reference and provid
 });
 test('Orders: pending, reconciliation, refund and stale events',async()=>{
   const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider('pending');
-  const pending=await chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);assert.equal(pending.status,'pending');assert.equal(pending.pix?.code,'test-pix-code');
+  const pending=await chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);assert.equal(pending.status,'pending');assert.equal(pending.pix?.code,'test-pix-code');assert.equal(pending.pix?.qrCodeBase64,'fixture-base64-not-real');
   const row=[...p.rows.values()][0], old=structuredClone(row);
   row.status='processed';row.status_detail='accredited';row.total_paid_amount='10.00';row.transactions.payments[0].status='processed';row.last_updated_date=new Date(Date.now()+1000).toISOString();
   assert.equal((await reconcileProviderOrder(env,row)).status,'approved');
@@ -386,7 +388,106 @@ test('Orders: production requires explicit flags and creates isolated orders wit
   await assert.rejects(chargeProviderOrder({...production,LIVE_PAYMENTS_ENABLED:'false'},real,form,p.fetcher));
   assert.equal(p.creates,0);
   const result=await chargeProviderOrder(production,real,form,p.fetcher);
-  assert.equal(result.status,'approved');assert.equal(p.creates,1);
+  assert.equal(result.status,'approved');assert.equal(p.creates,1);assert.equal(result.purchase?.eventId,hash(`meta-purchase:${real.id}`));
+  assert.equal(result.purchase?.value,10);assert.equal(result.purchase?.currency,'BRL');
+  const storedReal=await findOrder(production,access);
+  assert.equal((await refreshProviderOrder(production,storedReal!,p.fetcher)).purchase?.eventId,result.purchase?.eventId);
   const provider=[...p.rows.values()][0];
   await assert.rejects(reconcileProviderOrder(env,provider));
+});
+
+test('Orders: expired provider transaction allows a deliberate new attempt', async()=>{
+ const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider('pending');
+ await chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);
+ const row=[...p.rows.values()][0];row.status='cancelled';row.status_detail='expired';row.last_updated_date=new Date(Date.now()+1000).toISOString();
+ const fresh=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
+ const result=await refreshProviderOrder(env,fresh,p.fetcher);
+ assert.equal(result.status,'cancelled');assert.equal(result.expired,true);assert.equal(result.pix,undefined);
+});
+test('rejects malformed email and debit before creating any payment attempt', async()=>{
+ const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider();
+ for(const email of ['', 'name@', 'a b@example.com']) await assert.rejects(chargeProviderOrder(env,local,{payment_method_id:'pix',payer:{email}},p.fetcher));
+ await assert.rejects(chargeProviderOrder(env,local,{...form,payment_method_id:'master_debit'},p.fetcher));
+ assert.equal(p.creates,0);
+});
+
+test('Orders: mismatched account blocks repeated requests before reserving or creating a charge', async()=>{
+ const access=newAccess(),local=await ensureOrder(env,access,randomUUID()),p=ordersProvider('pending');
+ let posts=0;
+ const fetcher:typeof fetch=async(url,init)=>{
+  if(new URL(String(url)).pathname==='/users/me') return Response.json({id:456});
+  if(init?.method==='POST') posts++;
+  return p.fetcher(url,init);
+ };
+ for(let i=0;i<2;i++) await assert.rejects(chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},fetcher),e=>(e as any).status===503);
+ assert.equal(posts,0);assert.equal(p.creates,0);
+ const fresh=await findOrder(env,access);assert.equal(fresh!.status,'created');assert.equal(fresh!.active_attempt,null);
+ const count=await db.prepare('SELECT COUNT(*) AS count FROM payment_attempts WHERE order_id=?').bind(local.id).first<any>();
+ assert.equal(count.count,0);
+});
+
+test('Orders: account check rejects missing, malformed and mismatched identity and fails closed on API errors', async()=>{
+ for(const id of [undefined,null,'',0,-1,1.5,Number.MAX_SAFE_INTEGER+1,' 123','123 ',{},'456']) {
+  await assert.rejects(assertProviderAccount(env,async()=>Response.json({id})),e=>(e as any).status===503);
+ }
+ for(const id of [123,'123']) await assertProviderAccount(env,async()=>Response.json({id}));
+ const local=await ensureOrder(env,newAccess(),randomUUID()),p=ordersProvider();
+ for(const failure of ['unauthorized','timeout']) {
+  const fetcher:typeof fetch=async(url,init)=>{
+   if(new URL(String(url)).pathname==='/users/me') {
+    if(failure==='timeout') throw Error('mock network failure');
+    return Response.json({error:'unauthorized'},{status:401});
+   }
+   return p.fetcher(url,init);
+  };
+  await assert.rejects(chargeProviderOrder(env,local,{payment_method_id:'pix',payer:form.payer},fetcher));
+ }
+ assert.equal(p.creates,0);
+ const count=await db.prepare('SELECT COUNT(*) AS count FROM payment_attempts WHERE order_id=?').bind(local.id).first<any>();assert.equal(count.count,0);
+});
+
+test('Orders: observed Pix shape remains pending with aligned identity; all 16 validation checks remain enforced',()=>{
+ const a={id:'fixture-attempt',order_id:'fixture-order',payment_id:'ORDfixture',created_at:Date.now()};
+ const o={environment:'sandbox',id:'fixture-order',product_id:'150-doces-comer-vender',amount_cents:1000,currency:'BRL',active_attempt:a.id,status:'processing'};
+ // Sanitized regression fixture: real response shape, invented identifiers, no payer or payable QR data.
+ const p:any={id:'ORDfixture',type:'online',external_reference:a.id,user_id:'123',currency:'BRL',total_amount:'10.00',total_paid_amount:'10.00',status:'action_required',status_detail:'waiting_transfer',last_updated_date:'2026-10-28T14:59:29.588Z',transactions:{payments:[{id:'PAYfixture',amount:'10.00',status:'action_required',status_detail:'waiting_transfer',payment_method:{id:'pix',type:'bank_transfer'}}]}};
+ assert.equal(validateProviderOrder(p,a,o,env),'pending');
+ assert.throws(()=>validateProviderOrder(p,a,o,{...env,MERCADOPAGO_COLLECTOR_ID:'456'}),e=>(e as any).status===409);
+ const bad:[any,any,any][]=[
+  [p,a,{...o,environment:'production'}],
+  [{...p,id:'invalid id'},a,o],
+  [{...p,type:'point'},a,o],
+  [{...p,external_reference:'other'},a,o],
+  [{...p,user_id:'456'},a,o],
+  [{...p,currency:'USD'},a,o],
+  [{...p,total_amount:'1.00'},a,o],
+  [p,a,{...o,amount_cents:1}],
+  [p,a,{...o,currency:'USD'}],
+  [p,a,{...o,product_id:'other'}],
+  [p,{...a,order_id:'other'},o],
+  [p,{...a,payment_id:'ORDother'},o],
+  [{...p,last_updated_date:'invalid'},a,o],
+  [{...p,transactions:{}},a,o],
+  [{...p,transactions:{payments:[]}},a,o],
+  [{...p,transactions:{payments:[{...p.transactions.payments[0],amount:'1.00'}]}},a,o],
+ ];
+ for(const [provider,attempt,order] of bad) assert.throws(()=>validateProviderOrder(provider,attempt,order,env),e=>(e as any).status===409);
+});
+
+test('JotaFy records production Pix and approval once, without sandbox events', async () => {
+ const production={...env,MERCADOPAGO_MODE:'production',LIVE_PAYMENTS_ENABLED:'true'};
+ const local=await ensureOrder(production,newAccess(),randomUUID());
+ const p=ordersProvider('pending','production');
+ await chargeProviderOrder(production,local,{payment_method_id:'pix',payer:form.payer},p.fetcher);
+ const stored=await db.prepare('SELECT * FROM orders WHERE id=?').bind(local.id).first<any>();
+ const a=await db.prepare('SELECT * FROM payment_attempts WHERE id=?').bind(stored.active_attempt).first<any>();
+ const row=[...p.rows.values()][0];
+ // Fixture declares the authoritative provider payment method.
+ row.transactions.payments[0].payment_method.id='pix';
+ await reconcileProviderOrder(production,row);
+ await reconcileProviderOrder(production,row);
+ row.status='processed'; row.status_detail='accredited';row.total_paid_amount='10.00';row.transactions.payments[0].status='processed';row.last_updated_date=new Date(Date.now()+1000).toISOString();
+ await reconcileProviderOrder(production,row); await reconcileProviderOrder(production,row);
+ const events=await db.prepare('SELECT kind,COUNT(*) AS n FROM jotafy_events WHERE order_id=? GROUP BY kind').bind(local.id).all<any>();
+ assert.deepEqual(events.results.map(e=>[e.kind,e.n]).sort(),[['approved',1],['pix_generated',1]]);
 });

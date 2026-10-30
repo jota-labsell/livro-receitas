@@ -27,6 +27,9 @@ export type CommerceEnv = Pick<
   | "MERCADOPAGO_MODE"
   | "CHECKOUT_ENABLED"
   | "LIVE_PAYMENTS_ENABLED"
+  | "META_CAPI_ENABLED"
+  | "META_CAPI_ACCESS_TOKEN"
+  | "EBOOK_ADMIN_KEY"
 >;
 type Order = {
   id: string;
@@ -117,7 +120,12 @@ export async function mp<T>(
       "Não foi possível confirmar a resposta. Consulte o status antes de tentar novamente.",
     );
   }
-  if (!response.ok)
+  if (!response.ok) {
+    // Only bounded codes are logged: never payer data, tokens or raw provider bodies.
+    const diagnostic = await response.json().catch(() => null) as { errors?: { code?: unknown }[]; error?: unknown } | null;
+    const safeCode = (value: unknown) => typeof value === "string" && /^[a-zA-Z0-9_.-]{1,100}$/.test(value) ? value : undefined;
+    console.warn(JSON.stringify({ event: "payment_provider_error", status: response.status,
+      code: safeCode(diagnostic?.error), codes: Array.isArray(diagnostic?.errors) ? diagnostic.errors.slice(0, 5).map(e => safeCode(e?.code)).filter(Boolean) : undefined }));
     throw new CommerceError(
       response.status >= 500 ||
       response.status === 409 ||
@@ -127,6 +135,7 @@ export async function mp<T>(
       "Não foi possível concluir o pagamento. Confira os dados ou consulte o status.",
       response.status,
     );
+  }
   return response.json() as Promise<T>;
 }
 export type Method = { id: string; payment_type_id: string; status: string };
@@ -138,7 +147,7 @@ export async function availableMethods(
   return methods.filter(
     (m) =>
       m.status === "active" &&
-      (["credit_card", "debit_card"].includes(m.payment_type_id) ||
+      (m.payment_type_id === "credit_card" ||
         m.id === "pix"),
   );
 }

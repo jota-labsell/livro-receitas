@@ -1,3 +1,5 @@
+> Correção de entrega e recuperação segura de acesso: veja [RECUPERACAO-ACESSO.md](RECUPERACAO-ACESSO.md). Para concluir a operação em um terminal com rede e login Cloudflare, execute `npm.cmd run publicar:acesso`; depois, `npm.cmd run acesso:painel`. A correção foi implementada localmente; publicação e validação do cliente real ainda precisam ser comprovadas. As notas históricas abaixo não descrevem integralmente a produção atual.
+
 > Próxima publicação: aplicar a migration 0002 primeiro. Veja [produção e Meta Ads](PRODUCAO-META.md). O código aceita produção somente com ativação explícita; nenhum pagamento real é habilitado por este commit.
 
 > Integração atual: [Orders em sandbox](ORDERS-SANDBOX.md). Produção permanece bloqueada até validação oficial.
