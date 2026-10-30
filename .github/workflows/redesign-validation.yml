@@ -6,6 +6,9 @@ on:
   pull_request:
     branches:
       - feat/150-doces-r10
+concurrency:
+  group: jotafy-redesign-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
