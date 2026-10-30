@@ -16,6 +16,7 @@ export function ProductWorkspace({product,settings,pixel,paused,dirty,saving,onP
  const [tab,setTab]=useState<"general"|"pricing"|"delivery"|"tracking"|"advanced">("general");
  const [draft,setDraft]=useState({name:"",description:"",price_cents:1000,image_url:"",status:"draft" as Product["status"]});
  const [filter,setFilter]=useState("");
+ const [priceText,setPriceText]=useState("10.00");
  const [loading,setLoading]=useState(true),[sending,setSending]=useState(false);
  const [error,setError]=useState(""),[notice,setNotice]=useState("");
  const [changed,setChanged]=useState(false);
@@ -30,8 +31,8 @@ export function ProductWorkspace({product,settings,pixel,paused,dirty,saving,onP
   const block=(e:BeforeUnloadEvent)=>{if(changed){e.preventDefault()}};
   window.addEventListener("beforeunload",block);return()=>window.removeEventListener("beforeunload",block);
  },[changed]);
- const open=(p:Product)=>{setSelected(p);setDraft({name:p.name,description:p.description,price_cents:p.price_cents,image_url:p.image_url,status:p.status});setCreating(false);setChanged(false);setTab("general");setNotice("");setError("")};
- const create=()=>{setSelected(null);setCreating(true);setDraft({name:"",description:"",price_cents:1000,image_url:"",status:"draft"});setTab("general");setChanged(false);setNotice("");setError("")};
+ const open=(p:Product)=>{setPriceText((p.price_cents/100).toFixed(2));setSelected(p);setDraft({name:p.name,description:p.description,price_cents:p.price_cents,image_url:p.image_url,status:p.status});setCreating(false);setChanged(false);setTab("general");setNotice("");setError("")};
+ const create=()=>{setPriceText("10.00");setSelected(null);setCreating(true);setDraft({name:"",description:"",price_cents:1000,image_url:"",status:"draft"});setTab("general");setChanged(false);setNotice("");setError("")};
  const change=(field:keyof typeof draft,value:string|number)=>{setDraft(x=>({...x,[field]:value}));setChanged(true)};
  const save=async()=>{
   setSending(true);setError("");setNotice("");
@@ -89,7 +90,7 @@ export function ProductWorkspace({product,settings,pixel,paused,dirty,saving,onP
       <label>Caminho interno da imagem<input maxLength={240} value={draft.image_url} onChange={e=>change("image_url",e.target.value)} placeholder="/imagens/capa.webp"/></label>
       <p className={styles.readOnly}><Info size={15}/> Essas informações são armazenadas no catálogo administrativo. A página de vendas atual permanece configurada no código.</p>
      </div></section>}
-     {tab==="pricing"&&<section className={styles.section}><h4>Preço e pagamento</h4><div className={styles.catalogForm}><label>Preço (R$)<input type="number" min={1} max={1000000} step=".01" value={(draft.price_cents/100).toFixed(2)} disabled={selected?.status==="live"} onChange={e=>change("price_cents",Math.round(Number(e.target.value)*100))}/></label>
+     {tab==="pricing"&&<section className={styles.section}><h4>Preço e pagamento</h4><div className={styles.catalogForm}><label>Preço (R$)<input type="number" min={1} max={1000000} step=".01" value={priceText} disabled={selected?.status==="live"} onChange={e=>{setPriceText(e.target.value);change("price_cents",Math.round(Number(e.target.value)*100))}}/></label>
       <p className={styles.readOnly}><LockKeyhole size={15}/> {selected?.status==="live"?"O preço do produto vendido está protegido pelo checkout real (R$ 10,00). Não pode ser alterado isoladamente.":"O valor fica salvo como configuração do rascunho. Não ativa cobranças automaticamente."}</p>
      </div></section>}
      {tab==="delivery"&&<section className={styles.section}><h4>Entrega e acesso</h4><p>{selected?.status==="live"?"Entrega protegida do PDF atual pelo R2 e controle de acesso por pagamento aprovado.":"Entrega ainda não vinculada. Produto não pode receber pagamentos até ser configurado."}</p><button className={styles.ghost} onClick={onOpenSupport}>Abrir atendimento <ArrowUpRight size={15}/></button></section>}
