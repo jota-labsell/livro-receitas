@@ -11,6 +11,7 @@ declare global {
     MERCADOPAGO_MODE?: string;
     CHECKOUT_ENABLED?: string;
     LIVE_PAYMENTS_ENABLED?: string;
+    META_PIXEL_ENABLED?: string;
     META_CAPI_ENABLED?: string;
     META_CAPI_ACCESS_TOKEN?: string;
     EBOOK_ADMIN_KEY?: string;
