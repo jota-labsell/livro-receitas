@@ -167,52 +167,23 @@ export function OperationSummary({
           )}
           <p className={styles.footnote}>Percentuais calculados sobre as entradas registradas. As etapas representam sessões distintas, não cliques no anúncio.</p>
         </section>
-        <div className={styles.secondaryStats}>
-          <Metric
-            label="Vendas pendentes"
-            value={amount(s.pending_amount)}
-            note={`${s.pending || 0} pedidos aguardando pagamento ou confirmação.`}
-          />
-          <Metric
-            label="Ticket médio"
-            value={s.approved ? money(s.revenue / s.approved) : "—"}
-            note="Receita aprovada dividida pelas compras aprovadas."
-          />
-          <Metric
-            label="Taxas de pagamento"
-            value="—"
-            note="Taxas reais do Mercado Pago ainda não importadas."
-          />
-          <Metric
-            label="Vendas reembolsadas"
-            value={amount(s.refunded_amount)}
-            note="Valor nominal dos pedidos com status reembolsado; não é um extrato de estornos parciais."
-          />
-          <Metric
-            label="Aprovação de pedidos"
-            value={percent(s.approved || 0, s.orders)}
-            note={`${s.approved || 0} aprovados entre ${s.orders || 0} pedidos criados no período, incluindo pendentes.`}
-          />
-          <Metric
-            label="Despesas adicionais"
-            value="—"
-            note="Despesas operacionais ainda não cadastradas."
-          />
-          <Metric
-            label="Chargebacks"
-            value={amount(s.chargeback_amount)}
-            note="Valor nominal dos pedidos atualmente contestados."
-          />
-          <Metric
-            label="Pedidos revertidos"
-            value={percent(s.reversed || 0, s.orders)}
-            note="Reembolsos e contestações sobre pedidos criados no período."
-          />
-          <Metric
-            label="Impostos e custos"
-            value="—"
-            note="Tributos e custos do produto ainda não informados. Nenhum valor presumido."
-          />
+        <div className={styles.statsColumn}>
+          <div className={styles.secondaryStats}>
+            <Metric label="Vendas pendentes" value={amount(s.pending_amount)} note={`${s.pending || 0} pedidos aguardando pagamento ou confirmação.`}/>
+            <Metric label="Ticket médio" value={s.approved ? money(s.revenue / s.approved) : "—"} note="Receita aprovada dividida pelas compras aprovadas."/>
+            <Metric label="Aprovação de pedidos" value={percent(s.approved || 0, s.orders)} note={`${s.approved || 0} aprovados entre ${s.orders || 0} pedidos criados no período, incluindo pendentes.`}/>
+          </div>
+          <details className={styles.financialDetails}>
+            <summary>Outros indicadores financeiros <span>6 indicadores adicionais</span></summary>
+            <div className={styles.detailsStats}>
+              <Metric label="Taxas de pagamento" value="—" note="Taxas reais do Mercado Pago ainda não importadas."/>
+              <Metric label="Vendas reembolsadas" value={amount(s.refunded_amount)} note="Valor nominal dos pedidos com status reembolsado; não é um extrato de estornos parciais."/>
+              <Metric label="Despesas adicionais" value="—" note="Despesas operacionais ainda não cadastradas."/>
+              <Metric label="Chargebacks" value={amount(s.chargeback_amount)} note="Valor nominal dos pedidos atualmente contestados."/>
+              <Metric label="Pedidos revertidos" value={percent(s.reversed || 0, s.orders)} note="Reembolsos e contestações sobre pedidos criados no período."/>
+              <Metric label="Impostos e custos" value="—" note="Tributos e custos do produto ainda não informados. Nenhum valor presumido."/>
+            </div>
+          </details>
         </div>
       </div>
       <div className={styles.bottomStats}>
