@@ -123,7 +123,7 @@ export function normalizeInsights(rows:Insight[],level:"campaign"|"adset"|"ad"){
   campaignId:x.campaign_id||"",campaignName:x.campaign_name||"",
   adsetId:x.adset_id||"",adsetName:x.adset_name||"",
   spend:num(x.spend),impressions:num(x.impressions),reach:num(x.reach),
-  clicks:num(x.clicks),linkClicks:num(x.inline_link_clicks),
+  clicks:num(x.clicks),linkClicks:(x.actions||[]).some(a=>a.action_type==="link_click") ? (x.actions||[]).filter(a=>a.action_type==="link_click").reduce((s,a)=>s+num(a.value),0) : num(x.inline_link_clicks),
   outboundClicks:(x.outbound_clicks||[]).reduce((s,a)=>s+num(a.value),0),
   landingPageViews:(x.actions||[]).filter(a=>a.action_type==="landing_page_view").reduce((s,a)=>s+num(a.value),0),
  }));
