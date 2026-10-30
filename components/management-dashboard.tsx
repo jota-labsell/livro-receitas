@@ -253,10 +253,10 @@ export function ManagementDashboard() {
       <aside className={styles.sidebar}>
         <a className={styles.brand} href="/admin">
           <span>
-            r<span>p</span>
+            j<span>f</span>
           </span>
           <div>
-            Receitas Premium<small>CENTRAL DE OPERAÇÃO</small>
+            JotaFy<small>METATRACK · OPERAÇÕES</small>
           </div>
         </a>
         <button
@@ -291,7 +291,7 @@ export function ManagementDashboard() {
         </div>
         <div className={styles.sideFoot}>
           <span className={styles.dot} />
-          Workspace JotaFy<small>Dados de produção · BRL</small>
+          Receitas Premium<small>Workspace · Produção · BRL</small>
           <a href="/" target="_blank" rel="noreferrer">
             Abrir vitrine <ArrowUpRight size={15} />
           </a>
