@@ -48,7 +48,7 @@ export function MetaAdsWorkspace(){
  const sum=(k:keyof Row)=>data?.rows.reduce((t,r)=>t+(Number(r[k])||0),0)||0;
  const connected=Boolean(data?.connected);
  return <div className={styles.wrap}>
-  <div className={styles.heading}><div><p className={styles.eyebrow}>METATRACK / MARKETING API</p><h2>Meta Ads</h2><p>Campanhas, conjuntos e anúncios com dados obtidos diretamente da conta autorizada.</p></div>
+  <div className={styles.heading}><div><p className={styles.eyebrow}>METATRACK / MARKETING API</p><h2>Gerenciador de anúncios</h2><p>Campanhas, conjuntos e anúncios com dados obtidos diretamente da conta autorizada.</p></div>
    <button className={styles.secondary} disabled={loading} onClick={()=>void load()}><RefreshCw size={16}/> Atualizar</button>
   </div>
   {!!error&&<p className={styles.error} role="alert"><AlertCircle size={15}/>{error}</p>}
