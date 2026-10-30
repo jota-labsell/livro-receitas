@@ -43,7 +43,7 @@ try {
     await page.goto(origin);
     await page.getByText("R$ 20,00", { exact: true }).first().waitFor();
     await page.getByText("Lucro estimado", { exact: true }).first().waitFor();
-    await page.getByRole("button", { name: "Produtos", exact: true }).click();
+    await page.getByRole("navigation", { name: "GESTÃO" }).getByRole("button", { name: "Produtos", exact: true }).click();
     await page.getByRole("heading", { name: "Seus produtos", exact: true }).waitFor();
     await page.getByRole("textbox", { name: "Buscar produtos" }).fill("sem resultado");
     await page.getByRole("heading", { name: "Nenhum produto encontrado" }).waitFor();
@@ -58,7 +58,7 @@ try {
     await page.getByText("Configuração salva com sucesso e registrada na auditoria.").waitFor();
     assert.equal(posts.length, 1);
     assert.deepEqual(posts[0], { pixelId: "1150409944170993", capiPaused: true });
-    await page.getByRole("button", { name: "Produtos", exact: true }).click();
+    await page.getByRole("navigation", { name: "GESTÃO" }).getByRole("button", { name: "Produtos", exact: true }).click();
     await page.getByRole("button", { name: "Operação e campanhas" }).click();
     await page.getByRole("heading", { name: /Funil de conversão/ }).waitFor();
     await page.getByPlaceholder("Filtrar campanhas na tabela").fill("campanha de teste");
