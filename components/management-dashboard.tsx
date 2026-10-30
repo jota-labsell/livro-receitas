@@ -21,6 +21,7 @@ import {
   CalendarRange,
   ChevronDown,
   CheckCircle2,
+  BarChart3,
 } from "lucide-react";
 import { OperationSummary } from "./operation-summary";
 import { ExecutiveOverview } from "./executive-overview";
@@ -28,6 +29,7 @@ import { OperatorAccount } from "./operator-login";
 import { AccessAdminScreen } from "./access-admin-screen";
 import { MetaDiagnosticsScreen } from "./meta-diagnostics-screen";
 import { ProductWorkspace } from "./product-workspace";
+import { MetaAdsWorkspace } from "./meta-ads-workspace";
 import styles from "./management-dashboard.module.css";
 type Order = {
   id: string;
@@ -100,6 +102,7 @@ const nav = [
   ["overview", "Visão geral", LayoutDashboard],
   ["orders", "Vendas e pedidos", ShoppingBag],
   ["operation", "Operação e campanhas", ChartNoAxesCombined],
+  ["metaAds", "Meta Ads", BarChart3],
   ["support", "Atendimento", LifeBuoy],
   ["meta", "API da Meta", Radio],
   ["health", "Saúde dos serviços", Activity],
@@ -107,7 +110,7 @@ const nav = [
   ["account", "Minha conta", Settings2],
 ] as const;
 const navGroups = [
-  { title: "ANÁLISE", keys: ["overview", "operation", "orders"] },
+  { title: "ANÁLISE", keys: ["overview", "operation", "metaAds", "orders"] },
   { title: "GESTÃO", keys: ["product", "support"] },
   { title: "SISTEMA", keys: ["meta", "health", "account"] },
 ] as const;
@@ -146,7 +149,7 @@ export function ManagementDashboard() {
     window.addEventListener("beforeunload", onUnload);
     return () => window.removeEventListener("beforeunload", onUnload);
   }, []);
-  useEffect(() => setSite(location.origin), []);
+  useEffect(() => {setSite(location.origin);if(new URLSearchParams(location.search).has("meta_ads"))setTab("metaAds");}, []);
   useEffect(() => {
     const abort = new AbortController();
     setBusy(true);
@@ -759,6 +762,7 @@ export function ManagementDashboard() {
               onOpenSupport={() => setTab("support")}
             />
           )}
+          {tab === "metaAds" && <MetaAdsWorkspace />}
           {tab === "account" && <OperatorAccount />}
           {tab === "support" && (
             <div className={styles.embedded}>

@@ -41,6 +41,23 @@ try {
     page.on("pageerror", e=>errors.push(e.message));
     await page.route("**/api/admin/operations?*", route=>route.fulfill({ json: fixture }));
     await page.route("**/api/admin/operations", route=>{ posts.push(route.request().postDataJSON()); return route.fulfill({ json: { saved: true } }); });
+    let catalog=[{id:"150-doces-comer-vender",name:"150 Doces para Comer e Vender",description:"E-book",price_cents:1000,image_url:"/ebook/page-0.webp",currency:"BRL",status:"live",revision:1}];
+    await page.route("**/api/admin/products",route=>{
+      const request=route.request();
+      if(request.method()==="GET")return route.fulfill({json:{products:catalog}});
+      const b=request.postDataJSON();
+      const id=b.action==="create"?"p-12345678-1234-4234-a234-123456789012":b.id;
+      if(b.action==="create")catalog=[...catalog,{...b,id,revision:1,status:"draft"}];
+      else catalog=catalog.map(p=>p.id===id?{...p,...b,revision:p.revision+1}:p);
+      return route.fulfill({json:{id,products:catalog}});
+    });
+    await page.route("**/api/admin/meta-ads?*",route=>route.fulfill({json:{
+      configured:true,connected:true,accountId:"act_123456789",expiresAt:Date.now()+86400000,
+      accounts:[{id:"act_123456789",name:"Conta de teste",currency:"BRL",status:1,timezone:"America/Sao_Paulo"}],
+      currency:"BRL",level:"campaign",
+      rows:[{id:"12345678",name:"Campanha de exemplo",spend:14.16,impressions:500,reach:450,clicks:30,linkClicks:22,outboundClicks:20,landingPageViews:5}]
+    }}));
+    await page.route("**/api/admin/meta-ads",route=>route.fulfill({json:{saved:true}}));
     await page.goto(origin);
     await page.getByText("R$ 20,00", { exact: true }).first().waitFor();
     await page.getByRole("heading", { name: "Seus resultados, em uma visão." }).waitFor();
@@ -57,23 +74,26 @@ try {
     await page.getByRole("heading", { name: "Seus produtos", exact: true }).waitFor();
     await page.getByRole("table").first().waitFor();
     await page.getByText("PRODUTOS CADASTRADOS").waitFor();
-    await page.getByText("FORMATO DE ENTREGA").waitFor();
-    await page.screenshot({ path: `work/management-preview/catalog-${width}.png`, fullPage: true });
-    await page.getByRole("textbox", { name: "Buscar produtos" }).fill("sem resultado");
-    await page.getByRole("heading", { name: "Nenhum produto encontrado" }).waitFor();
-    await page.getByRole("button", { name: "Limpar busca" }).click();
-    await page.getByRole("button", { name: "Ver tabela" }).click();
-    await page.getByRole("button", { name: "Gerenciar" }).click();
-    await page.getByRole("button", { name: "Rastreamento" }).click();
+    await page.screenshot({path: `work/management-preview/catalog-${width}.png`,fullPage:true});
+    await page.getByRole("button",{name:"Adicionar produto"}).click();
+    await page.getByPlaceholder("Ex.: E-book de receitas").fill("Curso de sobremesas");
+    await page.getByPlaceholder("Descreva o produto").fill("Novo produto em rascunho");
+    await page.getByRole("button",{name:"Criar rascunho"}).click();
+    await page.getByText("Produto salvo no catálogo.").waitFor();
+    await page.getByRole("button",{name:"Voltar aos produtos"}).click();
+    await page.getByText("Curso de sobremesas").first().waitFor();
+    await page.getByRole("button",{name:"Configurar"}).first().click();
+    await page.getByRole("button",{name:"Rastreamento"}).click();
     await page.getByLabel("ID do Pixel").fill("1150409944170993");
-    await page.getByLabel("Pausar envio automático da CAPI").check();
-    await page.getByText("Alterações não salvas", { exact: true }).waitFor();
-    await page.screenshot({ path: `work/management-preview/editor-${width}.png`, fullPage: true });
-    await page.getByRole("button", { name: "Salvar alterações" }).click();
-    await page.getByText("Configuração salva com sucesso e registrada na auditoria.").waitFor();
+    await page.getByLabel("Pausar o envio da CAPI").check();
+    await page.getByRole("button",{name:"Salvar rastreamento"}).click();
     assert.equal(posts.length, 1);
-    assert.deepEqual(posts[0], { pixelId: "1150409944170993", capiPaused: true });
-    await page.getByRole("navigation", { name: "GESTÃO" }).getByRole("button", { name: "Produtos", exact: true }).click();
+    assert.deepEqual(posts[0], {pixelId:"1150409944170993",capiPaused:true});
+    await page.screenshot({path:`work/management-preview/editor-${width}.png`,fullPage:true});
+    await page.getByRole("navigation",{name:"ANÁLISE"}).getByRole("button",{name:"Meta Ads"}).click();
+    await page.getByRole("heading",{name:"Gerenciador de anúncios",level:2}).waitFor();
+    await page.getByText("Cliques no link").first().waitFor();
+    await page.screenshot({path:`work/management-preview/metaads-${width}.png`,fullPage:true});
     await page.getByRole("button", { name: "Operação e campanhas" }).click();
     await page.getByRole("heading", { name: /Funil de conversão/ }).waitFor();
     await page.getByPlaceholder("Filtrar campanhas na tabela").fill("campanha de teste");

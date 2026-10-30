@@ -109,3 +109,20 @@
   .tableProduct{align-items:center;text-align:left}
   .tableProduct small{overflow-wrap:anywhere}
 }
+
+/* Real catalog editor fields */
+.catalogForm{display:grid;gap:17px;max-width:720px}
+.catalogForm label{display:grid;gap:7px;color:#354254;font-size:12px;font-weight:700}
+.catalogForm input,.catalogForm textarea,.catalogForm select{
+ width:100%;min-height:43px;background:#fff!important;border:1px solid #cad5e5!important;color:#273248!important;
+ border-radius:8px!important;padding:10px 12px!important;font:inherit!important;font-size:13px!important;
+}
+.catalogForm input:disabled,.catalogForm select:disabled{background:#f1f4f8!important;color:#748197!important}
+.catalogForm textarea{min-height:96px;resize:vertical}
+.catalogForm input:focus-visible,.catalogForm textarea:focus-visible,.catalogForm select:focus-visible{outline:2px solid #4b77da;outline-offset:2px}
+.successMessage{color:#205b43;background:#e8f7ef;border:1px solid #bee5cd;border-radius:9px;padding:12px 15px;font-size:12px}
+.warn{color:#a44039!important;background:#fff1ee;border:1px solid #efc8c1;border-radius:9px;padding:13px;font-size:12px}
+.workspace .ghost{font-size:12px;cursor:pointer}
+.workspace .saveBar{margin-top:14px}
+.workspace .settingsForm label{color:#344357}
+@media(max-width:700px){.catalogForm{gap:12px}.workspace .hero{align-items:stretch}.workspace .hero .primary,.workspace .hero .ghost{width:100%}}
