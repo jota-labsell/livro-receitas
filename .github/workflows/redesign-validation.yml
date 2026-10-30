@@ -45,6 +45,6 @@ jobs:
         with:
           name: jotafy-redesign-screenshots
           path: |
-            work/management-preview/redesign-*.png
+            work/management-preview/*.png
             work/meta-panel-preview/meta-*.png
           if-no-files-found: ignore
