@@ -48,6 +48,8 @@ test('status lists production approvals without requiring marketing migrations o
   assert.equal(data.purchases.length, 1); assert.equal(data.purchases[0].state, null);
   assert.equal(JSON.stringify(data).includes(runtime.META_CAPI_ACCESS_TOKEN!), false);
   for (const statement of (await readFile('migrations/0007_meta_capi.sql', 'utf8')).split(';').filter(value => value.trim())) await db.prepare(statement).run();
+  assert.equal((await metaDiagnosticStatus(runtime)).tablesAvailable, false);
+  for (const statement of (await readFile('migrations/0009_meta_automatic.sql', 'utf8')).split(';').filter(value => value.trim())) await db.prepare(statement).run();
   assert.equal((await metaDiagnosticStatus(runtime)).tablesAvailable, true);
 });
 
@@ -113,7 +115,7 @@ test('test endpoint enforces the administrative send quota', async () => {
 test('actual Workers runtime reaches the mocked Graph endpoint and never follows redirects', async () => {
   const bundled = await build({ stdin: { contents: `import {sendMetaDiagnostic} from './lib/meta-diagnostics';
     export default {async fetch(){return Response.json(await sendMetaDiagnostic({SITE_URL:'https://store.example',META_CAPI_ACCESS_TOKEN:'fixture-runtime-token'},'TEST123'));}};`,
-    resolveDir: process.cwd(), loader: 'ts' }, bundle: true, platform: 'neutral', format: 'esm', external: ['node:crypto'], write: false });
+    resolveDir: process.cwd(), loader: 'ts' }, bundle: true, platform: 'neutral', format: 'esm', external: ['node:*'], write: false });
   let calls = 0, redirect = false;
   const worker = new Miniflare(convertV4MiniflareOptions({ modules: true, script: bundled.outputFiles[0].text,
     compatibilityDate: '2026-10-27', compatibilityFlags: ['nodejs_compat'],

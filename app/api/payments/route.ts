@@ -10,6 +10,7 @@ import {
   CommerceError,
 } from "@/lib/commerce";
 import { getEbook } from "@/lib/ebook";
+import { captureMetaContext } from "@/lib/meta-context";
 export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     if (!existing || !(await findOrder(runtime, existing)))
       throw new CommerceError(409, "Inicie o checkout novamente.");
     const order = await ensureOrder(runtime, existing, input.visitId);
+    await captureMetaContext(runtime, order.id, req, input.meta);
     return json(await charge(runtime, order, input.formData));
   } catch (e) {
     return failure(e);

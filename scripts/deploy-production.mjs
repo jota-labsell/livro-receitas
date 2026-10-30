@@ -23,6 +23,7 @@ if (!args.includes('--dry-run')) {
   runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT environment FROM orders LIMIT 0"],{stdio:'inherit'});
   // Do not publish recovery routes without their additive migration on the existing database.
   runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT id,order_id,token_hash,expires_at,revoked_at FROM product_access_grants LIMIT 0; SELECT token_hash,grant_id,expires_at FROM product_access_sessions LIMIT 0; SELECT id,action,actor,previous_status FROM product_access_audit LIMIT 0; SELECT bucket,count,expires_at FROM product_access_limits LIMIT 0"],{stdio:'inherit'});
+  runLocalCli('wrangler','wrangler',['d1','execute',database.database_name,'--remote','--command',"SELECT order_id,consent FROM meta_order_consent LIMIT 0; SELECT order_id,fbp FROM meta_purchase_context LIMIT 0; SELECT order_id,state FROM meta_purchase_delivery LIMIT 0; SELECT order_id,fbc,client_ip FROM meta_purchase_match LIMIT 0; SELECT order_id,http_status,error_code FROM meta_delivery_results LIMIT 0"],{stdio:'inherit'});
 }
 const deployEnv = {
   ...process.env,

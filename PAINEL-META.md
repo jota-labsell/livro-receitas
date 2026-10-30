@@ -28,8 +28,8 @@ pedido, cookie de publicidade ou cobrança. Não escreve no histórico de vendas
 ou na fila de produção. Nunca remove o código para enviar uma compra fictícia.
 
 `events_received: 1` significa que a Meta reconheceu o recebimento; não
-significa venda atribuída à campanha. O painel não corrige a integração
-automática de compras, que continua indicada como pendente.
+significa venda atribuída à campanha. O fluxo automático das novas compras
+está descrito em [META-AUTOMATICO.md](META-AUTOMATICO.md).
 
 Erros do provedor são reduzidos a campos diagnósticos seguros. Mensagens e
 corpos brutos não são exibidos. O teste não exige META_CAPI_ENABLED=true,
@@ -45,18 +45,18 @@ npm.cmd run test:meta
 npm.cmd run publicar:acesso
 ```
 
-O instalador copia somente os arquivos do painel, adiciona seu teste ao
-package.json e guarda cópias anteriores em work/meta-panel-backup. Não copia
-credenciais, estado de publicação ou configuração do Wrangler. O painel não
-precisa de nova migration; se as tabelas Meta não existirem, informa isso e
-continua exibindo as compras e permitindo o teste.
+O instalador copia os arquivos do painel e do envio automático, adiciona os
+testes ao package.json e guarda cópias anteriores em work/meta-panel-backup.
+Não copia credenciais ou estado de publicação. A configuração do Worker e
+cron é atualizada. O diagnóstico funciona sem migrations Meta, mas o envio
+automático exige 0007 e 0009, conforme META-AUTOMATICO.md.
 
 Fonte primária para test_event_code e resposta: SDK oficial da Meta,
 https://github.com/facebook/facebook-python-business-sdk/blob/main/facebook_business/adobjects/serverside/event_request.py
 
 ## Validação local
 
-Sete testes de API passaram: autenticação/origem, consulta com e sem tabelas
+Os testes de API cobrem autenticação/origem, consulta com e sem tabelas
 Meta, código obrigatório, payload isolado, erros sem exposição de credencial
 e cota de envio. TypeScript passou. A tela foi exercitada com respostas
 simuladas em Chrome a 402px e 1440px: formulário, resposta e ausência de

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 
 await mkdir('work/meta-panel-preview', { recursive: true });
-await build({ stdin: { contents: 'import React from "react";import{createRoot}from"react-dom/client";import{MetaDiagnosticsScreen}from"./components/meta-diagnostics-screen";createRoot(document.getElementById("root")).render(<MetaDiagnosticsScreen/>);', resolveDir: process.cwd(), loader: 'tsx' },
+await build({ stdin: { contents: 'import React from "react";import{createRoot}from"react-dom/client";import{metaAttribution}from"./lib/meta-attribution-client";globalThis.__metaAttribution=metaAttribution;import{MetaDiagnosticsScreen}from"./components/meta-diagnostics-screen";createRoot(document.getElementById("root")).render(<MetaDiagnosticsScreen/>);', resolveDir: process.cwd(), loader: 'tsx' },
   bundle: true, platform: 'browser', jsx: 'automatic', outfile: 'work/meta-panel-preview/panel.js', define: { 'process.env.NODE_ENV': '"production"' } });
 const folder = path.resolve('work/meta-panel-preview');
 await build({ stdin: { contents: 'import React from "react";import{createRoot}from"react-dom/client";import{AccessAdminLogin}from"./components/access-admin-screen";createRoot(document.getElementById("root")).render(<AccessAdminLogin destination={location.pathname==="/meta-login"?"/admin/meta":"/admin/acesso"}/>);', resolveDir: process.cwd(), loader: 'tsx' },
@@ -71,4 +71,23 @@ try {
     console.log(`OK login: invalid credential stays on screen; successful login opens ${scenario.destination}`);
     await page.close();
   }
+  const attributionPage = await browser.newPage();
+  await attributionPage.route('**/api/admin/meta', route => route.fulfill({ json: { pixelId: '1150409944170993', tokenConfigured: true, purchases: [] } }));
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  await attributionPage.goto(origin + '/?fbclid=fixture_CLICK_123');
+  await attributionPage.waitForFunction(() => typeof globalThis.__metaAttribution === 'function');
+  const first = await attributionPage.evaluate(() => globalThis.__metaAttribution());
+  assert.match(first.fbc, /^fb\.1\.\d{13}\.fixture_CLICK_123$/);
+  assert.equal(first.sourceUrl, origin + '/');
+  await attributionPage.goto(origin + '/');
+  await attributionPage.waitForFunction(() => typeof globalThis.__metaAttribution === 'function');
+  assert.equal((await attributionPage.evaluate(() => globalThis.__metaAttribution())).fbc, first.fbc);
+  await attributionPage.evaluate(() => localStorage.setItem('recipe-ad-measurement', 'deny'));
+  assert.deepEqual(await attributionPage.evaluate(() => globalThis.__metaAttribution()), { allowed: false });
+  await attributionPage.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  assert.equal((await attributionPage.evaluate(() => globalThis.__metaAttribution())).fbc, undefined);
+  await attributionPage.evaluate(() => Object.defineProperty(navigator, 'globalPrivacyControl', { value: true, configurable: true }));
+  assert.deepEqual(await attributionPage.evaluate(() => globalThis.__metaAttribution()), { allowed: false });
+  await attributionPage.close();
+  console.log('OK attribution: real click persisted, no fabricated click, query stripped, opt-out and GPC respected');
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

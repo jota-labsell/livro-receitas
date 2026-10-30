@@ -1,4 +1,5 @@
 import type { CommerceEnv } from "./commerce";
+import { isIP } from "node:net";
 
 const PIXEL_ID = "1150409944170993";
 const GRAPH_VERSION = "v26.0";
@@ -21,16 +22,20 @@ type ApprovedPurchase = {
   currency: string;
   user_agent: string | null;
   fbp: string | null;
+  fbc: string | null;
+  client_ip: string | null;
   event_source_url: string | null;
 };
 type Delivery = { attempts: number };
-type Context = { userAgent?: string | null; fbp?: string | null; sourceUrl?: string | null };
+type Context = { userAgent?: unknown; fbp?: unknown; fbc?: unknown; clientIp?: unknown; sourceUrl?: unknown };
 
 const encoder = new TextEncoder();
 const validUserAgent = (value: unknown): value is string =>
   typeof value === "string" && value.length > 0 && value.length <= 512;
 const validFbp = (value: unknown): value is string =>
   typeof value === "string" && /^fb\.1\.\d{10,13}\.\d{1,30}$/.test(value);
+const validFbc = (value: unknown): value is string =>
+  typeof value === "string" && /^fb\.\d{1,3}\.\d{10,13}\.[A-Za-z0-9_-]{1,500}$/.test(value);
 const validSourceUrl = (value: unknown): value is string => {
   if (typeof value !== "string" || value.length > 2048) return false;
   try {
@@ -53,8 +58,19 @@ async function sha256Hex(value: string) {
 export const metaPurchaseEventId = (orderId: string) =>
   sha256Hex(`meta-purchase:${orderId}`);
 
-function enabled(env: MetaEnv) {
-  return env.META_CAPI_ENABLED === "true" && Boolean(env.META_CAPI_ACCESS_TOKEN);
+export function metaCapiReady(env: MetaEnv) {
+  return env.META_CAPI_ENABLED === "true" && Boolean(env.META_CAPI_ACCESS_TOKEN) &&
+    env.MERCADOPAGO_MODE === "production" && env.CHECKOUT_ENABLED === "true" && env.LIVE_PAYMENTS_ENABLED === "true";
+}
+const enabled = metaCapiReady;
+
+async function deliveryResult(db: D1Database, orderId: string, status: number | null, code: unknown, trace: unknown, token: string) {
+  const safeTrace = typeof trace === 'string' && /^[A-Za-z0-9_-]{1,150}$/.test(trace) && !trace.includes(token) ? trace : null;
+  try {
+    await db.prepare(`INSERT INTO meta_delivery_results(order_id,http_status,error_code,trace_id,checked_at) VALUES(?,?,?,?,?)
+      ON CONFLICT(order_id) DO UPDATE SET http_status=excluded.http_status,error_code=excluded.error_code,trace_id=excluded.trace_id,checked_at=excluded.checked_at`)
+      .bind(orderId, status, Number.isSafeInteger(code) ? code : null, safeTrace, Date.now()).run();
+  } catch { console.warn(JSON.stringify({ event: 'meta_delivery_result_unavailable' })); }
 }
 
 async function markDead(db: D1Database, orderId: string) {
@@ -76,11 +92,12 @@ async function approvedPurchase(env: MetaEnv, orderId: string) {
   return db
     .prepare(
       `SELECT f.created_at,o.visit_hash,o.amount_cents,o.currency,
-              x.user_agent,x.fbp,x.event_source_url
+              x.user_agent,x.fbp,x.event_source_url,m.fbc,m.client_ip
          FROM orders o
          JOIN funnel_events f ON f.order_id=o.id AND f.name='purchase_approved'
          JOIN meta_order_consent c ON c.order_id=o.id AND c.consent=1
          LEFT JOIN meta_purchase_context x ON x.order_id=o.id
+         LEFT JOIN meta_purchase_match m ON m.order_id=o.id
         WHERE o.id=? AND o.status='approved' AND o.environment='production'
           AND o.product_id=? AND o.amount_cents=1000 AND o.currency='BRL'
           AND EXISTS(SELECT 1 FROM payment_attempts a
@@ -94,7 +111,7 @@ async function approvedPurchase(env: MetaEnv, orderId: string) {
 
 /**
  * Queue an event only after an authoritative Mercado Pago reconciliation has
- * stored an approved production order with explicit measurement consent.
+ * stored an approved production order with measurement enabled.
  */
 export async function enqueueMetaPurchase(env: MetaEnv, orderId: string) {
   if (!enabled(env)) return false;
@@ -118,7 +135,7 @@ export async function enqueueMetaPurchase(env: MetaEnv, orderId: string) {
 }
 
 /**
- * Persist consent and only the minimum matching context needed by CAPI.
+ * Persist the site's measurement preference and matching context needed by CAPI.
  * A grant after approval is refused to avoid backfilling old purchases;
  * a revocation is always accepted.
  */
@@ -140,6 +157,7 @@ export async function recordMetaConsent(
         )
         .bind(orderId, now),
       db.prepare("DELETE FROM meta_purchase_context WHERE order_id=?").bind(orderId),
+      db.prepare("DELETE FROM meta_purchase_match WHERE order_id=?").bind(orderId),
     ]);
     return true;
   }
@@ -156,6 +174,8 @@ export async function recordMetaConsent(
   const userAgent = validUserAgent(context.userAgent) ? context.userAgent : null;
   const fbp = validFbp(context.fbp) ? context.fbp : null;
   const sourceUrl = validSourceUrl(context.sourceUrl) ? context.sourceUrl : null;
+  const fbc = validFbc(context.fbc) ? context.fbc : null;
+  const clientIp = typeof context.clientIp === 'string' && isIP(context.clientIp) ? context.clientIp : null;
   if (userAgent || fbp || sourceUrl) {
     await db
       .prepare(
@@ -170,6 +190,10 @@ export async function recordMetaConsent(
       .bind(orderId, userAgent, fbp, sourceUrl, now)
       .run();
   }
+  if (fbc || clientIp) await db.prepare(`INSERT INTO meta_purchase_match(order_id,fbc,client_ip,updated_at) VALUES(?,?,?,?)
+    ON CONFLICT(order_id) DO UPDATE SET fbc=COALESCE(excluded.fbc,meta_purchase_match.fbc),
+      client_ip=COALESCE(excluded.client_ip,meta_purchase_match.client_ip),updated_at=excluded.updated_at`)
+    .bind(orderId, fbc, clientIp, now).run();
   return true;
 }
 
@@ -219,12 +243,14 @@ export async function sendMetaPurchase(
       .first<Delivery>();
     const attempts = delivery?.attempts ?? 1;
     const userData: Record<string, unknown> = {
-      external_id: [await sha256Hex(approved.visit_hash)],
+      external_id: [approved.visit_hash],
     };
     const agent = validUserAgent(userAgent) ? userAgent : approved.user_agent;
     const browserId = validFbp(fbp) ? fbp : approved.fbp;
     if (validUserAgent(agent)) userData.client_user_agent = agent;
     if (validFbp(browserId)) userData.fbp = browserId;
+    if (validFbc(approved.fbc)) userData.fbc = approved.fbc;
+    if (approved.client_ip && isIP(approved.client_ip)) userData.client_ip_address = approved.client_ip;
     const sourceUrl = validSourceUrl(approved.event_source_url)
       ? approved.event_source_url
       : validSourceUrl(env.SITE_URL)
@@ -250,6 +276,7 @@ export async function sendMetaPurchase(
         `https://graph.facebook.com/${GRAPH_VERSION}/${PIXEL_ID}/events`,
         {
           method: "POST",
+          redirect: "manual",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${env.META_CAPI_ACCESS_TOKEN}`,
@@ -258,13 +285,14 @@ export async function sendMetaPurchase(
           signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
         },
       );
-      if (!response.ok) {
-        retryable = response.status === 429 || response.status >= 500;
+      const data = await response.json().catch(() => ({})) as {
+        events_received?: number; fbtrace_id?: unknown; error?: { code?: unknown; fbtrace_id?: unknown; is_transient?: boolean };
+      };
+      await deliveryResult(db, orderId, response.status, data.error?.code, data.fbtrace_id ?? data.error?.fbtrace_id, env.META_CAPI_ACCESS_TOKEN!);
+      if (!response.ok || data.error) {
+        retryable = response.status === 429 || response.status >= 500 || data.error?.is_transient === true || [1, 2, 4, 17, 32, 341, 613].includes(Number(data.error?.code));
         throw new Error("Meta returned non-success HTTP status");
       }
-      const data = (await response.json().catch(() => ({}))) as {
-        events_received?: number;
-      };
       if (!Number.isInteger(data.events_received) || (data.events_received ?? 0) < 1)
         throw new Error("Meta did not acknowledge an event");
       await db
@@ -298,7 +326,7 @@ export async function sendMetaPurchase(
 }
 
 /**
- * Drain the durable queue. The JotaFy cron calls this so a purchase is still
+ * Drain the durable queue. The main Worker's cron calls this so a purchase is still
  * sent when the buyer closes the browser before the webhook/status response.
  */
 export async function dispatchMetaPurchases(
@@ -312,6 +340,17 @@ export async function dispatchMetaPurchases(
   let rows: { results: { order_id: string }[] };
   try {
     const now = Date.now();
+    // Recover enqueue failures after approval without backfilling past purchases:
+    // only orders with a pre-approval measurement record can enter this queue.
+    await db.prepare(`INSERT OR IGNORE INTO meta_purchase_delivery(order_id)
+      SELECT o.id FROM orders o JOIN meta_order_consent c ON c.order_id=o.id AND c.consent=1
+      JOIN funnel_events f ON f.event_key='purchase:'||o.id
+      WHERE o.status='approved' AND o.environment='production' AND o.product_id=? AND o.amount_cents=1000 AND o.currency='BRL'
+      AND f.created_at>=? AND c.updated_at<=f.created_at
+      AND NOT EXISTS(SELECT 1 FROM payment_attempts a WHERE a.order_id=o.id AND a.status IN ('refunded','charged_back'))
+      AND EXISTS(SELECT 1 FROM payment_attempts a WHERE a.order_id=o.id AND a.status='approved')
+      AND NOT EXISTS(SELECT 1 FROM meta_purchase_delivery d WHERE d.order_id=o.id) ORDER BY f.created_at LIMIT ?`)
+      .bind(PRODUCT_ID, now - RETRY_WINDOW_MS, limit).run();
     rows = await db
       .prepare(
         `SELECT d.order_id FROM meta_purchase_delivery d
@@ -355,5 +394,10 @@ export async function dispatchMetaPurchases(
       }
     }),
   );
+  // Matching data has a bounded retention period, independent of payment records.
+  await db.batch([
+    db.prepare('DELETE FROM meta_purchase_context WHERE updated_at<?').bind(Date.now() - RETRY_WINDOW_MS),
+    db.prepare('DELETE FROM meta_purchase_match WHERE updated_at<?').bind(Date.now() - RETRY_WINDOW_MS),
+  ]).catch(() => {});
   return sent;
 }

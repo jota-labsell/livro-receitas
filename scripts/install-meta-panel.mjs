@@ -11,6 +11,11 @@ const files = ['lib/meta-diagnostics.ts', 'app/api/admin/meta/route.ts', 'app/ad
   'components/meta-diagnostics-screen.tsx', 'components/meta-diagnostics.module.css', 'components/access-admin-screen.tsx',
   'scripts/open-access-admin.mjs', 'scripts/test-meta-diagnostics.mjs', 'scripts/test-meta-panel-ui.mjs', 'tests/meta-diagnostics.test.ts', 'PAINEL-META.md',
   '.github/workflows/deploy-production.yml', 'GITHUB-CLOUDFLARE.md'];
+files.push('lib/meta-capi.ts', 'lib/meta-context.ts', 'lib/meta-attribution-client.ts', 'lib/mercadopago-orders.ts',
+  'app/api/checkout/route.ts', 'app/api/payments/route.ts', 'app/api/orders/status/route.ts', 'app/privacidade/page.tsx',
+  'components/MetaPixel.tsx', 'components/checkout.tsx', 'worker.ts', 'wrangler.jsonc',
+  'migrations/0007_meta_capi.sql', 'migrations/0009_meta_automatic.sql', 'tests/meta-automatic.test.ts',
+  'scripts/deploy-production.mjs', 'scripts/deploy-sandbox.mjs', 'scripts/deploy-storefront.mjs', 'scripts/test-deploy-guards.mjs', 'META-AUTOMATICO.md');
 if (source.toLowerCase() === target.toLowerCase()) throw new Error('Execute na cópia em Projetos, não em System32.');
 const backup = path.join(target, 'work', 'meta-panel-backup', new Date().toISOString().replace(/[:.]/g, '-'));
 for (const file of [...files, 'package.json']) {
@@ -29,6 +34,7 @@ for (const file of files) {
 manifest.scripts['test:meta'] = 'node scripts/test-meta-diagnostics.mjs';
 manifest.scripts['meta:painel'] = 'node scripts/open-access-admin.mjs --meta';
 manifest.scripts['test:meta:ui'] = 'node scripts/test-meta-panel-ui.mjs';
+manifest.scripts['cloudflare:deploy'] = 'node scripts/deploy-production.mjs';
 if (!manifest.scripts.test.includes('scripts/test-meta-diagnostics.mjs'))
   manifest.scripts.test = `node scripts/test-meta-diagnostics.mjs && ${manifest.scripts.test}`;
 await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');

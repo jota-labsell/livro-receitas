@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { CommerceError, hash, type CommerceEnv } from "./commerce";
+import { metaCapiReady } from './meta-capi';
 
 export const DIAGNOSTIC_PIXEL = "1150409944170993";
 export const DIAGNOSTIC_GRAPH_VERSION = "v26.0";
@@ -12,23 +13,26 @@ export type MetaTestResult = {
 export async function metaDiagnosticStatus(runtime: CommerceEnv) {
   if (!runtime.ORDERS) throw new CommerceError(503, "Banco indisponível para diagnóstico.");
   const db = runtime.ORDERS;
-  const tables = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('meta_purchase_delivery','meta_order_consent','meta_purchase_context')").all<{ name: string }>();
+  const tables = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('meta_purchase_delivery','meta_order_consent','meta_purchase_context','meta_purchase_match','meta_delivery_results')").all<{ name: string }>();
   const names = new Set(tables.results.map(row => row.name));
   const queueAvailable = names.has("meta_purchase_delivery"), consentAvailable = names.has("meta_order_consent");
+  const resultsAvailable = names.has('meta_delivery_results');
+  const tablesAvailable = names.size === 5;
   const purchases = await db.prepare(`SELECT o.id,o.amount_cents,f.created_at AS approved_at,
     ${queueAvailable ? "d.state,d.attempts,d.sent_at" : "NULL AS state,NULL AS attempts,NULL AS sent_at"},
     ${consentAvailable ? "c.consent" : "NULL AS consent"}
+    ,${resultsAvailable ? 'r.http_status,r.error_code,r.trace_id' : 'NULL AS http_status,NULL AS error_code,NULL AS trace_id'}
     FROM orders o JOIN funnel_events f ON f.event_key='purchase:'||o.id
     ${queueAvailable ? "LEFT JOIN meta_purchase_delivery d ON d.order_id=o.id" : ""}
     ${consentAvailable ? "LEFT JOIN meta_order_consent c ON c.order_id=o.id" : ""}
+    ${resultsAvailable ? 'LEFT JOIN meta_delivery_results r ON r.order_id=o.id' : ''}
     WHERE o.environment='production' AND o.status='approved' ORDER BY f.created_at DESC LIMIT 20`).all();
   return {
     pixelId: DIAGNOSTIC_PIXEL, graphVersion: DIAGNOSTIC_GRAPH_VERSION,
     tokenConfigured: Boolean(runtime.META_CAPI_ACCESS_TOKEN?.trim()),
     automaticEnabled: runtime.META_CAPI_ENABLED === "true",
-    tablesAvailable: queueAvailable && consentAvailable && names.has("meta_purchase_context"),
-    // A flag or token does not prove that reconciliation is wired to CAPI.
-    automaticFlowConnected: false, purchases: purchases.results, checkedAt: Date.now(),
+    tablesAvailable, automaticFlowConnected: metaCapiReady(runtime) && tablesAvailable,
+    purchases: purchases.results, checkedAt: Date.now(),
   };
 }
 

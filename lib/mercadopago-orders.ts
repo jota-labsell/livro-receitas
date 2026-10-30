@@ -1,6 +1,7 @@
 import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, orderEnvironment, type CommerceEnv } from './commerce';
 import { PRODUCT_CONFIG as PRODUCT } from './product.config';
 import { assertProviderAccount } from './mercadopago-account';
+import { enqueueMetaPurchase } from './meta-capi';
 
 type LocalOrder = { environment: string; id: string; product_id: string; amount_cents: number; currency: string; active_attempt: string | null; status: string };
 type Attempt = { id: string; order_id: string; payment_id: string | null; created_at: number };
@@ -65,7 +66,12 @@ export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder)
       } catch { console.warn(JSON.stringify({event:'jotafy_event_unavailable'})); }
     }
   }
-  return (await db.prepare('SELECT * FROM orders WHERE id=?').bind(o.id).first<LocalOrder>())!;
+  const fresh = (await db.prepare('SELECT * FROM orders WHERE id=?').bind(o.id).first<LocalOrder>())!;
+  if (fresh.status === 'approved' && fresh.environment === 'production') {
+    try { await enqueueMetaPurchase(env, fresh.id); }
+    catch { console.warn(JSON.stringify({ event: 'meta_enqueue_unavailable' })); }
+  }
+  return fresh;
 }
 function result(o: LocalOrder, p?: ProviderOrder) {
   const method = p?.transactions?.payments?.[0]?.payment_method;

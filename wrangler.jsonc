@@ -1,7 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "livro-receitas",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
+  "triggers": { "crons": ["*/5 * * * *"] },
   "compatibility_date": "2026-10-27",
   "compatibility_flags": [
     "nodejs_compat",
@@ -36,6 +37,7 @@
     }
   ],
   "vars": {
+    "META_CAPI_ENABLED": "true",
     "CHECKOUT_ENABLED": "true",
     "MERCADOPAGO_MODE": "production",
     "LIVE_PAYMENTS_ENABLED": "true"

@@ -5,6 +5,7 @@ import { visitId, track } from "@/lib/analytics";
 import { Check, Copy, CreditCard, LockKeyhole, QrCode, RefreshCw, ShieldCheck } from "lucide-react";
 import styles from "./checkout.module.css";
 import { usePurchaseState } from "./purchase-experience";
+import { metaAttribution } from "@/lib/meta-attribution-client";
 type Controller = { unmount: () => Promise<void> };
 type Bricks = {
   create: (
@@ -67,7 +68,7 @@ async function post(path: string, data?: unknown): Promise<Result> {
   const response = await fetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: data ? JSON.stringify(data) : undefined,
+    body: data ? JSON.stringify({ ...data, meta: metaAttribution() }) : undefined,
   });
   const result = (await response.json()) as Result & { error?: string };
   if (!response.ok)

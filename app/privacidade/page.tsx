@@ -58,17 +58,20 @@ export default function Privacy() {
         </p>
         <h2>Medição de anúncios da Meta</h2>
         <p>
-          Em produção, se você permitir a medição, usamos o Pixel da Meta para
+          Em produção, usamos o Pixel da Meta e a API de Conversões para
           registrar visitas, visualização do produto, início do checkout e compras
           confirmadas. Enviamos produto, valor, moeda e um identificador do evento;
           não enviamos nome, e-mail, número de cartão ou dados preenchidos no checkout.
-          A Meta também recebe informações técnicas do navegador e pode usar cookies
-          conforme sua própria política de privacidade. Não usamos correspondência
-          avançada automática. Você pode recusar ou alterar sua escolha em
-          “Preferências de medição”, no final da página de venda. A compra e a entrega
-          funcionam independentemente dessa escolha. Eventos do sandbox não são
-          enviados ao Pixel. Bloqueadores ou restrições do navegador podem impedir
-          a entrega dos eventos; não há API de Conversões configurada nesta versão.
+          Para associar uma compra ao anúncio, também podemos enviar o identificador
+          do clique, identificadores de cookies da Meta, endereço IP e informações
+          técnicas do navegador. O contexto de associação é mantido por até 48 horas.
+          Sinais de privacidade enviados pelo navegador e preferências de medição já
+          registradas são respeitados. A Meta pode usar cookies conforme sua própria
+          política de privacidade. Não usamos captura automática de campos do checkout.
+          A compra e a entrega funcionam independentemente da medição. Somente
+          pagamentos aprovados e verificados no Mercado Pago geram compras pelo servidor;
+          eventos do sandbox não são enviados. A Meta pode receber o evento sem
+          atribuí-lo a uma campanha específica.
         </p>
         <h2>Serviços e segurança</h2>
         <p>
