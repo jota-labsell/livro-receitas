@@ -1,5 +1,19 @@
 # Retomada da central de gestão — 30/10/2026
 
+## Publicação mais recente: painel escuro, 14:49 UTC
+
+Integração `feat/painel-operacao-dark` → `feat/150-doces-r10` por fast-forward, commit publicado **8d675e77f4fddf861667cb43e728d332db3bb64e**. Checkout atual em branch local `release/painel-operacao-dark-20261030`, mesma pasta de trabalho. Nova versão ativa **560a2b54-488f-4770-a862-4280ac48db46**, deployment `b5b983ac-7669-4039-94f0-15b3eb060048`, 100% do tráfego. A versão anterior continua no histórico, não é mais a ativa.
+
+AGENTS.md, PAINEL-OPERACAO-DARK.md e CENTRAL-GESTAO.md lidos. Identidade OAuth/conta Workers e D1 confirmados; nenhuma migration pendente ou nova, guards completos passaram. Foram preservados os checkouts locais existentes. Build Cloudflare e dry-run passaram; publicado pelo script de produção, com tag e mensagem do commit acima. TypeScript, operações/autenticação (10), comércio (22), recuperação/entrega (18), Meta (17) e guards (4) passaram. Interface do painel 360/1440px passou, incluindo origem, menu e configuração. Artefato real local autenticado passou: tema #171f31, filtro Hoje consultando D1, indicadores/funil, sessões, troca de senha e logout.
+
+Produção verificada em navegador 360/1440px: /admin redireciona a /admin/entrar, login no novo tema, sem overflow; APIs operations/ebook/meta 401; account sem sessão 401; sessão de origem estrangeira 403; download sem autorização 303 e interface de recuperação. Checkout GET available=true, amount=10, production. CSS do login e chunk dos indicadores/funil comparados byte a byte com o artefato local. Não foi usada a senha do proprietário para abrir sua sessão; painel autenticado foi testado no Worker local isolado.
+
+Antes/depois: 44 pedidos, 1 conta de operador, 2 sessões, 0 itens na fila CAPI e 16 na fila push. Configuração de Pixel permanece sem override no banco (padrão existente), flags/secrets preservados, cron */5 mantido. NÃO cadastrar nova conta ou resetar a existente: o proprietário já concluiu o cadastro. Nenhuma cobrança/conversão fictícia foi executada.
+
+GitHub Actions permanece skipped e sem secrets/ativação. Workers Builds ainda têm falhas anteriores; API de configuração/listagem continua 403/10000 e 403/12004 por permissão específica de Builds ausente no OAuth. Não é bloqueio deste deploy manual, nem prova da causa dos builds. Pages é independente. Conferir novamente a versão ativa após qualquer build automático futuro.
+
+Registros desta publicação: work/dark-live-verification.json, work/dark-state-before.json, work/dark-state-after.json; capturas em work/dark-live-preview e work/management-worker-preview. Esses arquivos locais não contêm senha do proprietário. Scripts de smoke locais usam fixtures e não devem ser apontados à produção. Backup periódico existente continua ativo; este documento é incluído nos snapshots. Commits posteriores apenas de relatório não alteram o código publicado.
+
 ## Última conferência: 13:52–13:53 UTC (10:52–10:53 Brasília)
 
 Continuação após intervalo de horas: código sem alterações locais, branches remotas em `1e42ab1` (relatório; aplicação igual a `fe0ea12`). A versão ativa permaneceu `88ac37cf-fcaa-4b05-bb67-4349c0ad493e`, 100% do tráfego, confirmada via API. Checkout GET continuou disponível por R$ 10 em produção; APIs administrativas 401, download sem autorização 303 e login visível em navegador real.
