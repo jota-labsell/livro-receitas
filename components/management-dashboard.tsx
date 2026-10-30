@@ -111,7 +111,7 @@ const navGroups = [
   { title: "SISTEMA", keys: ["meta", "health", "account"] },
 ] as const;
 export function ManagementDashboard() {
-  const [expanded, setExpanded] = useState(false),
+  const [expanded, setExpanded] = useState(true),
     [source, setSource] = useState(""),
     [period, setPeriod] = useState("7");
   const [tab, setTab] = useState("overview"),
@@ -450,14 +450,14 @@ export function ManagementDashboard() {
                         aprovados.
                       </p>
                     </div>
-                    <span className={styles.chip}>BRL</span>
+                    <span className={styles.chip}>BRL · Dados internos</span>
                   </div>
                   {!data.days.length ? (
                     <div className={styles.empty}>
                       Nenhum pedido no período.
                     </div>
                   ) : (
-                    <div className={styles.chart} aria-label="Receita diária">
+                    <div className={styles.chart} aria-label="Receita aprovada diária, valores em reais">
                       {data.days.map((d) => (
                         <div
                           key={d.day}
@@ -476,6 +476,7 @@ export function ManagementDashboard() {
                       ))}
                     </div>
                   )}
+                  <div className={styles.chartLegend}><span><i/> Receita aprovada</span><span>Investimento: não conectado</span></div>
                 </section>
                 <section className={styles.panel}>
                   <h2>Sua operação, agora</h2>
@@ -635,6 +636,7 @@ export function ManagementDashboard() {
                     Abrir Meta Ads <ArrowUpRight size={15} />
                   </a>
                 </div>
+                <div className={styles.campaignToolbar}><label><Search size={16}/><span className={styles.srOnly}>Pesquisar campanha ou origem</span><input value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)} placeholder="Filtrar campanhas na tabela"/></label><small>Até 100 origens retornadas · Atribuição interna</small></div>
                 <div className={styles.tableScroll}>
                   <table>
                     <thead>
@@ -647,7 +649,7 @@ export function ManagementDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.campaigns.map((c, i) => (
+                      {data.campaigns.filter(c => `${c.campaign} ${c.source} ${c.medium}`.toLowerCase().includes(campaignFilter.trim().toLowerCase())).map((c, i) => (
                         <tr key={i}>
                           <td>
                             <strong>
@@ -665,11 +667,8 @@ export function ManagementDashboard() {
                       ))}
                     </tbody>
                   </table>
-                  {!data.campaigns.length && (
-                    <p className={styles.empty}>
-                      As origens aparecerão após as primeiras visitas
-                      rastreadas.
-                    </p>
+                  {!data.campaigns.filter(c => `${c.campaign} ${c.source} ${c.medium}`.toLowerCase().includes(campaignFilter.trim().toLowerCase())).length && (
+                    <p className={styles.empty}>{campaignFilter ? "Nenhuma campanha corresponde ao filtro." : "As origens aparecerão após as primeiras visitas rastreadas."}</p>
                   )}
                 </div>
                 <p className={styles.notice}>
