@@ -1,0 +1,129 @@
+.overview{
+ --bg:#0d0f14;--panel:#181b23;--raised:#20242e;--border:#303642;
+ --text:#eff2f8;--muted:#a7b0c0;--mint:#8cacff;--warn:#eab974;
+ color:var(--text);display:grid;gap:18px;min-width:0;font-variant-numeric:tabular-nums;
+}
+.overview *{box-sizing:border-box}
+.overview button{cursor:pointer;font:inherit}
+.overview button:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+.sectionIntro{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin:6px 0 -2px}
+.overline{font-size:10px;font-weight:790;letter-spacing:1.4px;color:var(--mint)}
+.sectionIntro h2{font-size:21px;line-height:1.3;font-weight:710;letter-spacing:-.6px;margin:7px 0 0}
+.dataTag{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:11px;color:#b4c5e4;background:#222838;border:1px solid #434c61;padding:8px 12px;border-radius:20px}
+.dataTag svg{color:#50cb9b}
+.headlineGrid{display:grid;grid-template-columns:1.15fr 1fr;gap:15px;min-width:0}
+.revenueHero{min-height:198px;display:flex;flex-direction:column;justify-content:space-between;background:#202531;border:1px solid #3f495c;border-radius:15px;padding:22px 24px;min-width:0}
+.heroEyebrow{display:flex;align-items:center;justify-content:space-between;gap:15px;color:#cbd2e2;font-size:13px;font-weight:660}
+.heroEyebrow svg{color:#50cb9b}
+.revenueAmount{display:block;font-size:clamp(37px,3.5vw,52px);letter-spacing:-1.8px;font-weight:760;line-height:1.22;color:#f0f4fc}
+.heroFooter{display:flex;align-items:flex-end;justify-content:space-between;gap:15px}
+.heroFooter>span{font-size:11px;line-height:1.6;color:#9ca9be;max-width:280px}
+.heroFooter button,.smallLink{display:flex;align-items:center;gap:7px;background:transparent!important;border:0!important;padding:8px 0!important;color:#acc5ff!important;font-weight:700;font-size:12px;min-height:0!important;white-space:nowrap}
+.heroFooter button:hover,.smallLink:hover{text-decoration:underline}
+.quickStats{background:var(--panel);border:1px solid var(--border);border-radius:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px 19px;min-width:0}
+.quickStats>div{display:flex;flex-direction:column;justify-content:center;padding:12px 14px;min-width:0}
+.quickStats>div:nth-child(odd){border-right:1px solid var(--border)}
+.quickStats>div:nth-child(-n+2){border-bottom:1px solid var(--border)}
+.quickStats span{font-size:11px;color:#b0bacb;font-weight:650}
+.quickStats strong{font-size:clamp(19px,2vw,27px);line-height:1.35;letter-spacing:-.6px;margin:4px 0;color:#eef2f8}
+.quickStats small{font-size:10px;color:#8e9ab0;line-height:1.4}
+.analysisGrid,.detailGrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(300px,1fr);gap:15px}
+.chartCard,.funnelCard,.campaignCard,.operationsCard{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:21px 22px;min-width:0}
+.cardHead{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;min-width:0;margin-bottom:22px}
+.cardHead h3{font-size:15px;line-height:1.4;letter-spacing:-.25px;font-weight:720;margin:0 0 5px;color:#ecf1f9}
+.cardHead p{font-size:11px;color:var(--muted);margin:0;line-height:1.55}
+.cardHead>svg{color:#8998b2;flex:none}
+.kpiChip{background:#252c3b;border:1px solid #404a5e;border-radius:8px;padding:6px 9px;font-size:10px;letter-spacing:.3px;color:#b5c6e8}
+.graph{display:grid;grid-template-columns:72px minmax(0,1fr);gap:5px;min-height:228px}
+.graphLabel{height:198px;display:flex;flex-direction:column;justify-content:space-between;color:#94a0b1;font-size:10px;padding:0 0 7px;white-space:nowrap}
+.svgWrap{height:230px;min-width:0;position:relative;padding-bottom:24px}
+.svgWrap svg{display:block;width:100%;height:195px}
+.axisLabels{position:relative;height:20px;font-size:10px;color:#9ea9ba}
+.axisLabels span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.chartFooter{border-top:1px solid var(--border);padding-top:14px;margin-top:5px;display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;font-size:11px;color:#9cabc1}
+.chartFooter>span:first-child{color:#d7e0ef;display:flex;align-items:center;gap:8px}
+.chartFooter i{height:9px;width:9px;background:#86aaff;border-radius:50%;display:block}
+.noChart{min-height:225px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:#a8b3c5}
+.noChart strong{font-size:13px;color:#e6ebf4}.noChart span{font-size:11px}
+.funnelCard{display:flex;flex-direction:column}.funnelCard .cardHead{margin-bottom:14px}
+.funnelList{display:grid;gap:15px;flex:1;padding-top:8px}
+.funnelRow{display:grid;gap:7px}
+.funnelTop{display:grid;grid-template-columns:minmax(0,1fr) 43px 45px;align-items:center;gap:9px;font-size:11px}
+.funnelTop>span{color:#cad2df}.funnelTop strong{color:#f1f5fb;font-size:12px;text-align:right}.funnelTop small{color:#a0acbd;font-size:11px;text-align:right}
+.track{height:6px;background:#303747;border-radius:99px;overflow:hidden}.track>span{display:block;background:#7f9fdf;height:100%;border-radius:99px}
+.funnelNote,.disclaimer{color:#929eaf!important;font-size:10px!important;line-height:1.55!important;margin:14px 0 0!important}
+.stateMessage{padding:24px 10px;line-height:1.6;text-align:center;color:#aab5c5;font-size:12px;flex:1;display:grid;place-items:center}
+.campaignCard,.operationsCard{min-height:330px}
+.campaignCard{display:flex;flex-direction:column}.campaignCard .cardHead{margin-bottom:13px}
+.tableOverflow{overflow:auto;min-width:0}
+.campaignCard table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:11px}
+.campaignCard th{text-transform:uppercase;font-size:10px;font-weight:650;letter-spacing:.35px;color:#a2aec0;text-align:right;border-bottom:1px solid #353c4a;padding:12px 9px;background:transparent}
+.campaignCard th:first-child{text-align:left}
+.campaignCard td{border-bottom:1px solid #2b313c;padding:14px 9px;color:#d8e0ed;text-align:right}
+.campaignCard td:first-child{text-align:left;max-width:275px;white-space:normal}
+.campaignCard td strong{font-size:11px;color:#edf2f9;display:block;font-weight:680}.campaignCard td span{display:block;margin-top:4px;font-size:10px;color:#9aa8bb}
+.campaignCard tr:last-child td{border-bottom:0}
+.cardFoot{margin-top:auto;border-top:1px solid var(--border);padding-top:12px;color:#a2b0c0;font-size:10px}
+.cardFoot strong{color:#d9e6fa}
+.healthList{display:grid}
+.healthList>div{border-bottom:1px solid var(--border);padding:12px 0;display:flex;gap:11px;align-items:flex-start}.healthList>div:last-child{border-bottom:0}
+.okDot,.attentionDot{border-radius:50%;height:8px;width:8px;flex:none;margin-top:5px;background:#50c99a;box-shadow:0 0 0 3px #48c59120}
+.attentionDot{background:#e9bc78;box-shadow:0 0 0 3px #b8853620}
+.healthList strong{display:block;color:#e4e9f4;font-size:12px}.healthList small{color:#a0aab9;font-size:11px;display:block;margin-top:3px}
+.outlineButton{width:100%;background:#252d3b!important;border:1px solid #43536d!important;border-radius:9px!important;padding:10px!important;font-size:12px!important;font-weight:680!important;display:flex;align-items:center;justify-content:center;gap:9px;color:#adc5fb!important;margin-top:auto}
+.outlineButton:hover{background:#313b51!important}
+.operationsCard{display:flex;flex-direction:column}.operationsCard .disclaimer{margin:10px 0 17px!important}
+.nextSteps{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 19px;background:#161a23;border:1px solid #333a48;border-radius:12px;color:#acb6c7;font-size:11px;line-height:1.6}
+.nextSteps>span{display:flex;gap:10px;align-items:center}.nextSteps svg{flex:none;color:#95a8c7}
+.nextSteps button{display:flex;align-items:center;gap:8px;background:transparent!important;border:0!important;padding:8px 0!important;color:#a8c3f9!important;font-size:11px;font-weight:720;min-height:0!important;white-space:nowrap}
+@media(max-width:1200px){.analysisGrid,.detailGrid{grid-template-columns:1.45fr 1fr}.quickStats{padding:6px}.quickStats>div{padding:12px}}
+@media(max-width:1000px){.headlineGrid,.analysisGrid,.detailGrid{grid-template-columns:1fr}.revenueHero{min-height:180px}.quickStats{min-height:190px}.chartCard,.funnelCard,.campaignCard,.operationsCard{min-height:0}}
+@media(max-width:650px){.overview{gap:12px}.sectionIntro{align-items:flex-start;flex-direction:column;gap:9px}.sectionIntro h2{font-size:18px}.dataTag{font-size:10px;padding:6px 10px}.revenueHero{padding:18px;min-height:166px}.revenueAmount{font-size:38px}.heroFooter{align-items:flex-start}.heroFooter>span{font-size:10px}.quickStats{padding:7px}.quickStats>div{padding:13px 11px}.quickStats strong{font-size:22px}.quickStats span{font-size:11px}.chartCard,.funnelCard,.campaignCard,.operationsCard{padding:17px 15px}.graph{grid-template-columns:58px minmax(0,1fr)}.graphLabel{font-size:9px}.axisLabels{font-size:9px}.cardHead h3{font-size:14px}.nextSteps{flex-wrap:wrap;padding:13px}.nextSteps button{margin-left:27px}.tableOverflow table{min-width:450px}.cardFoot{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.overview *, .overview *::before,.overview *::after{transition:none!important}}
+
+/* V3 layout derived from the provided dark data-product reference:
+   compact KPI strip first, large graph, smaller companion analysis, bottom table. */
+.overview{gap:14px}
+.sectionIntro{margin:0 0 0;align-items:center}
+.overline{color:#8491ab;font-size:10px}
+.sectionIntro h2{font-size:20px}
+.dataTag{background:none;border:0;color:#94a0b3;font-size:11px;padding:0}
+.headlineGrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
+.revenueHero{grid-column:1;min-height:132px;background:#1a1e28;border:1px solid #2d3340;border-radius:10px;padding:16px 17px}
+.revenueHero::before{content:none}
+.heroEyebrow{font-size:11px;color:#a6b1c3}
+.revenueAmount{font-size:clamp(25px,2.5vw,34px);letter-spacing:-.8px;color:#f3f5fa;margin-top:8px}
+.heroFooter{align-items:center;gap:7px}
+.heroFooter>span{font-size:10px;line-height:1.4;color:#8994a8}
+.heroFooter button{font-size:10px;min-height:22px!important;color:#9db8f1!important}
+.quickStats{grid-column:2/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:0;border:0;border-radius:0;background:transparent;gap:11px}
+.quickStats>div{padding:16px 17px;border:1px solid #2d3340!important;border-radius:10px;background:#1a1e28;justify-content:space-between}
+.quickStats>div:nth-child(4){display:none}
+.quickStats span{font-size:11px;color:#a8b4c8}
+.quickStats strong{font-size:clamp(23px,2.5vw,33px);color:#eef1f8;letter-spacing:-.8px;margin:9px 0 4px}
+.quickStats small{font-size:10px;color:#8491a7}
+.analysisGrid{grid-template-columns:minmax(0,1.7fr) minmax(310px,1fr);gap:11px}
+.detailGrid{grid-template-columns:minmax(0,1.7fr) minmax(310px,1fr);gap:11px}
+.chartCard,.funnelCard,.campaignCard,.operationsCard{border-radius:10px;padding:20px;border-color:#2c323f;background:#171b24}
+.chartCard{min-height:340px}
+.funnelCard{min-height:340px}
+.cardHead h3{font-size:13px;font-weight:680;letter-spacing:0}
+.cardHead p{font-size:11px;color:#8e9bad}
+.graph{min-height:235px}
+.graphLabel{color:#8490a4}
+.chartFooter{color:#8c99ad;justify-content:flex-start;gap:20px}
+.chartFooter i{background:#86aaff}
+.chartFooter .ordersLegend{color:#cbd2df;display:flex;align-items:center;gap:7px}
+.chartFooter .ordersLegend i{background:#edac71}
+.chartFooter>span:last-child{margin-left:auto}
+.track>span{background:#84aaff}
+.funnelRow:nth-child(2) .track>span{background:#60c6e3}
+.funnelRow:nth-child(3) .track>span{background:#a5b7e8}
+.funnelRow:nth-child(4) .track>span{background:#edac71}
+.funnelRow:nth-child(5) .track>span{background:#a79ce7}
+.funnelRow:nth-child(6) .track>span{background:#52cd9e}
+.okDot{background:#52cd9e}
+.nextSteps{background:#161b25;border-color:#2b3342}
+@media(max-width:1170px){.headlineGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.revenueHero{grid-column:1}.quickStats{grid-column:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.quickStats>div{padding:11px}.quickStats>div:nth-child(4){display:flex}.quickStats strong{font-size:20px}.revenueHero{min-height:215px}}
+@media(max-width:1000px){.analysisGrid,.detailGrid{grid-template-columns:1fr}}
+@media(max-width:700px){.headlineGrid{grid-template-columns:1fr}.revenueHero{grid-column:1;min-height:126px}.quickStats{grid-column:1;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.quickStats>div{min-height:103px}.chartCard,.funnelCard,.campaignCard,.operationsCard{padding:16px}.chartFooter{gap:8px}.chartFooter>span:last-child{margin-left:0}}

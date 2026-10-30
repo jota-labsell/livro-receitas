@@ -36,13 +36,18 @@ export function ProductWorkspace({
   const [editing, setEditing] = useState(false);
   const [panel, setPanel] = useState<Panel>("general");
   const [query, setQuery] = useState("");
-  const [layout, setLayout] = useState<"cards" | "table">("cards");
+  const [layout, setLayout] = useState<"cards" | "table">("table");
   const matches = [product].filter(p => (p.name + " " + p.id).toLowerCase().includes(query.toLowerCase()));
   return <div className={styles.workspace}>
     {!editing ? <>
       <div className={styles.hero}>
         <div><p className={styles.kicker}>CATÁLOGO / 1 PRODUTO CONFIGURADO</p><h2>Seus produtos</h2><p>Gerencie o conteúdo publicado, a entrega e o rastreamento em um só lugar.</p></div>
         <a className={styles.ghost} href="/" target="_blank" rel="noreferrer"><Eye size={17}/> Ver página de vendas <ExternalLink size={14}/></a>
+      </div>
+      <div className={styles.productStats} aria-label="Resumo do catálogo">
+        <div><span>PRODUTOS CADASTRADOS</span><strong>1</strong><small>Produto configurado no sistema</small></div>
+        <div><span>PREÇO DO PRODUTO</span><strong>{brl(product.price)}</strong><small>Pagamento único</small></div>
+        <div><span>FORMATO DE ENTREGA</span><strong>Digital</strong><small>Documento PDF protegido</small></div>
       </div>
       <div className={styles.toolbar}>
         <label className={styles.search}><Search size={17}/><span className={styles.srOnly}>Buscar produtos</span><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Buscar por nome ou identificador"/></label>
@@ -60,7 +65,7 @@ export function ProductWorkspace({
           <div className={styles.cardBottom}><strong>{brl(p.price)}</strong><button onClick={() => {setPanel("general");setEditing(true)}}>Gerenciar <ChevronRight size={16}/></button></div>
         </div>
       </article>)}</div> :
-      <div className={styles.tableScroll}><table className={styles.catalogTable}><thead><tr><th>Produto</th><th>Preço</th><th>Modelo</th><th>Situação</th><th>Ação</th></tr></thead><tbody>{matches.map(p=><tr key={p.id}><td><div className={styles.tableProduct}><img src="/ebook/page-0.webp" alt="" width={38} height={54}/><span>{p.name}<small>{p.id}</small></span></div></td><td>{brl(p.price)}</td><td>Único · Digital</td><td><span className={styles.status}><CheckCircle2 size={13}/> Configurado</span></td><td><button onClick={() => {setPanel("general");setEditing(true)}}>Gerenciar <ChevronRight size={15}/></button></td></tr>)}</tbody></table></div>}
+      <div className={styles.tableScroll}><table className={styles.catalogTable}><thead><tr><th>Produto</th><th>Preço</th><th>Modelo</th><th>Situação</th><th>Ação</th></tr></thead><tbody>{matches.map(p=><tr key={p.id}><td><div className={styles.tableProduct}><img src="/ebook/page-0.webp" alt="" width={38} height={54}/><span>{p.name}<small>{p.id}</small></span></div></td><td data-label="Preço">{brl(p.price)}</td><td data-label="Modelo">Único · Digital</td><td data-label="Situação"><span className={styles.status}><CheckCircle2 size={13}/> Configurado</span></td><td data-label="Ação"><button onClick={() => {setPanel("general");setEditing(true)}}>Gerenciar <ChevronRight size={15}/></button></td></tr>)}</tbody></table></div>}
       <p className={styles.explainer}><Info size={15}/> O catálogo reflete o produto realmente cadastrado na aplicação. Não há API de criação de múltiplos produtos nesta versão.</p>
     </> : <>
       <div className={styles.editorTop}>

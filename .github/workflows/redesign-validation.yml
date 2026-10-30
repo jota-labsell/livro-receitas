@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - design/jotafy-premium-workspace-20261030
+      - design/jotafy-graphite-v3-20261030
   pull_request:
     branches:
       - feat/150-doces-r10
