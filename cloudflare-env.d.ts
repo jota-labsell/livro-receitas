@@ -14,6 +14,9 @@ declare global {
     META_CAPI_ENABLED?: string;
     META_CAPI_ACCESS_TOKEN?: string;
     EBOOK_ADMIN_KEY?: string;
+    PLATFORM_ENCRYPTION_KEY?: string;
+    JOTAFY_PLATFORM_ENABLED?: string;
+    META_GRAPH_VERSION?: string;
   }
 }
 export {};

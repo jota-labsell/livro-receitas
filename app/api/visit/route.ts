@@ -1,3 +1,4 @@
+import {captureLegacyEvent} from "@/lib/platform-legacy";
 import { NextRequest } from "next/server";
 import { env, body, json, failure, sameOrigin } from "@/lib/http";
 import { validVisit, CommerceError, hash } from "@/lib/commerce";
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
       60,
     );
     await recordVisit(runtime, input.visitId, input.attribution);
+    await captureLegacyEvent(runtime,req,input,"visit");
     return json({ received: true });
   } catch (e) {
     return failure(e);

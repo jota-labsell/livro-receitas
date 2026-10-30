@@ -12,6 +12,7 @@ import {
 import { getEbook } from "@/lib/ebook";
 import { assertProviderAccount } from "@/lib/mercadopago-account";
 import { captureMetaContext } from "@/lib/meta-context";
+import {requireLegacyOffer,linkLegacyOrder} from '@/lib/platform-legacy';
 export async function GET() {
   let stage = "configuration";
   const unavailable = (reason: string) => {
@@ -20,6 +21,7 @@ export async function GET() {
   };
   try {
     const runtime = env();
+    await requireLegacyOffer(runtime);
     if (!paymentReady(runtime))
       return unavailable("configuration");
     stage = "provider_account";
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
     sameOrigin(req);
     const runtime = env();
     requireReady(runtime);
+    await requireLegacyOffer(runtime);
     const input = await body(req);
     if (!validVisit(input.visitId))
       throw new CommerceError(400, "Recarregue a página.");
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest) {
     const token =
       access && /^[a-f0-9]{64}$/.test(access) ? access : newAccess();
     const order = await ensureOrder(runtime, token, input.visitId);
+    await linkLegacyOrder(runtime,order.id);
     await captureMetaContext(runtime, order.id, req, input.meta);
     const response = json({ ready: true });
     response.cookies.set(ORDER_COOKIE, token, {

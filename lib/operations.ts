@@ -101,6 +101,7 @@ export async function saveOperationSettings(
     );
   const now = Date.now();
   await env.ORDERS!.batch([
+    ...(env.JOTAFY_PLATFORM_ENABLED==='true'?[env.ORDERS!.prepare("UPDATE platform_products SET pixel_id=?,capi_enabled=?,updated_at=?,version=version+1 WHERE id='150-doces-comer-vender'").bind(input.pixelId,input.capiPaused?0:1,now)]:[]),
     env
       .ORDERS!.prepare(
         `INSERT INTO operation_settings(id,pixel_id,capi_paused,updated_at) VALUES(1,?,?,?) ON CONFLICT(id) DO UPDATE SET pixel_id=excluded.pixel_id,capi_paused=excluded.capi_paused,updated_at=excluded.updated_at`,

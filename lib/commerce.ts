@@ -30,6 +30,9 @@ export type CommerceEnv = Pick<
   | "META_CAPI_ENABLED"
   | "META_CAPI_ACCESS_TOKEN"
   | "EBOOK_ADMIN_KEY"
+  | "PLATFORM_ENCRYPTION_KEY"
+  | "JOTAFY_PLATFORM_ENABLED"
+  | "META_GRAPH_VERSION"
 >;
 type Order = {
   id: string;
@@ -48,6 +51,7 @@ type Attempt = {
   request_hash: string;
   status: string;
   payment_id: string | null;
+  external_reference?: string | null;
   provider_updated_at: number;
 };
 export type Payment = {
@@ -225,6 +229,13 @@ export async function startAttempt(
       409,
       "Existe uma tentativa em andamento. Consulte o status antes de tentar novamente.",
     );
+  if(env.JOTAFY_PLATFORM_ENABLED==='true'&&!attempt.external_reference){
+    const compactOrder=order.id.replaceAll('-',''),prefix=order.product_id+'_'+compactOrder+'_';
+    const reference=prefix+attempt.id.replaceAll('-','').slice(0,64-prefix.length);
+    if(prefix.length>58)throw new CommerceError(503,'Referência de produto incompatível.');
+    await db(env).prepare('UPDATE payment_attempts SET external_reference=? WHERE id=? AND external_reference IS NULL').bind(reference,attempt.id).run();
+    attempt.external_reference=reference;
+  }
   return attempt;
 }
 export function safePaymentData(input: unknown, allowed: Method[]) {

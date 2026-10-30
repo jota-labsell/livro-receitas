@@ -32,7 +32,7 @@ type Config = {
 };
 type Result = { status: string; paymentId?: string | null; pix?: { code: string; qrCodeBase64?: string }; expired?: boolean; purchase?: ConfirmedPurchase };
 let sdkPromise: Promise<void> | undefined;
-function loadSdk() {
+export function loadSdk() {
   if (window.MercadoPago) return Promise.resolve();
   if (!sdkPromise)
     sdkPromise = new Promise<void>((resolve, reject) => {
@@ -54,7 +54,7 @@ function loadSdk() {
     });
   return sdkPromise;
 }
-function getBricks(publicKey: string) {
+export function getBricks(publicKey: string) {
   if (window.receitasPaymentSdk) {
     if (window.receitasPaymentSdk.publicKey !== publicKey)
       throw new Error("A configuração de pagamento mudou. Recarregue a página.");

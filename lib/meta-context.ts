@@ -16,6 +16,7 @@ export async function captureMetaContext(runtime: CommerceEnv, orderId: string, 
     await runtime.ORDERS.prepare('INSERT OR IGNORE INTO operation_order_pixel(order_id,pixel_id) VALUES(?,?)').bind(orderId,settings.pixelId).run();
     const previous = await runtime.ORDERS.prepare('SELECT consent FROM meta_order_consent WHERE order_id=?').bind(orderId).first<{ consent: number }>();
     const allowed = request.headers.get('sec-gpc') === '1' ? false : typeof data.allowed === 'boolean' ? data.allowed : previous?.consent !== 0;
+    if(!allowed&&runtime.JOTAFY_PLATFORM_ENABLED==='true')await runtime.ORDERS.prepare('UPDATE platform_sessions SET consent=0,fbclid=NULL,fbc=NULL,fbp=NULL,client_ip=NULL,user_agent=NULL WHERE product_id=\'150-doces-comer-vender\' AND id=(SELECT visit_hash FROM orders WHERE id=?)').bind(orderId).run();
     if (allowed && data.operation && typeof data.operation === 'object') {
       const operation = data.operation as Record<string,unknown>;
       if (validVisit(operation.visitId)) {

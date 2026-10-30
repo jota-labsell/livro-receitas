@@ -1,0 +1,7 @@
+import {NextRequest} from 'next/server';
+import {platformAdmin} from '@/lib/platform-admin';
+import {json,failure} from '@/lib/http';
+import {CommerceError,hash} from '@/lib/commerce';
+import {productBy} from '@/lib/platform-products';
+import {auditStatement} from '@/lib/platform-core';
+export async function PUT(req:NextRequest){try{const {runtime,actor}=await platformAdmin(req,true),p=await productBy(runtime,req.nextUrl.searchParams.get('product')||'');if(!runtime.EBOOKS)throw new CommerceError(503,'Armazenamento privado indisponível.');const length=Number(req.headers.get('content-length'));if(!length||length>25*1024*1024)throw new CommerceError(413,'Arquivo deve ter até 25 MiB.');const bytes=await req.arrayBuffer();if(bytes.byteLength!==length||bytes.byteLength>25*1024*1024)throw new CommerceError(413,'Tamanho do arquivo inválido.');const extension=(req.nextUrl.searchParams.get('name')||'arquivo.bin').split('.').at(-1)||'bin';if(!/^(pdf|zip|epub|mp4|bin)$/i.test(extension))throw new CommerceError(400,'Formato não permitido. Use PDF, ZIP, EPUB ou MP4.');const key=`products/${p.id}/${hash(Buffer.from(bytes).toString('base64'))}.${extension.toLowerCase()}`;await runtime.EBOOKS.put(key,bytes,{httpMetadata:{contentType:'application/octet-stream'}});await auditStatement(runtime,actor,'delivery.upload',p.id).run();return json({file_key:key,size:length,private:true});}catch(e){return failure(e);}}

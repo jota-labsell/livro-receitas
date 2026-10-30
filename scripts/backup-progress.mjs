@@ -45,6 +45,9 @@ try{
   await writeFile(path.join(snapshot,'tracked.patch'),patch);
   for(const f of files){const target=path.resolve(snapshot,'untracked',f.path);if(!target.startsWith(path.resolve(snapshot,'untracked')+path.sep))throw Error('Caminho de snapshot inválido');await mkdir(path.dirname(target),{recursive:true});await writeFile(target,f.data);}
   await copyFile(path.join(root,'RETOMADA-CENTRAL-GESTAO.md'),path.join(snapshot,'RETOMADA-CENTRAL-GESTAO.md'));
+  for(const note of ['JOTAFY-MULTIPRODUTO.md','PAINEL-OPERACAO-DARK.md'])try{await copyFile(path.join(root,note),path.join(snapshot,note));}catch(e){if(e.code!=='ENOENT')throw e;}
+  const progress=['# Registro automático do ponto de recuperação','',`Data UTC: ${new Date().toISOString()}`,`Branch: ${branch}`,`HEAD: ${head}`,'','As conclusões e pendências revisadas estão em JOTAFY-MULTIPRODUTO.md e RETOMADA-CENTRAL-GESTAO.md. A lista abaixo registra alterações de arquivos; não comprova testes ou publicação.','','## Alterações rastreadas','',git(['diff','--stat','HEAD','--']),'','## Arquivos novos de código','',...paths.map(p=>'- '+p),''];
+  await writeFile(path.join(snapshot,'PROGRESSO.md'),progress.join('\n'));
   const manifest={createdAt:new Date().toISOString(),root,branch,head,bundle,fingerprint,untracked:paths,snapshot,restore:'Clone o bundle em pasta nova; checkout do head; git apply --binary tracked.patch; copie untracked preservando caminhos. Leia RETOMADA-CENTRAL-GESTAO.md.'};
   await writeFile(path.join(snapshot,'manifest.json'),JSON.stringify(manifest,null,2));
   await writeFile(path.join(destination,'latest.json'),JSON.stringify(manifest,null,2));

@@ -20,7 +20,7 @@ test('default deployment uses the explicit production procedure', () => {
 test('the production-named Wrangler configuration cannot publish sandbox flags', () => {
   const config = JSON.parse(readFileSync('wrangler.jsonc', 'utf8'));
   assert.equal(config.name, 'livro-receitas');
-  assert.deepEqual(config.vars, { META_CAPI_ENABLED: 'true', CHECKOUT_ENABLED: 'true', MERCADOPAGO_MODE: 'production', LIVE_PAYMENTS_ENABLED: 'true' });
+  assert.deepEqual(config.vars, { META_CAPI_ENABLED: 'true', CHECKOUT_ENABLED: 'true', MERCADOPAGO_MODE: 'production', LIVE_PAYMENTS_ENABLED: 'true', JOTAFY_PLATFORM_ENABLED: 'true' });
   assert.equal(config.main, 'worker.ts');
   assert.deepEqual(config.triggers.crons, ['*/5 * * * *']);
 });

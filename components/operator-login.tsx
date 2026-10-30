@@ -17,7 +17,7 @@ export function OperatorLogin() {
           padding: 22,
         }}
       >
-        <p className={styles.eyebrow}>RECEITAS PREMIUM · GESTÃO</p>
+        <p className={styles.eyebrow}>JOTAFY · GESTÃO</p>
         <section className={styles.panel}>
           <h1>Bem-vindo de volta.</h1>
           <p>Entre para acompanhar suas vendas e sua operação.</p>

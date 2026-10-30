@@ -1,3 +1,4 @@
+import {internalEvent} from './platform-events';
 import {orderPixel} from './operations-settings';
 import { availableMethods, CommerceError, hash, mp, requireReady, safePaymentData, startAttempt, orderEnvironment, type CommerceEnv } from './commerce';
 import { PRODUCT_CONFIG as PRODUCT } from './product.config';
@@ -5,7 +6,7 @@ import { assertProviderAccount } from './mercadopago-account';
 import { enqueueMetaPurchase } from './meta-capi';
 
 type LocalOrder = { environment: string; id: string; product_id: string; amount_cents: number; currency: string; active_attempt: string | null; status: string };
-type Attempt = { id: string; order_id: string; payment_id: string | null; created_at: number };
+type Attempt = { id: string; order_id: string; payment_id: string | null; external_reference?:string|null; created_at: number };
 export type ProviderOrder = {
   id: string; type: string; external_reference: string; user_id: string;
   currency: string; total_amount: string; total_paid_amount?: string;
@@ -26,7 +27,7 @@ async function get(env: CommerceEnv, id: string, fetcher: typeof fetch) {
 }
 export function validateProviderOrder(p: ProviderOrder, a: Attempt, o: LocalOrder, env: CommerceEnv) {
   const payments = p.transactions?.payments;
-  if (o.environment !== orderEnvironment(env) || !validId(p.id) || p.type !== 'online' || p.external_reference !== a.id ||
+  if (o.environment !== orderEnvironment(env) || !validId(p.id) || p.type !== 'online' || p.external_reference !== (a.external_reference||a.id) ||
       String(p.user_id) !== env.MERCADOPAGO_COLLECTOR_ID || p.currency !== 'BRL' ||
       !/^10(?:\.0{1,2})?$/.test(p.total_amount) || o.amount_cents !== 1000 || o.currency !== 'BRL' ||
       o.product_id !== PRODUCT.id || a.order_id !== o.id || (a.payment_id && a.payment_id !== p.id) ||
@@ -46,7 +47,7 @@ export function validateProviderOrder(p: ProviderOrder, a: Attempt, o: LocalOrde
 }
 export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder) {
   const db = env.ORDERS!;
-  const a = await db.prepare('SELECT * FROM payment_attempts WHERE id=?').bind(p.external_reference).first<Attempt>();
+  const a = env.JOTAFY_PLATFORM_ENABLED==='true' ? await db.prepare('SELECT * FROM payment_attempts WHERE id=? OR external_reference=?').bind(p.external_reference,p.external_reference).first<Attempt>() : await db.prepare('SELECT * FROM payment_attempts WHERE id=?').bind(p.external_reference).first<Attempt>();
   if (!a) throw new CommerceError(404, 'Pedido não encontrado.');
   const o = await db.prepare('SELECT * FROM orders WHERE id=?').bind(a.order_id).first<LocalOrder>();
   if (!o) throw new CommerceError(404, 'Pedido não encontrado.');
@@ -97,7 +98,7 @@ export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, 
     let p: ProviderOrder | undefined;
     if (a.payment_id) p = await get(env,a.payment_id,fetcher);
     else {
-      const query = new URLSearchParams({ external_reference:a.id, begin_date:new Date(a.created_at - 60000).toISOString(), end_date:new Date().toISOString(), page_size:'2' });
+      const query = new URLSearchParams({ external_reference:a.external_reference||a.id, begin_date:new Date(a.created_at - 60000).toISOString(), end_date:new Date().toISOString(), page_size:'2' });
       const found = await mp<{data?: ProviderOrder[]; paging?: {total?: string}}>(env,`/v1/orders?${query}`,{headers:scope(env)},fetcher);
       if (!Array.isArray(found.data) || Number(found.paging?.total || found.data.length) > 1) throw new CommerceError(409,'Pedido em conferência. Entre em contato.');
       if (found.data[0]) p = await get(env,found.data[0].id,fetcher);
@@ -118,7 +119,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
   let created: ProviderOrder;
   try {
     created = await mp<ProviderOrder>(env,'/v1/orders', {method:'POST', headers:{...headers,'X-Idempotency-Key':a.id},body:JSON.stringify({
-      type:'online',processing_mode:'automatic',total_amount:'10.00',currency:'BRL',external_reference:a.id,description:PRODUCT.name,payer:data.payer,
+      type:'online',processing_mode:'automatic',total_amount:'10.00',currency:'BRL',external_reference:a.external_reference||a.id,description:PRODUCT.name,payer:data.payer,
       transactions:{payments:[{amount:'10.00',payment_method:{id:method.id,type:method.payment_type_id,...(data.token ? {token:data.token,installments:1}: {})}}]},
     })},fetcher);
   } catch(error) {
@@ -135,6 +136,7 @@ export async function chargeProviderOrder(env: CommerceEnv, order: LocalOrder, f
   if (!created.id || !validId(created.id)) throw new CommerceError(502,'Consulte o status do pagamento.');
   // Persist provider ID even if the following authoritative GET times out.
   await env.ORDERS!.prepare('UPDATE payment_attempts SET payment_id=? WHERE id=? AND (payment_id IS NULL OR payment_id=?)').bind(created.id,a.id,created.id).run();
+  if(env.JOTAFY_PLATFORM_ENABLED==='true'){const row=await env.ORDERS!.prepare('SELECT visit_hash FROM orders WHERE id=?').bind(order.id).first<{visit_hash:string}>();if(row&&await env.ORDERS!.prepare('SELECT id FROM platform_sessions WHERE id=? AND product_id=?').bind(row.visit_hash,order.product_id).first())await internalEvent(env,hash('legacy-payment:'+a.id),'payment_created',order.product_id,row.visit_hash,null,order.id);}
   const confirmed = await get(env,created.id,fetcher);
   return result(await reconcileProviderOrder(env,confirmed),confirmed,env);
 }

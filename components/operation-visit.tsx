@@ -1,4 +1,6 @@
 "use client";
+import {platformContext} from "@/lib/platform-attribution-client";
+import {pageViewEventId} from "@/lib/meta-pixel";
 import { useEffect } from "react";
 import {operationAttribution} from "@/lib/operation-attribution-client";
 import { visitId } from "@/lib/analytics";
@@ -17,6 +19,7 @@ export function OperationVisit() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         visitId: visitId(),
+        eventId: crypto.randomUUID(),pageViewEventId:pageViewEventId(visitId()),platform:platformContext(visitId()),
         attribution: operationAttribution(),
       }),
       keepalive: true,

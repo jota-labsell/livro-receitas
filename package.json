@@ -32,7 +32,9 @@
     "cloudflare:deploy:production": "node scripts/deploy-production.mjs",
     "test:operations": "node scripts/test-operations.mjs",
     "test:management:ui": "node scripts/test-management-ui.mjs",
-    "gestao:configurar": "node scripts/open-access-admin.mjs --gestao"
+    "gestao:configurar": "node scripts/open-access-admin.mjs --gestao",
+    "test:platform": "node scripts/test-platform.mjs",
+    "test:platform:ui": "node scripts/test-platform-ui.mjs"
   },
   "repository": {
     "type": "git",

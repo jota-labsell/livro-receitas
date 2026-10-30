@@ -64,8 +64,10 @@ export function setMetaConsent(allowed: boolean) {
   if (!allowed) pending.clear();
   flush();
 }
+let pageLoadId: string | undefined;
+export function pageViewEventId(visit:string){return `page:${visit}:${pageLoadId||=crypto.randomUUID()}`;}
 export function metaPageView(visit: string) {
-  queue("page", { name: "PageView", id: `page:${visit}`, data: {} });
+  queue("page", { name: "PageView", id: pageViewEventId(visit), data: {} });
 }
 export function metaFunnel(name: "offer_view" | "cta_click" | "checkout_start", visit: string) {
   const map = { offer_view: "ViewContent", cta_click: "OfferCTAClick", checkout_start: "InitiateCheckout" };

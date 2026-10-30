@@ -11,11 +11,13 @@ import {
 } from "@/lib/commerce";
 import { getEbook } from "@/lib/ebook";
 import { captureMetaContext } from "@/lib/meta-context";
+import {requireLegacyOffer} from '@/lib/platform-legacy';
 export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
     const runtime = env();
     requireReady(runtime);
+    await requireLegacyOffer(runtime);
     if (!(await getEbook()))
       throw new CommerceError(
         503,

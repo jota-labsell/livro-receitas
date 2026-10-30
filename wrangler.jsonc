@@ -2,7 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "livro-receitas",
   "main": "worker.ts",
-  "triggers": { "crons": ["*/5 * * * *"] },
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
   "compatibility_date": "2026-10-27",
   "compatibility_flags": [
     "nodejs_compat",
@@ -40,7 +44,8 @@
     "META_CAPI_ENABLED": "true",
     "CHECKOUT_ENABLED": "true",
     "MERCADOPAGO_MODE": "production",
-    "LIVE_PAYMENTS_ENABLED": "true"
+    "LIVE_PAYMENTS_ENABLED": "true",
+    "JOTAFY_PLATFORM_ENABLED": "true"
   },
   "keep_vars": true
 }
