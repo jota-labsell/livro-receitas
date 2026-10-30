@@ -30,7 +30,9 @@ export async function body(req: NextRequest) {
   if (text.length > 16000)
     throw new CommerceError(413, "Solicitação muito grande.");
   try {
-    return JSON.parse(text) as Record<string, unknown>;
+    const value: unknown = JSON.parse(text);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('object required');
+    return value as Record<string, unknown>;
   } catch {
     throw new CommerceError(400, "Solicitação inválida.");
   }

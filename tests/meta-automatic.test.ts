@@ -52,7 +52,7 @@ before(async () => {
   }));
   db = await mf.getD1Database('ORDERS') as unknown as D1Database;
   runtime.ORDERS = db; globalThis.__metaDiagnosticEnv = runtime;
-  for (const file of ['0001_commerce.sql', '0002_order_environment.sql', '0003_jotafy.sql', '0007_meta_capi.sql', '0009_meta_automatic.sql'])
+  for (const file of ['0001_commerce.sql', '0002_order_environment.sql', '0003_jotafy.sql', '0007_meta_capi.sql', '0009_meta_automatic.sql', '0010_operations.sql'])
     for (const statement of (await readFile(`migrations/${file}`, 'utf8')).split(';').filter(value => value.trim())) await db.prepare(statement).run();
 });
 after(async () => { await mf?.dispose(); });
@@ -173,4 +173,14 @@ test('transient Graph rate limit with HTTP 400 remains eligible for automatic re
 test('live transport normalizes token whitespace in the same way as the successful diagnostic test', async () => {
   const f = await fixture();
   assert.equal(await sendMetaPurchase({ ...runtime, META_CAPI_ACCESS_TOKEN: ` ${runtime.META_CAPI_ACCESS_TOKEN}\n` }, f.order.id, await metaPurchaseEventId(f.order.id), undefined, undefined, graphFetch), true);
+});
+test('pausing CAPI retains the purchase and its original Pixel for a later send',async()=>{
+  const f=await fixture();const count=delivered.length;
+  await db.prepare("INSERT INTO operation_settings(id,pixel_id,capi_paused,updated_at) VALUES(1,'123456789',1,?)").bind(Date.now()).run();
+  assert.equal(await sendMetaPurchase(runtime,f.order.id,await metaPurchaseEventId(f.order.id),undefined,undefined,graphFetch),false);
+  assert.equal(delivered.length,count);assert.equal((await db.prepare('SELECT state FROM meta_purchase_delivery WHERE order_id=?').bind(f.order.id).first<any>())?.state,'pending');
+  assert.equal((await db.prepare('SELECT status FROM orders WHERE id=?').bind(f.order.id).first<any>())?.status,'approved');
+  assert.equal((await metaDiagnosticStatus(runtime)).automaticFlowConnected,false);
+  await db.prepare('UPDATE operation_settings SET capi_paused=0 WHERE id=1').run();
+  assert.equal(await sendMetaPurchase(runtime,f.order.id,await metaPurchaseEventId(f.order.id),undefined,undefined,graphFetch),true);
 });

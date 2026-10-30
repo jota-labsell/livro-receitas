@@ -6,6 +6,7 @@ import { limitedProductAction } from "@/lib/product-access";
 export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
+    if (req.headers.get('sec-gpc') === '1') return json({ received: false });
     const runtime = env(),
       input = await body(req);
     if (!validVisit(input?.visitId))

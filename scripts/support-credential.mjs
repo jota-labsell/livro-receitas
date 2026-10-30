@@ -5,7 +5,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const credentialFile = path.join(projectRoot, 'work', 'support-access.key.enc');
+// A release worktree shares the original checkout's encrypted operational key.
+// Locate it without copying the secret or creating a replacement backend key.
+let credentialRoot = projectRoot;
+try {
+  const common = execFileSync('git', ['rev-parse', '--git-common-dir'], {
+    cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true,
+  }).trim();
+  credentialRoot = path.dirname(path.resolve(projectRoot, common));
+} catch { /* A source archive uses its own work directory. */ }
+const credentialFile = path.join(credentialRoot, 'work', 'support-access.key.enc');
 function powershell(code, input) {
   if (process.platform !== 'win32') throw new Error('Este assistente de credencial requer Windows. Configure EBOOK_ADMIN_KEY pelo gerenciador de segredos no seu ambiente.');
   // The credential travels over stdin/stdout pipes only; never shell arguments or terminal output.

@@ -1,6 +1,7 @@
 import { randomBytes, createHmac, timingSafeEqual } from "node:crypto";
 import { CommerceError, type CommerceEnv } from "./commerce";
 import { limitedProductAction } from "./product-access";
+import { issueAdminSession } from './access-admin';
 type LoginEnv = CommerceEnv & { EBOOK_ADMIN_KEY?: string };
 type Account = { email: string; password_hash: string; salt: string };
 async function derive(password: string, salt: string) {
@@ -64,21 +65,16 @@ export async function accountLogin(
   )
     throw new CommerceError(401, "E-mail ou senha inválidos.");
   const lifetime = input.remember === true ? 7 * 86400 : 3600;
-  const text =
-    randomBytes(16).toString("hex") + "." + (Date.now() + lifetime * 1000);
-  return {
-    session:
-      text +
-      "." +
-      createHmac("sha256", env.EBOOK_ADMIN_KEY).update(text).digest("hex"),
-    lifetime,
-  };
+  return issueAdminSession(env,lifetime,'password',account);
 }
 export async function saveAccount(
   env: LoginEnv,
   actor: string,
   input: Record<string, unknown>,
 ) {
+  const session = await env.ORDERS?.prepare('SELECT kind FROM operation_admin_sessions WHERE actor=? AND expires_at>?')
+    .bind(actor,Date.now()).first<{kind:string}>();
+  if (!session) throw new CommerceError(401,'Entre novamente para alterar sua conta.');
   if (
     typeof input.email !== "string" ||
     input.email.length > 254 ||
@@ -98,19 +94,24 @@ export async function saveAccount(
     .first<Account>();
   if (previous && !(await passwordMatches(previous, input.currentPassword)))
     throw new CommerceError(401, "Confira sua senha atual.");
+  if (!previous && session.kind !== 'key') throw new CommerceError(403,'A configuração inicial exige acesso administrativo de configuração.');
   const salt = randomBytes(32).toString("hex"),
     passwordHash = await derive(input.password, salt),
     now = Date.now();
-  await env.ORDERS!.batch([
+  const update = previous
+    ? env.ORDERS!.prepare('UPDATE operation_account SET email=?,password_hash=?,salt=?,updated_at=? WHERE id=1 AND password_hash=? AND salt=?')
+      .bind(input.email.trim().toLowerCase(),passwordHash,salt,now,previous.password_hash,previous.salt)
+    : env.ORDERS!.prepare('INSERT OR IGNORE INTO operation_account(id,email,password_hash,salt,updated_at) VALUES(1,?,?,?,?)')
+      .bind(input.email.trim().toLowerCase(),passwordHash,salt,now);
+  const results = await env.ORDERS!.batch([
+    update,
+    env.ORDERS!.prepare('DELETE FROM operation_admin_sessions WHERE EXISTS(SELECT 1 FROM operation_account WHERE id=1 AND password_hash=? AND salt=?)')
+      .bind(passwordHash,salt),
     env
       .ORDERS!.prepare(
-        "INSERT INTO operation_account(id,email,password_hash,salt,updated_at) VALUES(1,?,?,?,?) ON CONFLICT(id) DO UPDATE SET email=excluded.email,password_hash=excluded.password_hash,salt=excluded.salt,updated_at=excluded.updated_at",
+        "INSERT INTO operation_audit(id,actor,action,created_at) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM operation_account WHERE id=1 AND password_hash=? AND salt=?)",
       )
-      .bind(input.email.trim().toLowerCase(), passwordHash, salt, now),
-    env
-      .ORDERS!.prepare(
-        "INSERT INTO operation_audit(id,actor,action,created_at) VALUES(?,?,?,?)",
-      )
-      .bind(crypto.randomUUID(), actor, "update_operator_account", now),
+      .bind(crypto.randomUUID(), actor, "update_operator_account", now,passwordHash,salt),
   ]);
+  if (results[0].meta.changes !== 1) throw new CommerceError(409,'A conta mudou durante a alteração. Entre novamente.');
 }

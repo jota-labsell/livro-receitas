@@ -1,4 +1,6 @@
 "use client";
+import { operationAttribution } from './operation-attribution-client';
+import { visitId } from './analytics';
 const clickPattern = /^[A-Za-z0-9_-]{8,500}$/;
 const fbcPattern = /^fb\.\d{1,3}\.\d{10,13}\.[A-Za-z0-9_-]{1,500}$/;
 function cookie(name: string) {
@@ -21,5 +23,5 @@ export function metaAttribution() {
       try { sessionStorage.setItem('recipe-meta-click', JSON.stringify({ click, fbc })); } catch {}
     } else if (!fbcPattern.test(fbc) && fbcPattern.test(saved?.fbc || '')) fbc = saved!.fbc!;
   } catch {}
-  return { allowed: true, fbc: fbcPattern.test(fbc) ? fbc : undefined, fbp: cookie('_fbp') || undefined, sourceUrl: location.origin + location.pathname };
+  return { allowed: true, operation: {visitId:visitId(),attribution:operationAttribution()}, fbc: fbcPattern.test(fbc) ? fbc : undefined, fbp: cookie('_fbp') || undefined, sourceUrl: location.origin + location.pathname };
 }

@@ -4,7 +4,7 @@ import styles from "./management-dashboard.module.css";
 export function OperatorLogin() {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
-    [remember, setRemember] = useState(true),
+    [remember, setRemember] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
@@ -86,7 +86,7 @@ export function OperatorLogin() {
         </section>
         <p className={styles.muted}>
           Primeiro acesso? Entre uma vez pelo{" "}
-          <a href="/admin/acesso/entrar">
+          <a href="/admin/configurar">
             acesso administrativo de configuração
           </a>{" "}
           e cadastre seu e-mail e senha em Central de operação → Minha conta.
@@ -130,7 +130,7 @@ export function OperatorAccount() {
             setPassword("");
             setCurrent("");
             setMessage(
-              "Conta salva. Nos próximos acessos, use seu e-mail e senha.",
+              "Conta salva. Todas as sessões anteriores foram encerradas. Entre com seu e-mail e senha.",
             );
           } catch (e) {
             setError((e as Error).message);
@@ -181,7 +181,7 @@ export function OperatorAccount() {
           {error}
         </p>
       )}
-      {message && <p role="status">{message}</p>}
+      {message && <p role="status">{message} <a href="/admin/entrar">Entrar novamente</a></p>}
     </section>
   );
 }

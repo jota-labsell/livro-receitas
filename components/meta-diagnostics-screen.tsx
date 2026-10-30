@@ -4,7 +4,7 @@ import type { MetaTestResult } from "@/lib/meta-diagnostics";
 import styles from "./meta-diagnostics.module.css";
 
 type Purchase = { id: string; amount_cents: number; approved_at: number; state: string | null; attempts: number | null; sent_at: number | null; consent?: number | null; http_status?: number | null; error_code?: number | null; trace_id?: string | null };
-type Status = { pixelId: string; graphVersion: string; tokenConfigured: boolean; automaticEnabled: boolean; tablesAvailable: boolean; automaticFlowConnected: boolean; purchases: Purchase[]; checkedAt: number };
+type Status = { pixelId: string; graphVersion: string; tokenConfigured: boolean; automaticEnabled: boolean; tablesAvailable: boolean; automaticFlowConnected: boolean; capiPaused?: boolean; settingsAvailable?: boolean; purchases: Purchase[]; checkedAt: number };
 const date = (value: number) => new Date(value).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 async function request<T>(method = "GET", input?: unknown): Promise<T> {
   const response = await fetch("/api/admin/meta", { method, cache: "no-store", signal: AbortSignal.timeout(25000), headers: input ? { "Content-Type": "application/json" } : undefined, body: input ? JSON.stringify(input) : undefined });
@@ -30,7 +30,7 @@ export function MetaDiagnosticsScreen() {
     {error && <p className={styles.error} role="alert">{error}</p>}
     <section aria-busy={busy}><div className={styles.row}><h2>Configuração do servidor</h2><button disabled={busy} onClick={() => void load()}>{busy ? "Consultando…" : "Atualizar diagnóstico"}</button></div>
       {!status ? <p>{busy ? "Carregando configuração…" : "Não foi possível carregar. Tente atualizar."}</p> : <>
-        <dl className={styles.cards}><div><dt>Pixel</dt><dd>{status.pixelId}</dd></div><div><dt>Token da API</dt><dd>{status.tokenConfigured ? "Configurado" : "Ausente"}</dd></div><div><dt>Envio automático</dt><dd>{status.automaticFlowConnected ? "Conectado" : "Integração pendente"}</dd></div><div><dt>Tabelas da Meta</dt><dd>{status.tablesAvailable ? "Presentes" : "Migration incompleta ou ausente"}</dd></div></dl>
+        <dl className={styles.cards}><div><dt>Pixel</dt><dd>{status.pixelId}</dd></div><div><dt>Token da API</dt><dd>{status.tokenConfigured ? "Configurado" : "Ausente"}</dd></div><div><dt>Envio automático</dt><dd>{status.capiPaused ? "Pausado" : status.automaticFlowConnected ? "Preparado; confira os envios" : "Integração pendente"}</dd></div><div><dt>Tabelas da Meta</dt><dd>{status.tablesAvailable ? "Presentes" : "Migration incompleta ou ausente"}</dd></div></dl>
         <p>API {status.graphVersion} · Chave de ativação automática: {status.automaticEnabled ? "ligada" : "desligada"} · Consulta: {date(status.checkedAt)}</p>
         <p className={styles.notice}>{status.automaticFlowConnected ? "Novas compras aprovadas são enviadas após a confirmação do Mercado Pago. Uma rotina verifica pendências a cada cinco minutos; o histórico abaixo mostra a confirmação da Meta." : "O envio automático depende da ativação, do token e das migrations. O teste abaixo verifica a conexão independentemente dessa ativação."}</p>
       </>}

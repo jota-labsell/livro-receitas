@@ -37,7 +37,7 @@ before(async () => {
   db = await mf.getD1Database("ORDERS") as unknown as D1Database; env.ORDERS = db;
   globalThis.__accessTestEnv = env;
   globalThis.__accessTestStorage = { manifest: async () => EBOOK_PREVIEW, body: async () => null };
-  for (const name of ["0001_commerce.sql", "0002_order_environment.sql", "0003_jotafy.sql", "0008_product_access.sql"]) {
+  for (const name of ["0001_commerce.sql", "0002_order_environment.sql", "0003_jotafy.sql", "0008_product_access.sql", "0010_operations.sql"]) {
     const sql = await readFile(`migrations/${name}`, "utf8");
     for (const statement of sql.split(";").filter(s => s.trim())) await db.prepare(statement).run();
   }
@@ -179,15 +179,15 @@ test("real ebook bytes are delivered intact through both authorization paths, ve
   }
 });
 test("administrative auth fails closed, rejects tampering and missing setup, rate limits abuse", async () => {
-  assert.throws(() => verifyAccessAdmin(env));
+  await assert.rejects(() => verifyAccessAdmin(env));
   await assert.rejects(loginAccessAdmin({ ...env, EBOOK_ADMIN_KEY: undefined }, "anything", "fixture"));
   await assert.rejects(loginAccessAdmin(env, "incorrect", "fixture-wrong"));
   const cookie = await loginAccessAdmin(env, env.EBOOK_ADMIN_KEY, "fixture-good");
-  assert.match(verifyAccessAdmin(env, cookie), /^support:/);
-  assert.throws(() => verifyAccessAdmin(env, cookie.slice(0,-1) + (cookie.endsWith("a") ? "b" : "a")));
+  assert.match(await verifyAccessAdmin(env, cookie), /^support:/);
+  await assert.rejects(() => verifyAccessAdmin(env, cookie.slice(0,-1) + (cookie.endsWith("a") ? "b" : "a")));
   const [nonce, expiry, signature] = cookie.split(".");
-  assert.throws(() => verifyAccessAdmin(env, `${nonce}.${Number(expiry)+1000}.${signature}`));
-  assert.throws(() => verifyAccessAdmin({ ...env, EBOOK_ADMIN_KEY: "f".repeat(64) }, cookie));
+  await assert.rejects(() => verifyAccessAdmin(env, `${nonce}.${Number(expiry)+1000}.${signature}`));
+  await assert.rejects(() => verifyAccessAdmin({ ...env, EBOOK_ADMIN_KEY: "f".repeat(64) }, cookie));
   await limitedProductAction(env, "fixture-rate", 1);
   await assert.rejects(limitedProductAction(env, "fixture-rate", 1), (e: unknown) => (e as { status: number }).status === 429);
 });

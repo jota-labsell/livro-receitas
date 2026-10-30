@@ -10,28 +10,28 @@ import { PRODUCT_CONFIG } from "@/lib/product.config";
 export async function GET(req: NextRequest) {
   try {
     const runtime = env();
-    verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+    await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     if (!runtime.ORDERS) throw new CommerceError(503, "Banco indisponível.");
     const db = runtime.ORDERS,
       f = reportFilter(req.nextUrl.searchParams);
     const base = `environment='production' AND created_at>=? AND created_at<?`;
-    const summary = await db
-      .prepare(
-        `SELECT COUNT(*) orders,COALESCE(SUM(CASE WHEN status='approved' THEN amount_cents ELSE 0 END),0) revenue,
- SUM(status='approved') approved,SUM(status IN ('pending','processing')) pending,SUM(status IN ('refunded','charged_back')) reversed FROM orders WHERE ${base}`,
-      )
-      .bind(f.start, f.end)
-      .first();
-    const days = await db
-      .prepare(
-        `SELECT strftime('%Y-%m-%d',created_at/1000-10800,'unixepoch') day,COUNT(*) orders,SUM(CASE WHEN status='approved' THEN amount_cents ELSE 0 END) revenue FROM orders WHERE ${base} GROUP BY day ORDER BY day`,
-      )
-      .bind(f.start, f.end)
-      .all();
     const where =
       base +
       ` AND (?='' OR status=?) AND (?='' OR id=? OR EXISTS(SELECT 1 FROM payment_attempts a WHERE a.order_id=orders.id AND a.payment_id=?))`;
     const args = [f.start, f.end, f.status, f.status, f.q, f.q, f.q];
+    const summary = await db
+      .prepare(
+        `SELECT COUNT(*) orders,COALESCE(SUM(CASE WHEN status='approved' THEN amount_cents ELSE 0 END),0) revenue,
+ SUM(status='approved') approved,SUM(status IN ('pending','processing')) pending,SUM(status IN ('refunded','charged_back')) reversed FROM orders WHERE ${where}`,
+      )
+      .bind(...args)
+      .first();
+    const days = await db
+      .prepare(
+        `SELECT strftime('%Y-%m-%d',created_at/1000-10800,'unixepoch') day,COUNT(*) orders,SUM(CASE WHEN status='approved' THEN amount_cents ELSE 0 END) revenue FROM orders WHERE ${where} GROUP BY day ORDER BY day`,
+      )
+      .bind(...args)
+      .all();
     const orders = await db
       .prepare(
         `SELECT id,status,amount_cents,created_at,updated_at FROM orders WHERE ${where} ORDER BY created_at DESC,id LIMIT 26 OFFSET ?`,
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
     const file = await runtime.EBOOKS?.head(
       `sha256/${EBOOK_PREVIEW.sha256}.pdf`,
     )
-      .then((x) => Boolean(x))
+      .then((x) => Boolean(x && x.size === EBOOK_PREVIEW.bytes))
       .catch(() => null);
     return json({
       summary,
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
     const runtime = env(),
-      actor = verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+      actor = await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     await limitedProductAction(runtime, "operations:" + actor, 10);
     await saveOperationSettings(runtime, actor, await body(req));
     return json({ saved: true });

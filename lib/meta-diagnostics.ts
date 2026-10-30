@@ -28,11 +28,13 @@ export async function metaDiagnosticStatus(runtime: CommerceEnv) {
     ${consentAvailable ? "LEFT JOIN meta_order_consent c ON c.order_id=o.id" : ""}
     ${resultsAvailable ? 'LEFT JOIN meta_delivery_results r ON r.order_id=o.id' : ''}
     WHERE o.environment='production' AND o.status='approved' ORDER BY f.created_at DESC LIMIT 20`).all();
+  const settings=await operationSettings(runtime);
   return {
-    pixelId: (await operationSettings(runtime)).pixelId, graphVersion: DIAGNOSTIC_GRAPH_VERSION,
+    pixelId: settings.pixelId, graphVersion: DIAGNOSTIC_GRAPH_VERSION,
+    capiPaused: settings.capiPaused, settingsAvailable: settings.available,
     tokenConfigured: Boolean(runtime.META_CAPI_ACCESS_TOKEN?.trim()),
     automaticEnabled: runtime.META_CAPI_ENABLED === "true",
-    tablesAvailable, automaticFlowConnected: metaCapiReady(runtime) && tablesAvailable,
+    tablesAvailable, automaticFlowConnected: metaCapiReady(runtime) && tablesAvailable && settings.available && !settings.capiPaused,
     purchases: purchases.results, checkedAt: Date.now(),
   };
 }

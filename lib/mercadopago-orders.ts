@@ -76,8 +76,13 @@ export async function reconcileProviderOrder(env: CommerceEnv, p: ProviderOrder)
 }
 async function result(o: LocalOrder, p: ProviderOrder | undefined, env: CommerceEnv) {
   const method = p?.transactions?.payments?.[0]?.payment_method;
+  let purchase;
+  if (o.environment === 'production' && o.status === 'approved' && p) {
+    try { purchase = { pixelId: await orderPixel(env,o.id), eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: 'BRL' }; }
+    catch { console.warn(JSON.stringify({event:'purchase_pixel_unavailable'})); }
+  }
   return { status: o.status, paymentId: null, expired: p?.status === "expired" || p?.status_detail === "expired" || p?.transactions?.payments?.[0]?.status_detail === "expired", providerOrderId: p?.id || null,
-    ...(o.environment === "production" && o.status === "approved" && p ? { purchase: { pixelId: await orderPixel(env,o.id), eventId: hash(`meta-purchase:${o.id}`), value: 10, currency: "BRL" } } : {}),
+    ...(purchase ? {purchase} : {}),
     ...(o.status === 'pending' && method?.qr_code ? { pix: { code: method.qr_code, qrCodeBase64: method.qr_code_base64 } } : {}) };
 }
 export async function refreshProviderOrder(env: CommerceEnv, order: LocalOrder, fetcher: typeof fetch = fetch) {

@@ -18,19 +18,27 @@ A conta é única para o operador. A criação não é pública. Entre com a ses
 
 A senha usa PBKDF2 SHA-256 com 100 mil iterações (compatível com o limite WebCrypto Workers), salt aleatório de 32 bytes e comparação de tempo constante. Senhas não são registradas em logs. Login tem cotas por origem e global. E-mail/senha inválidos geram resposta genérica. Alterar conta existente exige a senha atual e sessão autenticada. Cookies são Secure, HttpOnly, SameSite Strict; sessão padrão de uma hora ou sete dias se escolhido. Sair apaga o cookie deste navegador.
 
-A troca de senha não revoga automaticamente todas as sessões assinadas existentes: elas vencem pelo prazo original. Para revogação global de emergência, rotacione EBOOK_ADMIN_KEY no ambiente seguro. Não há recuperação automática de senha por e-mail; a credencial administrativa de configuração permanece como mecanismo operacional de recuperação, sem exposição no painel.
+As sessões são assinadas e registradas por hash em operation_admin_sessions. Toda página e API administrativa verifica também esse registro no servidor. Sair revoga a sessão no banco, inclusive para cópias do cookie. Criar a conta ou alterar credenciais revoga todas as sessões anteriores atomicamente com a atualização e exige novo login. A atualização compara o hash anterior para impedir alterações concorrentes. Cookies antigos, anteriores a este registro, não são aceitos. Rotacionar EBOOK_ADMIN_KEY continua sendo uma opção de emergência. Não há recuperação automática de senha por e-mail.
+
+### Primeiro cadastro do proprietário
+
+No terminal interativo deste checkout, execute `npm.cmd run gestao:configurar`. Informe somente no terminal a senha de proteção local da credencial operacional já provisionada. O assistente localiza o arquivo criptografado no checkout original mesmo quando executado em um worktree, copia a chave para a área de transferência e abre /admin/configurar. A chave não aparece no terminal nem deve ser enviada pelo chat.
+
+Autentique essa configuração uma vez, abra Minha conta e escolha e-mail e senha próprios (12 a 256 caracteres; use um gerenciador de senhas). O cadastro encerra inclusive a sessão de configuração. Entre novamente em /admin/entrar, usando e-mail e senha. Não existe senha padrão, inscrição pública ou conta criada pelo processo de deploy. A chave operacional fica restrita à configuração e recuperação; não é necessária no acesso cotidiano. Sem a senha de proteção local, o assistente não decifra a chave e não a substitui automaticamente.
 
 ## Publicação
 
 Necessária a migration aditiva 0010_operations.sql no banco atual, depois o build e deploy. O script de deploy verifica as novas tabelas e não pula as verificações anteriores.
 
 ```sh
-npx wrangler d1 execute receitas-premium-150-orders --remote --file migrations/0010_operations.sql
+npx wrangler d1 migrations list receitas-premium-150-orders --remote
+# Somente se houver migrations pendentes necessárias, após revisar a lista:
+npx wrangler d1 migrations apply receitas-premium-150-orders --remote
 npm run cloudflare:build
 npm run cloudflare:deploy:production
 ```
 
-Não foi publicada nesta sessão: a credencial disponível recebe HTTP 403 / 7403 ao consultar esse D1. Não houve tentativa de contornar a proteção nem de substituir produção por uma versão sem a migration.
+Na retomada em 30/10/2026, o terminal usa OAuth do Wrangler da conta 48a86816b0ea33a5e9da7eb156dd98b1, sem CLOUDFLARE_API_TOKEN no processo. O D1 e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a corresponde ao banco esperado. A migration 0010 já está no histórico e as sete tabelas operation_* foram confirmadas, inclusive operation_admin_sessions. Nenhuma migration foi reaplicada nesta retomada. O erro 403/7403 anterior não foi reproduzido.
 
 ## Privacidade
 

@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { loadSupportCredential, copySupportCredential, readProtectionPassword } from './support-credential.mjs';
 try {
-  if (process.argv.slice(2).some(value => value !== '--meta')) throw new Error('Use somente --meta para abrir o diagnóstico.');
-  const adminPath = process.argv.includes('--meta') ? '/admin/meta' : '/admin/acesso';
+  if (process.argv.slice(2).some(value => !['--meta','--gestao'].includes(value))) throw new Error('Use somente --meta para abrir o diagnóstico.');
+  const adminPath = process.argv.includes('--gestao') ? '/admin/configurar' : process.argv.includes('--meta') ? '/admin/meta' : '/admin/acesso';
   const key = await loadSupportCredential(await readProtectionPassword());
   if (!key) throw new Error('Credencial ainda não provisionada. Execute npm.cmd run publicar:acesso primeiro.');
   copySupportCredential(key);

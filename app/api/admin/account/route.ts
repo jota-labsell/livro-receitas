@@ -7,10 +7,12 @@ export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
     const runtime = env(),
-      actor = verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+      actor = await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     await limitedProductAction(runtime, "account:" + actor, 5, 15 * 60000);
     await saveAccount(runtime, actor, await body(req));
-    return json({ saved: true });
+    const response = json({ saved: true, signInRequired: true });
+    response.cookies.set(ADMIN_COOKIE,'',{httpOnly:true,secure:true,sameSite:'strict',path:'/',maxAge:0});
+    return response;
   } catch (e) {
     return failure(e);
   }

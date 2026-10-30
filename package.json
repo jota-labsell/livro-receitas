@@ -31,7 +31,8 @@
     "cloudflare:deploy:sandbox": "node scripts/deploy-sandbox.mjs",
     "cloudflare:deploy:production": "node scripts/deploy-production.mjs",
     "test:operations": "node scripts/test-operations.mjs",
-    "test:management:ui": "node scripts/test-management-ui.mjs"
+    "test:management:ui": "node scripts/test-management-ui.mjs",
+    "gestao:configurar": "node scripts/open-access-admin.mjs --gestao"
   },
   "repository": {
     "type": "git",

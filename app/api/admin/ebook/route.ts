@@ -6,7 +6,7 @@ import { issueProductAccess, limitedProductAction, ProductAccessError, revokePro
 export async function GET(req: NextRequest) {
   try {
     const runtime = env();
-    verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+    await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     if (!runtime.ORDERS) throw new CommerceError(503, "Banco indisponível.");
     const page = Math.max(1, Math.min(10000, Number(req.nextUrl.searchParams.get("page")) || 1));
     const orderId = req.nextUrl.searchParams.get("order");
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
-    const runtime = env(), actor = verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+    const runtime = env(), actor = await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     await limitedProductAction(runtime, `admin-action:${actor}`, 10);
     const input = await body(req);
     if (input.action === "revoke" && typeof input.grantId === "string") {

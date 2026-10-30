@@ -8,7 +8,7 @@ import { metaDiagnosticStatus, sendMetaDiagnostic } from "@/lib/meta-diagnostics
 export async function GET(req: NextRequest) {
   try {
     const runtime = env();
-    verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+    await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     return json(await metaDiagnosticStatus(runtime));
   } catch (error) { return failure(error); }
 }
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
     const runtime = env();
-    const actor = verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
+    const actor = await verifyAccessAdmin(runtime, req.cookies.get(ADMIN_COOKIE)?.value);
     const input = await body(req);
     if (!input || Array.isArray(input) || input.action !== "test")
       throw new CommerceError(400, "Escolha o envio de evento de teste.");

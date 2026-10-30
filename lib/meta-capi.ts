@@ -216,12 +216,12 @@ export async function sendMetaPurchase(
 ): Promise<boolean> {
   if (!enabled(env)) return false;
   const settings=await operationSettings(env);
-  if(settings.capiPaused)return false;
-  const pixelId=await orderPixel(env,orderId);
+  if(!settings.available || settings.capiPaused)return false;
   const token = env.META_CAPI_ACCESS_TOKEN!.trim();
   const db = database(env);
   if (!db) return false;
   try {
+    const pixelId=await orderPixel(env,orderId);
     await enqueueMetaPurchase(env, orderId);
     const approved = await approvedPurchase(env, orderId);
     if (!approved) return false;

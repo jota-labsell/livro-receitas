@@ -24,3 +24,4 @@ export async function POST(req: NextRequest) {
     return failure(e);
   }
 }
+export { DELETE } from '../ebook/login/route';

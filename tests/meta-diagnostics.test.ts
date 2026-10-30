@@ -17,7 +17,7 @@ before(async () => {
   mf = new Miniflare(convertV4MiniflareOptions({ modules: true, script: 'export default {fetch(){return new Response("test")}}', d1Databases: ['ORDERS'], compatibilityDate: '2026-10-27' }));
   db = await mf.getD1Database('ORDERS') as unknown as D1Database;
   runtime.ORDERS = db; globalThis.__metaDiagnosticEnv = runtime;
-  for (const name of ['0001_commerce.sql', '0002_order_environment.sql', '0008_product_access.sql']) {
+  for (const name of ['0001_commerce.sql', '0002_order_environment.sql', '0008_product_access.sql', '0010_operations.sql']) {
     for (const statement of (await readFile(`migrations/${name}`, 'utf8')).split(';').filter(value => value.trim())) await db.prepare(statement).run();
   }
   session = await loginAccessAdmin(runtime, runtime.EBOOK_ADMIN_KEY, 'fixture-ip');

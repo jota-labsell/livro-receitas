@@ -38,7 +38,7 @@ before(async () => {
   );
   db = (await mf.getD1Database("ORDERS")) as any;
   env.ORDERS = db;
-  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8"));
+  const sql = (await readFile("migrations/0001_commerce.sql", "utf8")) + (await readFile("migrations/0002_order_environment.sql", "utf8")) + (await readFile("migrations/0003_jotafy.sql", "utf8")) + (await readFile("migrations/0010_operations.sql", "utf8"));
   for (const statement of sql.split(";").filter((s) => s.trim()))
     await db.prepare(statement).run();
 });

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { body, env, failure, json, sameOrigin } from "@/lib/http";
-import { ADMIN_COOKIE, loginAccessAdmin } from "@/lib/access-admin";
+import { ADMIN_COOKIE, loginAccessAdmin, revokeAdminSession } from "@/lib/access-admin";
 export async function POST(req: NextRequest) {
   try {
     sameOrigin(req);
@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     sameOrigin(req);
+    await revokeAdminSession(env(),req.cookies.get(ADMIN_COOKIE)?.value);
     const response = json({ ok: true });
     response.cookies.set(ADMIN_COOKIE, "", { httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 0 });
     return response;
