@@ -1,5 +1,7 @@
 # Central de gestão — publicação de 30/10/2026
 
+Reconferido às 13:52 UTC: mesma versão ativa com 100% do tráfego; checkout por R$ 10 disponível; painel e download protegidos. Execução `meta_dispatch` observada no D1 às 13:50:35 UTC. Backup agendado continuou durante o intervalo com resultado 0. Últimos checks: Pages success, Actions skipped, os dois Workers Builds failure. Último log bloqueado por 403/12004: `a842311b-91d0-42b1-874b-5ff75d5cf199`. O 7403 reapareceu transitoriamente na retomada; após whoami, as consultas D1 voltaram a funcionar na mesma conta, sem troca de credenciais. A causa dos builds continua não comprovada.
+
 ## Publicação confirmada
 
 - Painel: https://livro-receitas.joaolucasqtb.workers.dev/admin.

@@ -1,5 +1,15 @@
 # Retomada da central de gestão — 30/10/2026
 
+## Última conferência: 13:52–13:53 UTC (10:52–10:53 Brasília)
+
+Continuação após intervalo de horas: código sem alterações locais, branches remotas em `1e42ab1` (relatório; aplicação igual a `fe0ea12`). A versão ativa permaneceu `88ac37cf-fcaa-4b05-bb67-4349c0ad493e`, 100% do tráfego, confirmada via API. Checkout GET continuou disponível por R$ 10 em produção; APIs administrativas 401, download sem autorização 303 e login visível em navegador real.
+
+Na primeira consulta desta retomada, o helper que lê o OAuth local respondeu 401 e a consulta D1 retornou 7403. Após `wrangler whoami`, novas consultas Workers/D1 funcionaram com a mesma conta OAuth e sem alterar secrets ou fazer login interativo. Migrations continuam sem pendências. Não confundir essa ocorrência de autenticação do terminal com a causa dos builds nativos, que permanece desconhecida.
+
+Cron observado no banco: `meta_dispatch` às **13:50:35 UTC**, comprovando execução recente da rotina; isso não comprova aceitação de evento novo pela Meta. Pedidos permanecem 44, conta de operador ainda não cadastrada. O proprietário precisa concluir o primeiro cadastro seguro.
+
+Checks finais do commit de relatório: Pages success; Actions skipped; Workers Builds livro-receitas e receitas-premium-150 failure. Último build livro-receitas: `a842311b-91d0-42b1-874b-5ff75d5cf199`; logs continuam HTTP 403/12004 mesmo quando a API de deployments funciona. Falta a permissão específica de Workers Builds. Os builds não substituíram a versão manual ativa. Backup periódico continuou durante o intervalo; tarefa do Windows com LastTaskResult 0 e snapshots conferidos.
+
 ## Onde continuar
 
 - Repositório: jota-labsell/livro-receitas.
