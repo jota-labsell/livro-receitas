@@ -4,24 +4,15 @@ import { configureMetaPixel, metaPageView } from "@/lib/meta-pixel";
 import { visitId } from "@/lib/analytics";
 import { metaAttribution } from "@/lib/meta-attribution-client";
 
-export function MetaPixel() {
+type MetaPixelProps = { enabled: boolean; pixelId: string };
+
+/** The first PageView no longer waits for a browser-side configuration fetch. */
+export function MetaPixel({ enabled, pixelId }: MetaPixelProps) {
   useEffect(() => {
-    let disposed = false;
     const attribution = metaAttribution();
-    void fetch("/api/marketing")
-      .then((response) => {
-        if (!response.ok) throw new Error("marketing unavailable");
-        return response.json() as Promise<{ enabled?: boolean; pixelId?: string }>;
-      })
-      .then((config) => {
-        if (disposed) return;
-        const enabled = config.enabled === true;
-        configureMetaPixel(enabled, enabled && attribution.allowed, !attribution.allowed, config.pixelId);
-        if (enabled) metaPageView(visitId());
-      })
-      .catch(() => configureMetaPixel(false, false));
-    return () => { disposed = true; };
-  }, []);
+    configureMetaPixel(enabled, enabled && attribution.allowed, !attribution.allowed, pixelId);
+    if (enabled && attribution.allowed) metaPageView(visitId());
+  }, [enabled, pixelId]);
 
   return null;
 }

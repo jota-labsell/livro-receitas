@@ -1,8 +1,7 @@
-import {operationSettings} from '@/lib/operations-settings';
+import { marketingConfig } from "@/lib/marketing-config";
 import { cloudflareEnv } from "@/lib/runtime";
 import { json } from "@/lib/http";
+
 export async function GET() {
-  const env = cloudflareEnv();
-  const settings=await operationSettings(env||{});
-  return json({ pixelId:settings.pixelId, enabled: Boolean(settings.available && env?.MERCADOPAGO_MODE === "production" && env.LIVE_PAYMENTS_ENABLED === "true" && env.CHECKOUT_ENABLED === "true") });
+  return json(await marketingConfig(cloudflareEnv()));
 }

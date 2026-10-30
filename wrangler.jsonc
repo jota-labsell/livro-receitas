@@ -37,6 +37,7 @@
     }
   ],
   "vars": {
+    "META_PIXEL_ENABLED": "true",
     "META_CAPI_ENABLED": "true",
     "CHECKOUT_ENABLED": "true",
     "MERCADOPAGO_MODE": "production",

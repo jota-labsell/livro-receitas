@@ -18,6 +18,7 @@ config.main = path.resolve(config.main);
 config.assets.directory = path.resolve(config.assets.directory);
 config.vars = {
   ...config.vars,
+  META_PIXEL_ENABLED: 'false',
   CHECKOUT_ENABLED: 'false',
   LIVE_PAYMENTS_ENABLED: 'false',
   MERCADOPAGO_MODE: 'sandbox',
