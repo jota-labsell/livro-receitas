@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Cloudflare token ausente"; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Cloudflare account ID ausente"; exit 1; }
-          node -e "const c=require('./wrangler.jsonc');const d=c.d1_databases.find(x=>x.binding==='ORDERS');if(d.database_name!=='receitas-premium-150-orders'||d.database_id!=='e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a')process.exit(1);"
+          node -e "const fs=require('node:fs');const c=JSON.parse(fs.readFileSync('./wrangler.jsonc','utf8'));const d=c.d1_databases.find(x=>x.binding==='ORDERS');if(!d||d.database_name!=='receitas-premium-150-orders'||d.database_id!=='e5ba3e0b-eff5-4bfd-8461-fe09c1eceb7a')process.exit(1);"
           npx wrangler d1 info receitas-premium-150-orders --json > "$RUNNER_TEMP/d1-info.json"
           node -e "const i=require(process.env.RUNNER_TEMP+'/d1-info.json');console.log('Database:',i.name,'Storage version:',i.version)"
           npx wrangler d1 time-travel info receitas-premium-150-orders
